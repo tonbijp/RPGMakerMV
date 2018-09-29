@@ -80,7 +80,6 @@ if ( showAlwaysDashMenu.toLowerCase() === 'true' ) return;
 
 const _Window_Command_addCommand = Window_Command.prototype.addCommand;
 Window_Options.prototype.addCommand = function( name, symbol, enabled, ext ){
-    console.log( symbol );
     if( symbol === 'alwaysDash' ) return;
     _Window_Command_addCommand.call(this,name,symbol,enabled,ext);
 };
