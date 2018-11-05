@@ -1,3 +1,3 @@
 # RPGツクールMV プラグイン置き場
 
-姉妹ページの[リファレンス](http://tonbi.jp/Game/RPGMakerMV/)もどーぞ。
+[RPGツクールMV リファレンスプロジェクト](https://github.com/katai5plate/RPGMV-CoreScript-Reference/)の編集もしてます。
