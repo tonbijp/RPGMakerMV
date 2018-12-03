@@ -10,12 +10,15 @@
 // http://opensource.org/licenses/mit-license.php
 //========================================
 /*:
- * @plugindesc 壁の後ろを歩けるようにし、高層[☆]タイルに通行設定を適用する。
+ * @plugindesc 壁の後ろを歩けるようにし、高層[☆]タイルに通行設定を適用
  * @author とんび@鳶嶋工房
  * 
  * @help
  * 
  * 利用規約 : MITライセンス
+ * 
+ * プラグインを適用すると自動的に屋根上部(A3の1,3行)と壁上部(A4の1,3行)を高層[☆]に設定します。
+ * A4の下の行(デフォルトでは崖がある)には適用しません。
  */
     
 (function(){'use strict';
@@ -54,7 +57,7 @@ DataManager.onLoad = function(object ){
             if( !currentObject ) continue;
             const flags = currentObject.flags;
 
-            // 屋根タイル(A3の1,3列)を走査
+            // 屋根タイル(A3の1,3行)を走査
             let tileId = Tilemap.TILE_ID_A3;
             for( const tileOffset of [0, 48 * 16] ){
                 tileId += tileOffset ;
@@ -62,7 +65,7 @@ DataManager.onLoad = function(object ){
                     setTopRoof2UpperLayer( flags, tileId + x * 48 );
                 }
             }
-            // 壁(上)タイル(A4の1,3列)を走査(5列には適用しない)
+            // 壁(上)タイル(A4の1,3行)を走査(5行には適用しない)
             tileId = Tilemap.TILE_ID_A4;
             for( const tileOffset of [0, 48 * 16] ){
                 tileId += tileOffset ;
@@ -80,7 +83,7 @@ DataManager.onLoad = function(object ){
         flags[ tileId + 10 ] = flags[ tileId + 11 ] = 
         flags[ tileId + 14 ] = flags[ tileId + 15 ] = 0x0010;
     }
-    //  壁(上)の上端のみを高層表示[☆]に設定
+    //  壁(上)の上端のみを高層表示[☆]、↓通行不可に設定
     function setTopWall2UpperLayer( flags, tileId ){
         flags[ tileId + 20 ] =  flags[ tileId + 21 ] =
         flags[ tileId + 22 ] =  flags[ tileId + 23 ] =
@@ -88,7 +91,7 @@ DataManager.onLoad = function(object ){
         flags[ tileId + 35 ] = flags[ tileId + 36 ] = 
         flags[ tileId + 37 ] = flags[ tileId + 42 ] = 
         flags[ tileId + 43 ] = flags[ tileId + 45 ] =
-        flags[ tileId + 46 ] = 0x0010;
+        flags[ tileId + 46 ] = 0x0011;
     }
 }
 })();
