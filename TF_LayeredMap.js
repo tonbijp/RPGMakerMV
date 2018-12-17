@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap
-// Version :0.0.1.0 
+// Version :0.0.2.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018
@@ -212,10 +212,16 @@ Game_Map.prototype.checkPassage = function( x, y, bit ){
     for ( let i = 0; i < tiles.length; i++ ){
         const tileId = tiles[ i ];
         const flag = flags[ tileId ];
-        if( (flag & 0x18) === 0x18 ) continue; // [☆] かつ上通行不可設定の場合は無視
-        if( ( flag & bit ) === bit ) return false;  // [×] 通行不可
-        if( Tilemap.isRoofTile( tileId ) && 1 < tileId % 4 ) return true; // 屋根上端は通行可
-        if( Tilemap.isWallTopTile( tileId ) ) return true; // 壁(上)上端は通行可
+
+        // 高層[☆]以外は無視
+        if( !(flag & 0x10 ) ) continue;
+
+        // 0x08(上通行不可[・])は特殊設定用のビットに使う
+        // そのため通行判定として無視
+        if( flag & 0x08  ) continue;
+
+        // 高層[☆]の通行不可[・]設定は問答無用で通行不可
+        if(  ( flag & bit ) === bit ) return false;
     }
     return _Game_Map_checkPassage.call( this, x, y, bit );
 };
