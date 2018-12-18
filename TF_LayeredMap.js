@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap
-// Version :0.3.0.0
+// Version :0.3.0.1
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018
@@ -30,13 +30,13 @@
  *      0x6 ↑・・↓ : billboard, ↑↓　　 pass, ground (both side)┃┃
  *      0x7 ↑・・・ : billboard, ↑　　　 pass, ground (like bartizan)┗┛
  *      0x8 ・→←↓ : billboard,  all directtion , ground (for bush)
- *      0x9 ・→←・ : billboard, all pass, upper
- *      0xA ・→・↓ : 未設定
- *      0xB ・→・・ : 未設定
- *      0xC ・・←↓ : 未設定
- *      0xD ・・←・ : 未設定
- *      0xE ・・・↓ : 未設定
- *      0xF ・・・・ : 未設定
+ *      0x9 ・→←・ : billboard,  all directtion , upper
+ *      0xA ・→・↓ : undefined
+ *      0xB ・→・・ : undefined
+ *      0xC ・・←↓ : undefined
+ *      0xD ・・←・ : undefined
+ *      0xE ・・・↓ : undefined
+ *      0xF ・・・・ : undefined
  * 
  * Released under the MIT License.
  */
@@ -45,7 +45,7 @@
  * @author とんび@鳶嶋工房
  * 
  * @help
- * デフォルトで使ってない設定を行う事で、タイルの挙動が変化します。
+ * デフォルトで未使用の設定で、タイルの重なりが変化します。
  * 
  * 1. A3・A4タイルに[カウンター]を設定
  *      [○] 下を通れる(ほぼ[☆]の状態)
