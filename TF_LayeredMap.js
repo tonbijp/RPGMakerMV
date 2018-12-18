@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap
-// Version :0.2.0.0
+// Version :0.3.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018
@@ -30,19 +30,15 @@
  *      0x6 ↑・・↓ : 書き割り、上下　　 通行可、1階 (両脇に木とか)┃┃
  *      0x7 ↑・・・ : 書き割り、上　　　 通行可、1階 (張り出し的な)┗┛
  *      0x8 ・→←↓ : 書き割り、全方向に 通行可、1階 (草むらなどに)
- *      0x9 ・→←・ : 書き割り、全方向に 通行可、2階(予定)
- *      0xA ・→・↓ : 書き割り、全方向に 通行可、3階(予定)
- *      0xB ・→・・ : 書き割り、全方向に 通行可、4階(予定)
+ *      0x9 ・→←・ : 書き割り、全方向に 通行可、2階
+ *      0xA ・→・↓ : 未設定
+ *      0xB ・→・・ : 未設定
  *      0xC ・・←↓ : 未設定
  *      0xD ・・←・ : 未設定
  *      0xE ・・・↓ : 未設定
  *      0xF ・・・・ : 未設定
  * 
  * 利用規約 : MITライセンス
- */
-/**
- * 今後の予定
- * ・2階以上の指定に対応する(ループに注意)
  */
 (function(){'use strict';
 
@@ -76,12 +72,10 @@ const _ShaderTilemap_createLayers = ShaderTilemap.prototype._createLayers;
 ShaderTilemap.prototype._createLayers = function() {
     _ShaderTilemap_createLayers.call(this);
 
-    // 書き割り風オブジェクトを
-    // 画面に表示される縦のタイル数+1 生成
-    // +1 はスクロールの際にはみ出す部分
-    // TODO:書き割りに高さが追加されると、さらに足す必要がある
+    // 書き割り風オブジェクトを生成
+    // +2 はスクロールの際にはみ出す部分と2階用
     const th = this._tileHeight;
-    const tileRows = Math.ceil(this._height / th) + 1;
+    const tileRows = Math.ceil(this._height / th) + 2;
 
     if( !this.hasOwnProperty( 'TF_billboards' ) ){
         this.TF_billboards = [];
@@ -143,10 +137,14 @@ ShaderTilemap.prototype._paintTiles = function( startX, startY, x, y ) {
      */
     const drawTile = ( tileId ) => {
         if ( this._isHigherTile( tileId ) ) {
-            // 全方向通行可の場合は高層マップレイヤに表示
-            if( this.flags[ tileId ] & 0xF ){
+            if( ( this.flags[ tileId ] & 0x9 ) === 0x9 ){
+                // 2階設定は、ひとつ下の書き割りに書き込む
+                this._drawTile( this.TF_billboards[ y + 1 ].children[ 0 ].children[ 0 ], tileId, dx, -this._tileHeight * 2 );
+            }else if( this.flags[ tileId ] & 0xF ){
+                // 通行不可設定のどれかがONだと書き割り
                 this._drawTile( this.TF_billboards[ y ].children[ 0 ].children[ 0 ], tileId, dx, -this._tileHeight );
             }else{
+                // 全方向通行可の場合は通常の高層[☆]表示
                 this._drawTile( upperLayer, tileId, dx, dy );
             }
         } else {
