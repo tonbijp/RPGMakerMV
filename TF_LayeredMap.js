@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap
-// Version :0.1.2.0
+// Version :0.1.2.1
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018
@@ -227,7 +227,8 @@ DataManager.onLoad = function(object ){
 
                 // A3・A4のカウンター設定かつ高層[☆]なら、タイルを補完
                 const upTileId = ( y === 0 )? getMapData( x, $dataMap.height - 1, 0 ) : getMapData( x, y - 1, 0 );
-                setMapData( x, y, 1, upTileId );
+                setMapData( x, y, 1, tileId );
+                setMapData( x, y, 0, upTileId );
             }
         }
 
@@ -272,35 +273,42 @@ DataManager.onLoad = function(object ){
         }
     }
 
-    //  屋根の上端を高層表示[☆]、下通行不可[・]に設定
     function roof2UpperLayer( flags, tileId ){
-        for( let i=0; i < 16; i++ ){
-            flags[ tileId + i  ] = flags[ tileId + i ] & 0xFFE0 | ROOF_PASS_ARRAY[ i ];
+        if(  flags[ tileId + 15 ] & 0xF  ){
+            //  屋根の上端を高層表示[☆]、下通行不可[・]に設定
+            for( let i=0; i < 16; i++ ){
+                flags[ tileId + i  ] = flags[ tileId + i ] & 0xFFE0 | ROOF_PASS_EDGE[ i ];
+            }
+        }else{
+            //  屋根全体を高層表示[☆]、通行可[○]に設定
+            for( let i=0; i < 16; i++ ){
+                flags[ tileId + i  ] = flags[ tileId + i ] & 0xFFE0 | 0x10;
+            }
         }
     }
     //  壁(上面)の上端を高層表示[☆]、下通行不可[・]に設定
     function wallTop2UpperLayer( flags, tileId ){
         for( let i=0; i < 47; i++ ){
-            flags[ tileId + i  ] = flags[ tileId + i ] & 0xFFE0 | WALL_TOP_PASS_ARRAY[ i ];
+            flags[ tileId + i  ] = flags[ tileId + i ] & 0xFFE0 | WALL_TOP_PASS_EDGE[ i ];
         }
     }
     //  壁(側面)の上端を高層表示[☆]、下通行不可[・]に設定
     function wallSide2UpperLayer( flags, tileId ){
         for( let i=0; i < 16; i++ ){
-            flags[ tileId + i  ] = flags[ tileId + i ] & 0xFFE0 | WALL_SIDE_PASS_ARRAY[ i ];
+            flags[ tileId + i  ] = flags[ tileId + i ] & 0xFFE0 | WALL_SIDE_PASS_EDGE[ i ];
         }
     }
 }
 
 // 屋根用通行設定
-const ROOF_PASS_ARRAY = [
+const ROOF_PASS_EDGE = [
     0, 2, 17, 17, 
     4, 6, 17, 17, 
     0, 2, 17, 17, 
     4, 6, 17, 17, 
 ];
 // 壁(上面)用通行設定
-const WALL_TOP_PASS_ARRAY = [
+const WALL_TOP_PASS_EDGE = [
     0, 2, 4, 6, 0, 2, 4, 6,
     0, 2, 4, 6, 0, 2, 4, 6,
     2, 6, 2, 6, 17, 17, 17, 17,
@@ -309,7 +317,7 @@ const WALL_TOP_PASS_ARRAY = [
     2, 6, 17, 17, 6, 17, 17, 
 ];
 // 壁(側面)用通行設定
-const WALL_SIDE_PASS_ARRAY = [
+const WALL_SIDE_PASS_EDGE = [
     15, 15, 17, 17, 
     15, 15, 17, 17, 
     15, 15, 17, 17, 
