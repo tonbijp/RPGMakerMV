@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap
-// Version :0.1.1.0
+// Version :0.1.2.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018
@@ -40,8 +40,7 @@
 /**
  * 今後の予定
  * ・2階以上の指定に対応する(ループに注意)
- * ・オートタイルの通行設定を、もう少し的確に行う
- * ・オートタイルを高層配置した際に、低層マップタイルを補完する
+ * ・[○]の通行設定だと全部高層に移す。[×]の通行設定だと上面のみ
  */
 (function(){'use strict';
 
@@ -217,18 +216,27 @@ DataManager.onLoad = function(object ){
     }
 
     /**
-     * カウンター設定オートタイルの箇所に、補完タイルを設定
+     * カウンター設定のA3,A4オートタイルの箇所に、低層の補完タイルを設定
      */
     function treatDataMap(){
-        // TODO: 地面マップを入れ替える
-        /*
+        const flags = $dataTilesets[ $dataMap.tilesetId ].flags;
         for( let y = 0; y < $dataMap.height; y++ ){
             for( let x = 0; x < $dataMap.width; x++ ){
-                const z = 0;
-                $dataMap.data[ x + ( y + z * $dataMap.height ) * $dataMap.width ];
+                const tileId = getMapData( x, y, 0 );
+                if( tileId < Tilemap.TILE_ID_A3 || !( (flags[ tileId ] & 0x90 ) === 0x90 ) ) continue;
+
+                // A3・A4のカウンター設定かつ高層[☆]なら、タイルを補完
+                const upTileId = ( y === 0 )? getMapData( x, $dataMap.height - 1, 0 ) : getMapData( x, y - 1, 0 );
+                setMapData( x, y, 1, upTileId );
             }
         }
-        */
+
+        function getMapData( x, y, z ){
+            return $dataMap.data[ x + ( y + z * $dataMap.height ) * $dataMap.width ];
+        }
+        function setMapData( x, y, z, tileId ){
+            $dataMap.data[ x + ( y + z * $dataMap.height ) * $dataMap.width ] = tileId;
+        }
     }
 
     /**
@@ -236,14 +244,18 @@ DataManager.onLoad = function(object ){
      */
     function treatDataTilesets(){
         // 全タイルセットに対して設定
-        for( const currentObject of $dataTilesets ){
-            if( !currentObject ) continue;
-            const flags = currentObject.flags;
+        for( const curTileset of $dataTilesets ){
+            if( !curTileset ) continue;
+            const flags = curTileset.flags;
 
             // 屋根タイル(A3)を走査
             for( let tileId = Tilemap.TILE_ID_A3; tileId < Tilemap.TILE_ID_A4; tileId += 48 ) {
                 if(  flags[ tileId ] & 0x80  ){ // カウンター設定か
-                    roof2UpperLayer( flags, tileId );
+                    if( Tilemap.isRoofTile( tileId ) ){
+                        roof2UpperLayer( flags, tileId );
+                    }else{
+                        wallSide2UpperLayer( flags, tileId );
+                    }
                 }
             }
 
@@ -282,10 +294,10 @@ DataManager.onLoad = function(object ){
 
 // 屋根用通行設定
 const ROOF_PASS_ARRAY = [
-    15, 15, 17, 17,
-    15, 15, 17, 17,
-    15, 15, 17, 17,
-    15, 15, 17, 17,
+    0, 2, 17, 17, 
+    4, 6, 17, 17, 
+    0, 2, 17, 17, 
+    4, 6, 17, 17, 
 ];
 // 壁(上面)用通行設定
 const WALL_TOP_PASS_ARRAY = [
@@ -298,10 +310,10 @@ const WALL_TOP_PASS_ARRAY = [
 ];
 // 壁(側面)用通行設定
 const WALL_SIDE_PASS_ARRAY = [
-    15, 15, 17, 17,
-    15, 15, 17, 17,
-    15, 15, 17, 17,
-    15, 15, 17, 17,
+    15, 15, 17, 17, 
+    15, 15, 17, 17, 
+    15, 15, 17, 17, 
+    15, 15, 17, 17, 
 ];
 
 
@@ -331,9 +343,6 @@ Game_Map.prototype.checkPassage = function( x, y, bit ){
         // 高層[☆]の通行不可[・]設定は
         // 他の重なったタイルによらず通行不可
         if(  ( flag & bit ) === bit ) return false;
-
-        // 屋根と壁は低層タイルの状態によらず常に通行可
-        if ( Tilemap.isRoofTile( tileId ) || Tilemap.isWallTile( tileId ) ) return true;
     }
     return _Game_Map_checkPassage.call( this, x, y, bit );
 };
