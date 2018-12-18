@@ -10,6 +10,37 @@
 // http://opensource.org/licenses/mit-license.php
 //========================================
 /*:
+ * @plugindesc Upper[☆]tile display like billboard.
+ * @author Tonbi@Tobishima-Factory
+ * 
+ * @help
+ * Change tile behavior by use no effect option at default.
+ * 
+ * 1. Set [counter]option for A3・A4 tile.
+ *      [○] Behavior like[☆]
+ *      [×] Hide only upper tile.
+ * 
+ * 2. set [☆] to BCDE tile, and set 4 direction setting.
+ *      0x0 ↑→←↓ : [☆]  Same as no plugin.
+ *      0x1 ↑→←・ : billboard, ↑・←→ pass, ground (for fence)
+ *      0x2 ↑→・↓ : billboard, ↑↓　→ pass, ground (left side of fence)┃
+ *      0x3 ↑→・・ : billboard, ↑　　→ pass, ground (bottom left)┗
+ *      0x4 ↑・←↓ : billboard, ↑↓←　 pass, ground (right)   ┃
+ *      0x5 ↑・←・ : billboard, ↑　←　 pass, ground (bottom right)   ┛
+ *      0x6 ↑・・↓ : billboard, ↑↓　　 pass, ground (both side)┃┃
+ *      0x7 ↑・・・ : billboard, ↑　　　 pass, ground (like bartizan)┗┛
+ *      0x8 ・→←↓ : billboard,  all directtion , ground (for bush)
+ *      0x9 ・→←・ : billboard, all pass, upper
+ *      0xA ・→・↓ : 未設定
+ *      0xB ・→・・ : 未設定
+ *      0xC ・・←↓ : 未設定
+ *      0xD ・・←・ : 未設定
+ *      0xE ・・・↓ : 未設定
+ *      0xF ・・・・ : 未設定
+ * 
+ * Released under the MIT License.
+ */
+/*:ja
  * @plugindesc 高層[☆]タイルを書き割り風に配置する
  * @author とんび@鳶嶋工房
  * 
@@ -309,9 +340,9 @@ DataManager.onLoad = function(object ){
                 flags[ tileId + i  ] = flags[ tileId + i ] & 0xFFE0 | WALL_SIDE_PASS_EDGE[ i ];
             }
         }else{
-            // [○] : 全体を高層表示[☆]かつ通行可
+            // [○] : 全体を高層表示[☆]かつ通行可(一番下のみ通行不可)
             for( let i=0; i < 16; i++ ){
-                flags[ tileId + i  ] = flags[ tileId + i ] & 0xFFE0 | 0x10;
+                flags[ tileId + i  ] = flags[ tileId + i ] & 0xFFE0 | WALL_SIDE_PASS[ i ];
             }
         }
     }
@@ -339,6 +370,12 @@ const WALL_SIDE_PASS_EDGE = [
     15, 15, 17, 17, 
     15, 15, 17, 17, 
     15, 15, 17, 17, 
+];
+const WALL_SIDE_PASS = [
+    25, 25, 25, 25, 
+    25, 25, 25, 25, 
+    17, 17, 17, 17, 
+    17, 17, 17, 17, 
 ];
 
 
