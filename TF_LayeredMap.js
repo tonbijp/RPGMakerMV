@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap
-// Version :0.1.0.0
+// Version :0.1.1.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018
@@ -17,9 +17,9 @@
  * 1. A3・A4のオートタイルに、[カウンター]設定を行うと
  *      上部タイルの後ろに回り込みます。
  * 
- * 2. 通行設定に[☆]を指定したあと、通行設定(4方向)の設定によって挙動が変わります
+ * 2. 通行設定に[☆]を指定したあと、通行設定(4方向)を設定します。
  *      0x0 ↑→←↓ : [☆] 設定、全方向に 通行可(プラグインなしと同じ)
- *      0x1 ↑→←・ : 書き割り、上　左右 通行可、1階 (基本、これを柵に使えばいい)
+ *      0x1 ↑→←・ : 書き割り、上　左右 通行可、1階 (基本、柵とか)
  *      0x2 ↑→・↓ : 書き割り、上下　右 通行可、1階 (柵の左側とか)┃
  *      0x3 ↑→・・ : 書き割り、上　　右 通行可、1階 (柵の左下とか)┗
  *      0x4 ↑・←↓ : 書き割り、上下左　 通行可、1階 (柵の右側とか)   ┃
@@ -69,7 +69,7 @@ ShaderTilemap.prototype.refreshTileset = function() {
 }
 
 /**
- * 
+ * 書き割りレイヤーの生成と追加
  */
 const _ShaderTilemap_createLayers = ShaderTilemap.prototype._createLayers;
 ShaderTilemap.prototype._createLayers = function() {
@@ -210,12 +210,31 @@ const _DataManager_onLoad = DataManager.onLoad;
 DataManager.onLoad = function(object ){
     _DataManager_onLoad.call( this, object );
 
-    if( object === $dataTilesets ) setWallBackTile();
+    if( object === $dataMap ){
+        treatDataMap();
+    } else  if( object === $dataTilesets ){
+        treatDataTilesets();
+    }
+
+    /**
+     * カウンター設定オートタイルの箇所に、補完タイルを設定
+     */
+    function treatDataMap(){
+        // TODO: 地面マップを入れ替える
+        /*
+        for( let y = 0; y < $dataMap.height; y++ ){
+            for( let x = 0; x < $dataMap.width; x++ ){
+                const z = 0;
+                $dataMap.data[ x + ( y + z * $dataMap.height ) * $dataMap.width ];
+            }
+        }
+        */
+    }
 
     /**
      * カウンター設定しているA3・A4オートタイルを回り込みに設定
      */
-    function setWallBackTile(){
+    function treatDataTilesets(){
         // 全タイルセットに対して設定
         for( const currentObject of $dataTilesets ){
             if( !currentObject ) continue;
@@ -224,46 +243,67 @@ DataManager.onLoad = function(object ){
             // 屋根タイル(A3)を走査
             for( let tileId = Tilemap.TILE_ID_A3; tileId < Tilemap.TILE_ID_A4; tileId += 48 ) {
                 if(  flags[ tileId ] & 0x80  ){ // カウンター設定か
-                    setTopRoof2UpperLayer( flags, tileId );
+                    roof2UpperLayer( flags, tileId );
                 }
             }
+
             // 壁タイル(A4)を走査
             for( let tileId = Tilemap.TILE_ID_A4; tileId < Tilemap.TILE_ID_MAX; tileId += 48 ) {
                 if(  flags[ tileId ] & 0x80  ){ // カウンター設定か
                     if( Tilemap.isWallTopTile( tileId ) ){
-                        setTopWallTop2UpperLayer( flags, tileId );
+                        wallTop2UpperLayer( flags, tileId );
                     }else{
-                        setTopWallSide2UpperLayer( flags, tileId );
+                        wallSide2UpperLayer( flags, tileId );
                     }
                 }
             }
         }
     }
+
     //  屋根の上端を高層表示[☆]、下通行不可[・]に設定
-    function setTopRoof2UpperLayer( flags, tileId ){
-        flags[ tileId + 2 ] =  flags[ tileId + 3 ] =
-        flags[ tileId + 6 ] =  flags[ tileId + 7 ] =
-        flags[ tileId + 10 ] = flags[ tileId + 11 ] = 
-        flags[ tileId + 14 ] = flags[ tileId + 15 ] = 0x0011;
+    function roof2UpperLayer( flags, tileId ){
+        for( let i=0; i < 16; i++ ){
+            flags[ tileId + i  ] = flags[ tileId + i ] & 0xFFE0 | ROOF_PASS_ARRAY[ i ];
+        }
     }
     //  壁(上面)の上端を高層表示[☆]、下通行不可[・]に設定
-    function setTopWallTop2UpperLayer( flags, tileId ){
-        flags[ tileId + 20 ] =  flags[ tileId + 21 ] =
-        flags[ tileId + 22 ] =  flags[ tileId + 23 ] =
-        flags[ tileId + 33 ] = flags[ tileId + 34 ] = 
-        flags[ tileId + 35 ] = flags[ tileId + 36 ] = 
-        flags[ tileId + 37 ] = flags[ tileId + 42 ] = 
-        flags[ tileId + 43 ] = flags[ tileId + 45 ] =
-        flags[ tileId + 46 ] = 0x0011;
+    function wallTop2UpperLayer( flags, tileId ){
+        for( let i=0; i < 47; i++ ){
+            flags[ tileId + i  ] = flags[ tileId + i ] & 0xFFE0 | WALL_TOP_PASS_ARRAY[ i ];
+        }
     }
     //  壁(側面)の上端を高層表示[☆]、下通行不可[・]に設定
-    function setTopWallSide2UpperLayer( flags, tileId ){
-        flags[ tileId + 2 ] =  flags[ tileId + 3 ] =
-        flags[ tileId + 6 ] =  flags[ tileId + 7 ] =
-        flags[ tileId + 10 ] = flags[ tileId + 11 ] = 
-        flags[ tileId + 14 ] = flags[ tileId + 15 ] = 0x0011;
+    function wallSide2UpperLayer( flags, tileId ){
+        for( let i=0; i < 16; i++ ){
+            flags[ tileId + i  ] = flags[ tileId + i ] & 0xFFE0 | WALL_SIDE_PASS_ARRAY[ i ];
+        }
     }
 }
+
+// 屋根用通行設定
+const ROOF_PASS_ARRAY = [
+    15, 15, 17, 17,
+    15, 15, 17, 17,
+    15, 15, 17, 17,
+    15, 15, 17, 17,
+];
+// 壁(上面)用通行設定
+const WALL_TOP_PASS_ARRAY = [
+    0, 2, 4, 6, 0, 2, 4, 6,
+    0, 2, 4, 6, 0, 2, 4, 6,
+    2, 6, 2, 6, 17, 17, 17, 17,
+    4, 4, 6, 6, 0, 2, 4, 6,
+    6, 17, 17, 17, 17, 17, 4, 6,
+    2, 6, 17, 17, 6, 17, 17, 
+];
+// 壁(側面)用通行設定
+const WALL_SIDE_PASS_ARRAY = [
+    15, 15, 17, 17,
+    15, 15, 17, 17,
+    15, 15, 17, 17,
+    15, 15, 17, 17,
+];
+
 
 /*---- Game_Map ----*/
 /**
