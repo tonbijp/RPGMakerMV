@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap
-// Version :0.1.2.1
+// Version :0.2.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018
@@ -14,10 +14,13 @@
  * @author とんび@鳶嶋工房
  * 
  * @help
- * 1. A3・A4のオートタイルに、[カウンター]設定を行うと
- *      上部タイルの後ろに回り込みます。
+ * デフォルトで使ってない設定を行う事で、タイルの挙動が変化します。
  * 
- * 2. 通行設定に[☆]を指定したあと、通行設定(4方向)を設定します。
+ * 1. A3・A4タイルに[カウンター]を設定
+ *      [○] 下を通れる(ほぼ[☆]の状態)
+ *      [×] 上部タイルのみ後ろに回り込む
+ * 
+ * 2. BCDEタイルに[☆]を指定したあと、通行設定(4方向)
  *      0x0 ↑→←↓ : [☆] 設定、全方向に 通行可(プラグインなしと同じ)
  *      0x1 ↑→←・ : 書き割り、上　左右 通行可、1階 (基本、柵とか)
  *      0x2 ↑→・↓ : 書き割り、上下　右 通行可、1階 (柵の左側とか)┃
@@ -40,7 +43,6 @@
 /**
  * 今後の予定
  * ・2階以上の指定に対応する(ループに注意)
- * ・[○]の通行設定だと全部高層に移す。[×]の通行設定だと上面のみ
  */
 (function(){'use strict';
 
@@ -273,29 +275,46 @@ DataManager.onLoad = function(object ){
         }
     }
 
+    //  屋根の通行設定
     function roof2UpperLayer( flags, tileId ){
         if(  flags[ tileId + 15 ] & 0xF  ){
-            //  屋根の上端を高層表示[☆]、下通行不可[・]に設定
+            // [×] : 上端を高層表示[☆]、適宜通行不可[・]
             for( let i=0; i < 16; i++ ){
                 flags[ tileId + i  ] = flags[ tileId + i ] & 0xFFE0 | ROOF_PASS_EDGE[ i ];
             }
         }else{
-            //  屋根全体を高層表示[☆]、通行可[○]に設定
+            // [○] : 全体を高層表示[☆]かつ通行可
             for( let i=0; i < 16; i++ ){
                 flags[ tileId + i  ] = flags[ tileId + i ] & 0xFFE0 | 0x10;
             }
         }
     }
-    //  壁(上面)の上端を高層表示[☆]、下通行不可[・]に設定
+    //  壁(上面)の通行設定
     function wallTop2UpperLayer( flags, tileId ){
-        for( let i=0; i < 47; i++ ){
-            flags[ tileId + i  ] = flags[ tileId + i ] & 0xFFE0 | WALL_TOP_PASS_EDGE[ i ];
+        if(  flags[ tileId + 46 ] & 0xF  ){
+            // [×] : 上端を高層表示[☆]、適宜通行不可[・]
+            for( let i=0; i < 47; i++ ){
+                flags[ tileId + i  ] = flags[ tileId + i ] & 0xFFE0 | WALL_TOP_PASS_EDGE[ i ];
+            }
+        }else{
+            // [○] : 全体を高層表示[☆]かつ通行可
+            for( let i=0; i < 47; i++ ){
+                flags[ tileId + i  ] = flags[ tileId + i ] & 0xFFE0 | 0x10;
+            }
         }
     }
-    //  壁(側面)の上端を高層表示[☆]、下通行不可[・]に設定
+    //  壁(側面)の通行設定
     function wallSide2UpperLayer( flags, tileId ){
-        for( let i=0; i < 16; i++ ){
-            flags[ tileId + i  ] = flags[ tileId + i ] & 0xFFE0 | WALL_SIDE_PASS_EDGE[ i ];
+        if(  flags[ tileId + 15 ] & 0xF  ){
+            // [×] : 上端を高層表示[☆]、適宜通行不可[・]
+            for( let i=0; i < 16; i++ ){
+                flags[ tileId + i  ] = flags[ tileId + i ] & 0xFFE0 | WALL_SIDE_PASS_EDGE[ i ];
+            }
+        }else{
+            // [○] : 全体を高層表示[☆]かつ通行可
+            for( let i=0; i < 16; i++ ){
+                flags[ tileId + i  ] = flags[ tileId + i ] & 0xFFE0 | 0x10;
+            }
         }
     }
 }
