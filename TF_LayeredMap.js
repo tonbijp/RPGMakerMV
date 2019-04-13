@@ -1,6 +1,6 @@
 //========================================
-// TF_LayeredMap
-// Version :0.3.0.1
+// TF_LayeredMap.js
+// Version :0.4.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018
@@ -231,20 +231,18 @@ ShaderTilemap.prototype._updateLayerPositions = function( startX, startY ) {
     };
 };
 
-/*---- DataManager ----*/
+/*---- Scene_Map ---*/
 /**
- * JSONの読み込みが完了した時に呼ばれる
- * @param {Object} object 読み込み完了したJSONオブジェクト
+ * シーン表示前に、マップデータを書き換える
+ * 
  */
-const _DataManager_onLoad = DataManager.onLoad;
-DataManager.onLoad = function(object ){
-    _DataManager_onLoad.call( this, object );
+const _Scene_Map_onMapLoaded = Scene_Map.prototype.onMapLoaded;
+Scene_Map.prototype.onMapLoaded = function( ){
+    treatDataMap();
+    treatDataTilesets();
 
-    if( object === $dataMap ){
-        treatDataMap();
-    } else  if( object === $dataTilesets ){
-        treatDataTilesets();
-    }
+    _Scene_Map_onMapLoaded.call( this );
+    // end: onMapLoaded
 
     /**
      * カウンター設定のA3,A4オートタイルの箇所に、低層の補完タイルを設定
