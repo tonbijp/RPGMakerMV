@@ -1,9 +1,9 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.4.0.0
+// Version :0.4.1.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
-// Copyright : Tobishima-Factory 2018
+// Copyright : Tobishima-Factory 2018 - 2019
 // Website : http://tonbi.jp
 //
 // This software is released under the MIT License.
@@ -231,44 +231,19 @@ ShaderTilemap.prototype._updateLayerPositions = function( startX, startY ) {
     };
 };
 
-/*---- Scene_Map ---*/
+/*---- DataManager ---*/
 /**
- * シーン表示前に、マップデータを書き換える
- * 
+ * 読み込み直後に、タイルセットデータを書き換える
  */
-const _Scene_Map_onMapLoaded = Scene_Map.prototype.onMapLoaded;
-Scene_Map.prototype.onMapLoaded = function( ){
-    treatDataMap();
-    treatDataTilesets();
+const _DataManager_onLoad = DataManager.onLoad;
+DataManager.onLoad = function(object ){
+    _DataManager_onLoad.call( this, object );
 
-    _Scene_Map_onMapLoaded.call( this );
-    // end: onMapLoaded
-
-    /**
-     * カウンター設定のA3,A4オートタイルの箇所に、低層の補完タイルを設定
-     */
-    function treatDataMap(){
-        const flags = $dataTilesets[ $dataMap.tilesetId ].flags;
-        for( let y = 0; y < $dataMap.height; y++ ){
-            for( let x = 0; x < $dataMap.width; x++ ){
-                const tileId = getMapData( x, y, 0 );
-                if( tileId < Tilemap.TILE_ID_A3 || !( (flags[ tileId ] & 0x90 ) === 0x90 ) ) continue;
-
-                // A3・A4のカウンター設定かつ高層[☆]なら、タイルを補完
-                const upTileId = ( y === 0 )? getMapData( x, $dataMap.height - 1, 0 ) : getMapData( x, y - 1, 0 );
-                setMapData( x, y, 1, tileId );
-                setMapData( x, y, 0, upTileId );
-            }
-        }
-
-        function getMapData( x, y, z ){
-            return $dataMap.data[ x + ( y + z * $dataMap.height ) * $dataMap.width ];
-        }
-        function setMapData( x, y, z, tileId ){
-            $dataMap.data[ x + ( y + z * $dataMap.height ) * $dataMap.width ] = tileId;
-        }
+    if( object === $dataTilesets ){
+        treatDataTilesets();
     }
 
+    // end: onLoad
     /**
      * カウンター設定しているA3・A4オートタイルを回り込みに設定
      */
@@ -342,6 +317,44 @@ Scene_Map.prototype.onMapLoaded = function( ){
             for( let i=0; i < 16; i++ ){
                 flags[ tileId + i  ] = flags[ tileId + i ] & 0xFFE0 | WALL_SIDE_PASS[ i ];
             }
+        }
+    }
+}
+
+
+
+/*---- Scene_Map ---*/
+/**
+ * シーン表示前に、マップデータを書き換える
+ */
+const _Scene_Map_onMapLoaded = Scene_Map.prototype.onMapLoaded;
+Scene_Map.prototype.onMapLoaded = function( ){
+    treatDataMap();
+    _Scene_Map_onMapLoaded.call( this );
+    // end: onMapLoaded
+
+    /**
+     * カウンター設定のA3,A4オートタイルの箇所に、低層の補完タイルを設定
+     */
+    function treatDataMap(){
+        const flags = $dataTilesets[ $dataMap.tilesetId ].flags;
+        for( let y = 0; y < $dataMap.height; y++ ){
+            for( let x = 0; x < $dataMap.width; x++ ){
+                const tileId = getMapData( x, y, 0 );
+                if( tileId < Tilemap.TILE_ID_A3 || !( (flags[ tileId ] & 0x90 ) === 0x90 ) ) continue;
+
+                // A3・A4のカウンター設定かつ高層[☆]なら、タイルを補完
+                const upTileId = ( y === 0 )? getMapData( x, $dataMap.height - 1, 0 ) : getMapData( x, y - 1, 0 );
+                setMapData( x, y, 1, tileId );
+                setMapData( x, y, 0, upTileId );
+            }
+        }
+
+        function getMapData( x, y, z ){
+            return $dataMap.data[ x + ( y + z * $dataMap.height ) * $dataMap.width ];
+        }
+        function setMapData( x, y, z, tileId ){
+            $dataMap.data[ x + ( y + z * $dataMap.height ) * $dataMap.width ] = tileId;
         }
     }
 }
