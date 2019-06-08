@@ -13,6 +13,24 @@
  * @plugindesc Upper[☆]tile display like billboard.
  * @author Tonbi@Tobishima-Factory
  * 
+ * @param SupplementEnabled
+ * @type boolean
+ * @text Suply : ON(true) | 処理なし : OFF(false)
+ * @desc Fill with north tile.
+ * @default true
+ * 
+ * @param DefaultLowerTile
+ * @desc 補完がない場合の低層タイル番号
+ * A5左上を0として右への順(デフォルトは草原)
+ * @default 16
+ * 
+ * @help プラグインコマンド
+ * ・SUPPLEMENT_ENABLED 真偽値
+ * 低層タイルを補完します
+ * true : 補完
+ * false : 処理なし
+ * 
+ * 
  * @help
  * Change tile behavior by use no effect option at default.
  * 
@@ -45,8 +63,9 @@
  * @author とんび@鳶嶋工房
  * 
  * @param SupplementEnabled
+ * @type boolean
+ * @text 補完 : ON(true) | 処理なし : OFF(false)
  * @desc 低層を北位置のタイルで補完するか
- * 補完 : true | 処理なし : false
  * @default true
  * 
  * @param DefaultLowerTile
@@ -96,15 +115,16 @@ const DEFAULT_LOWER_TILE = 'DefaultLowerTile';
 let _defaultLowerTileId = 16;
 
 // flag用定数
-const FLUG_UPPER = 0x10; // 高層[☆]
-const FLUG_UPPER_COUNTER = 0x90;    // 高層[☆]とカウンター
-const FLUG_ALL_DIR = 0xF;  // 全方向の通行設定
-const FLUG_NORTH_DIR = 0x08 // 上方向の通行設定
-const FLUG_WITHOUT_DIR_UPPER = 0xFFE0; // 方向と高層[☆]を除いたもの
+const FLAG_UPPER = 0x10; // 高層[☆]
+const FLAG_COUNTER = 0x80; // カウンター
+const FLAG_UPPER_COUNTER = 0x90;    // 高層[☆]とカウンター
+const FLAG_ALL_DIR = 0xF;  // 全方向の通行設定
+const FLAG_NORTH_DIR = 0x08 // 上方向の通行設定
+const FLAG_WITHOUT_DIR_UPPER = 0xFFE0; // 方向と高層[☆]を除いたもの
 
 // 書割り設定
 const FLOOR2_BOARD = 0x9; // 書き割り、全方向に 通行可、2階
-const FLOOR3_BOARD = 0xA// 書き割り、全方向に 通行可、3階
+const FLOOR3_BOARD = 0xA; // 書き割り、全方向に 通行可、3階
 
 /**
  * パラメータを受け取る
@@ -116,9 +136,9 @@ if( pluginParams[ SUPPLEMENT_ENABLED ] ){
 } 
 
 if( pluginParams[ DEFAULT_LOWER_TILE ] ){
-    _defaultLowerTileId = parseInt( pluginParams[ SUPPLEMENT_ENABLED ], 10 );
+    _defaultLowerTileId = parseInt( pluginParams[ DEFAULT_LOWER_TILE ], 10 );
 }
-_defaultLowerTileId += 1536; // A5の最初のタイルIDを足す
+_defaultLowerTileId += Tilemap.TILE_ID_A5;
 
 
 /*---- Game_Interpreter ----*/
@@ -163,7 +183,7 @@ ShaderTilemap.prototype._createLayers = function() {
     _ShaderTilemap_createLayers.call(this);
 
     // 書き割り風オブジェクトを生成
-    // +3 はスクロールの際にはみ出す部分と2階3階用
+    // +3 はスクロールの際にはみ出す部分と2・3階用
     const th = this._tileHeight;
     const tileRows = Math.ceil(this._height / th) + 3;
 
@@ -233,7 +253,7 @@ ShaderTilemap.prototype._paintTiles = function( startX, startY, x, y ) {
             }else if( ( this.flags[ tileId ] & FLOOR3_BOARD ) === FLOOR3_BOARD ){
                 // 3階設定は、ふたつ下の書き割りに書き込む
                 this._drawTile( this.TF_billboards[ y + 2 ].children[ 0 ].children[ 0 ], tileId, dx, -this._tileHeight * 3 );
-            }else if( this.flags[ tileId ] & FLUG_ALL_DIR ){
+            }else if( this.flags[ tileId ] & FLAG_ALL_DIR ){
                 // 通行不可設定のどれかがONだと書き割り
                 this._drawTile( this.TF_billboards[ y ].children[ 0 ].children[ 0 ], tileId, dx, -this._tileHeight );
             }else{
@@ -317,67 +337,72 @@ DataManager.onLoad = function(object ){
 
             // 屋根タイル(A3)を走査
             for( let tileId = Tilemap.TILE_ID_A3; tileId < Tilemap.TILE_ID_A4; tileId += 48 ) {
-                if(  flags[ tileId ] & 0x80  ){ // カウンター設定か
-                    if( Tilemap.isRoofTile( tileId ) ){
-                        roof2UpperLayer( flags, tileId );
-                    }else{
-                        wallSide2UpperLayer( flags, tileId );
-                    }
+                if( !isCounterTile( flags[ tileId ] ) ) continue;
+
+                if( Tilemap.isRoofTile( tileId ) ){
+                    roof2UpperLayer( flags, tileId );
+                }else{
+                    wallSide2UpperLayer( flags, tileId );
                 }
             }
 
             // 壁タイル(A4)を走査
             for( let tileId = Tilemap.TILE_ID_A4; tileId < Tilemap.TILE_ID_MAX; tileId += 48 ) {
-                if(  flags[ tileId ] & 0x80  ){ // カウンター設定か
-                    if( Tilemap.isWallTopTile( tileId ) ){
-                        wallTop2UpperLayer( flags, tileId );
-                    }else{
-                        wallSide2UpperLayer( flags, tileId );
-                    }
+                if( !isCounterTile( flags[ tileId ] ) ) continue;
+
+                if( Tilemap.isWallTopTile( tileId ) ){
+                    wallTop2UpperLayer( flags, tileId );
+                }else{
+                    wallSide2UpperLayer( flags, tileId );
                 }
             }
+        }
+
+        // カウンター設定か
+        function isCounterTile( tileFlag ){
+            return ( tileFlag  & FLAG_COUNTER ) === FLAG_COUNTER;
         }
     }
 
     //  屋根の通行設定
     function roof2UpperLayer( flags, tileId ){
-        if(  flags[ tileId + 15 ] & FLUG_ALL_DIR  ){
+        if(  flags[ tileId + 15 ] & FLAG_ALL_DIR  ){
             // [×] : 上端を高層表示[☆]、適宜通行不可[・]
             for( let i=0; i < 16; i++ ){
-                flags[ tileId + i  ] = flags[ tileId + i ] & FLUG_WITHOUT_DIR_UPPER | ROOF_PASS_EDGE[ i ];
+                flags[ tileId + i  ] = flags[ tileId + i ] & FLAG_WITHOUT_DIR_UPPER | ROOF_PASS_EDGE[ i ];
             }
         }else{
             // [○] : 全体を高層表示[☆]かつ通行可
             for( let i=0; i < 16; i++ ){
-                flags[ tileId + i  ] = flags[ tileId + i ] & FLUG_WITHOUT_DIR_UPPER | FLUG_UPPER;
+                flags[ tileId + i  ] = flags[ tileId + i ] & FLAG_WITHOUT_DIR_UPPER | FLAG_UPPER;
             }
         }
     }
     //  壁(上面)の通行設定
     function wallTop2UpperLayer( flags, tileId ){
-        if(  flags[ tileId + 46 ] & FLUG_ALL_DIR  ){
+        if(  flags[ tileId + 46 ] & FLAG_ALL_DIR  ){
             // [×] : 上端を高層表示[☆]、適宜通行不可[・]
             for( let i=0; i < 47; i++ ){
-                flags[ tileId + i  ] = flags[ tileId + i ] & FLUG_WITHOUT_DIR_UPPER | WALL_TOP_PASS_EDGE[ i ];
+                flags[ tileId + i  ] = flags[ tileId + i ] & FLAG_WITHOUT_DIR_UPPER | WALL_TOP_PASS_EDGE[ i ];
             }
         }else{
             // [○] : 全体を高層表示[☆]かつ通行可
             for( let i=0; i < 47; i++ ){
-                flags[ tileId + i  ] = flags[ tileId + i ] & FLUG_WITHOUT_DIR_UPPER | FLUG_UPPER;
+                flags[ tileId + i  ] = flags[ tileId + i ] & FLAG_WITHOUT_DIR_UPPER | FLAG_UPPER;
             }
         }
     }
     //  壁(側面)の通行設定
     function wallSide2UpperLayer( flags, tileId ){
-        if(  flags[ tileId + 15 ] & FLUG_ALL_DIR  ){
+        if(  flags[ tileId + 15 ] & FLAG_ALL_DIR  ){
             // [×] : 上端を高層表示[☆]、適宜通行不可[・]
             for( let i=0; i < 16; i++ ){
-                flags[ tileId + i  ] = flags[ tileId + i ] & FLUG_WITHOUT_DIR_UPPER | WALL_SIDE_PASS_EDGE[ i ];
+                flags[ tileId + i  ] = flags[ tileId + i ] & FLAG_WITHOUT_DIR_UPPER | WALL_SIDE_PASS_EDGE[ i ];
             }
         }else{
             // [○] : 全体を高層表示[☆]かつ通行可(一番下のみ通行不可)
             for( let i=0; i < 16; i++ ){
-                flags[ tileId + i  ] = flags[ tileId + i ] & FLUG_WITHOUT_DIR_UPPER | WALL_SIDE_PASS[ i ];
+                flags[ tileId + i  ] = flags[ tileId + i ] & FLAG_WITHOUT_DIR_UPPER | WALL_SIDE_PASS[ i ];
             }
         }
     }
@@ -396,22 +421,24 @@ Scene_Map.prototype.onMapLoaded = function( ){
     // end: onMapLoaded
 
     /**
-     * カウンター設定のA3,A4オートタイルの箇所に、低層の補完タイルを設定
+     * カウンター設定のA3・A4オートタイルの箇所に、低層の補完タイルを設定
      */
     function treatDataMap(){
         const flags = $dataTilesets[ $dataMap.tilesetId ].flags;
         for( let y = 0; y < $dataMap.height; y++ ){
             for( let x = 0; x < $dataMap.width; x++ ){
                 const tileId = getMapData( x, y, 0 );
-                if( tileId < Tilemap.TILE_ID_A3 || !( (flags[ tileId ] & FLUG_UPPER_COUNTER ) === FLUG_UPPER_COUNTER ) ) continue;
 
+                if( !( ( Tilemap.isTileA3( tileId ) || Tilemap.isTileA4( tileId ) ) && isUpperCounter( flags[ tileId ]) ) ) continue;
+                // A3・A4のカウンター設定かつ高層[☆]なら、タイルを補完
                 setMapData( x, y, 1, tileId );
 
-                // A3・A4のカウンター設定かつ高層[☆]なら、タイルを補完
                 if( _supplementEnabled ){
+                    // 北タイルで補完
                     const upTileId = ( y === 0 )? getMapData( x, $dataMap.height - 1, 0 ) : getMapData( x, y - 1, 0 );
                     setMapData( x, y, 0, upTileId );
                 } else {
+                    // 指定タイルで補完
                     setMapData( x, y, 0, _defaultLowerTileId );
                 }
             }
@@ -422,6 +449,9 @@ Scene_Map.prototype.onMapLoaded = function( ){
         }
         function setMapData( x, y, z, tileId ){
             $dataMap.data[ x + ( y + z * $dataMap.height ) * $dataMap.width ] = tileId;
+        }
+        function isUpperCounter( tileFlag ){
+            return  ( tileFlag & FLAG_UPPER_COUNTER ) === FLAG_UPPER_COUNTER;
         }
     }
 }
@@ -473,12 +503,12 @@ Game_Map.prototype.checkPassage = function( x, y, bit ){
         const tileId = tiles[ i ];
         const flag = flags[ tileId ];
 
-        // ここでは高層[☆]タイルのみ判定するので、外は無視
-        if( !(flag & FLUG_UPPER ) ) continue;
+        // ここでは高層[☆]タイルのみ判定するので他は無視
+        if( !(flag & FLAG_UPPER ) ) continue;
 
         // 上通行不可[・]は特殊設定用のビットに使う
         // そのため通行判定として無視
-        if( flag & FLUG_NORTH_DIR  ) continue;
+        if( flag & FLAG_NORTH_DIR  ) continue;
 
         // 高層[☆]の通行不可[・]設定は
         // 他の重なったタイルによらず通行不可
