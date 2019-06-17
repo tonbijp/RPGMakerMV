@@ -13,22 +13,16 @@
  * @plugindesc Upper[☆]tile display like billboard.
  * @author Tonbi@Tobishima-Factory
  * 
- * @param SupplementEnabled
+ * @param FillWithNorthTile
  * @type boolean
  * @text Suply : ON(true) | 処理なし : OFF(false)
- * @desc Fill with north tile.
+ * @desc Fill with north tile. It is function for A3 or A4 tile.
  * @default true
  * 
  * @param DefaultLowerTile
- * @desc 補完がない場合の低層タイル番号
- * A5左上を0として右への順(デフォルトは草原)
+ * @desc 
+ * Start with 0 at upper left A5 to right.
  * @default 16
- * 
- * @help プラグインコマンド
- * ・SUPPLEMENT_ENABLED 真偽値
- * 低層タイルを補完します
- * true : 補完
- * false : 処理なし
  * 
  * 
  * @help
@@ -40,7 +34,7 @@
  * 
  * 2. set [☆] to BCDE tile, and set 4 direction setting.
  *      0x0 ↑→←↓ : [☆]  Same as no plugin.
- *      0x1 ↑→←・ : billboard, ↑・←→ pass, ground (for fence)
+ *      0x1 ↑→←・ : billboard, ↑　←→ pass, ground (for fence)
  *      0x2 ↑→・↓ : billboard, ↑↓　→ pass, ground (left side of fence)┃
  *      0x3 ↑→・・ : billboard, ↑　　→ pass, ground (bottom left)┗
  *      0x4 ↑・←↓ : billboard, ↑↓←　 pass, ground (right)   ┃
@@ -62,23 +56,18 @@
  * @plugindesc 高層[☆]タイルを書き割り風に配置する
  * @author とんび@鳶嶋工房
  * 
- * @param SupplementEnabled
+ * @param FillWithNorthTile
  * @type boolean
- * @text 補完 : ON(true) | 処理なし : OFF(false)
+ * @text 北タイルでの補完 : ON(true) | 指定タイルでの補完 : OFF(false)
  * @desc 低層を北位置のタイルで補完するか
  * @default true
  * 
  * @param DefaultLowerTile
- * @desc 補完がない場合の低層タイル番号
- * A5左上を0として右への順(デフォルトは草原)
+ * @desc FillWithNorthTileがOFFの場合の補完指定タイルの番号
+ * 番号はA5左上を0として右への順(デフォルトは草原)
  * @default 16
  * 
- * @help プラグインコマンド
- * ・SUPPLEMENT_ENABLED 真偽値
- * 低層タイルを補完します
- * true : 補完
- * false : 処理なし
- * 
+ * @help 
  * デフォルトで未使用の設定で、タイルの重なりが変化します。
  * 
  * 1. A3・A4タイルに[カウンター]を設定
@@ -87,29 +76,34 @@
  * 
  * 2. BCDEタイルに[☆]を指定したあと、通行設定(4方向)
  *      0x0 ↑→←↓ : [☆] 設定、全方向に 通行可(プラグインなしと同じ)
- *      0x1 ↑→←・ : 書き割り、上　左右 通行可、1階 (基本、柵とか)
- *      0x2 ↑→・↓ : 書き割り、上下　右 通行可、1階 (柵の左側とか)┃
- *      0x3 ↑→・・ : 書き割り、上　　右 通行可、1階 (柵の左下とか)┗
- *      0x4 ↑・←↓ : 書き割り、上下左　 通行可、1階 (柵の右側とか)   ┃
- *      0x5 ↑・←・ : 書き割り、上　左　 通行可、1階 (柵の右下とか)   ┛
- *      0x6 ↑・・↓ : 書き割り、上下　　 通行可、1階 (両脇に木とか)┃┃
- *      0x7 ↑・・・ : 書き割り、上　　　 通行可、1階 (張り出し的な)┗┛
- *      0x8 ・→←↓ : 書き割り、全方向に 通行可、1階 (草むらなどに)
+ *      0x1 ↑→←・ : 書き割り、上　左右 通行可、1階 【基本、柵とか】
+ *      0x2 ↑→・↓ : 書き割り、上下　右 通行可、1階 （柵の左側とか）┃
+ *      0x3 ↑→・・ : 書き割り、上　　右 通行可、1階（(柵の左下とか）┗
+ *      0x4 ↑・←↓ : 書き割り、上下左　 通行可、1階 （柵の右側とか）   ┃
+ *      0x5 ↑・←・ : 書き割り、上　左　 通行可、1階 （柵の右下とか）   ┛
+ *      0x6 ↑・・↓ : 書き割り、上下　　 通行可、1階 （両脇に木とか）┃┃
+ *      0x7 ↑・・・ : 書き割り、上　　　 通行可、1階 （張り出し的な）┗┛
+ *      0x8 ・→←↓ : 書き割り、全方向に 通行可、1階 （草むらなどに）
  *      0x9 ・→←・ : 書き割り、全方向に 通行可、2階
  *      0xA ・→・↓ : 書き割り、全方向に 通行可、3階
  *      0xB ・→・・ : 未設定
- *      0xC ・・←↓ : 未設定
- *      0xD ・・←・ : 未設定
- *      0xE ・・・↓ : 未設定
+ *      0xC ・・←↓ : 書き割り、全方向に 通行可、1階優先オート(※1)
+ *      0xD ・・←・ : 書き割り、全方向に 通行可、2階優先オート(※1)
+ *      0xE ・・・↓ : 書き割り、全方向に 通行可、3階優先オート(※1)
  *      0xF ・・・・ : 未設定
+ * 
+ * ※1 オートは以下の法則で配置されます。
+ *      ・南(画面下)に接地面(上に接続)タイルがあれば、2階
+ *      ・南(画面下)に中間(上下に接続)タイルがあれば、3階
+ *      ・南(画面下)にそれ以外ならば、優先階
  * 
  * 利用規約 : MITライセンス
  */
 (function(){'use strict';
 
 const PLUGIN_NAME = 'TF_LayeredMap';
-const SUPPLEMENT_ENABLED = 'SupplementEnabled';
-let _supplementEnabled = true;
+const SUPPLEMENT_ENABLED = 'FillWithNorthTile';
+let _FillWithNorthTile = true;
 
 const DEFAULT_LOWER_TILE = 'DefaultLowerTile';
 let _defaultLowerTileId = 16;
@@ -125,6 +119,10 @@ const FLAG_WITHOUT_DIR_UPPER = 0xFFE0; // 方向と高層[☆]を除いたもの
 // 書割り設定
 const FLOOR2_BOARD = 0x9; // 書き割り、全方向に 通行可、2階
 const FLOOR3_BOARD = 0xA; // 書き割り、全方向に 通行可、3階
+const FLOOR2_BOARD_AUTO = 0xD; // 書き割り、全方向に 通行可、2階優先オート
+const FLOOR3_BOARD_AUTO = 0xE; // 書き割り、全方向に 通行可、3階優先オート
+
+const AUTOTILE_BLOCK = 48; // オートタイル1ブロック分のパターン数
 
 /**
  * パラメータを受け取る
@@ -132,7 +130,7 @@ const FLOOR3_BOARD = 0xA; // 書き割り、全方向に 通行可、3階
 const pluginParams = PluginManager.parameters( PLUGIN_NAME );
 
 if( pluginParams[ SUPPLEMENT_ENABLED ] ){
-    _supplementEnabled = ( pluginParams[ SUPPLEMENT_ENABLED ].toLowerCase() === 'true' );
+    _FillWithNorthTile = ( pluginParams[ SUPPLEMENT_ENABLED ].toLowerCase() === 'true' );
 } 
 
 if( pluginParams[ DEFAULT_LOWER_TILE ] ){
@@ -151,10 +149,10 @@ Game_Interpreter.prototype.pluginCommand = function ( command, args ){
 
     if( command.toUpperCase() !== SUPPLEMENT_ENABLED ) return;
 
-    _supplementEnabled = ( args[0].toLowerCase() === 'true' );
+    _FillWithNorthTile = ( args[0].toLowerCase() === 'true' );
 };
 
-
+ 
 /*---- ShaderTilemap ----*/
 /**
  * タイルセットの画像を設定する。
@@ -162,11 +160,11 @@ Game_Interpreter.prototype.pluginCommand = function ( command, args ){
  */
 const _ShaderTilemaprefreshTileset = ShaderTilemap.prototype.refreshTileset;
 ShaderTilemap.prototype.refreshTileset = function() {
-    _ShaderTilemaprefreshTileset.call(this);
+    _ShaderTilemaprefreshTileset.call( this );
 
     // BitmapをPIXI.Textureにコンバート
-    const bitmaps = this.bitmaps.map(function(x) {
-        return x._baseTexture ? new PIXI.Texture(x._baseTexture) : x;
+    const bitmaps = this.bitmaps.map( function( x ) {
+        return x._baseTexture ? new PIXI.Texture( x._baseTexture ) : x;
    } );
 
    // 書き割りのタイルセットの画像をアップデート
@@ -193,7 +191,7 @@ ShaderTilemap.prototype._createLayers = function() {
 
     for( let i = 0; i < tileRows; i++ ){
         const billboard = new PIXI.tilemap.ZLayer( this, 3 );
-        billboard.spriteId = -Infinity;
+        billboard.spriteId = Infinity;
         this.addChild( billboard );
         this.TF_billboards.push( billboard );
         const layer = new PIXI.tilemap.CompositeRectTileLayer( 0, [], 0 );
@@ -246,22 +244,29 @@ ShaderTilemap.prototype._paintTiles = function( startX, startY, x, y ) {
      * @param {Number} tileId タイルID
      */
     const drawTile = ( tileId ) => {
-        if ( this._isHigherTile( tileId ) ) {
-            if( ( this.flags[ tileId ] & FLOOR2_BOARD ) === FLOOR2_BOARD ){
-                // 2階設定は、ひとつ下の書き割りに書き込む
-                this._drawTile( this.TF_billboards[ y + 1 ].children[ 0 ].children[ 0 ], tileId, dx, -this._tileHeight * 2 );
-            }else if( ( this.flags[ tileId ] & FLOOR3_BOARD ) === FLOOR3_BOARD ){
-                // 3階設定は、ふたつ下の書き割りに書き込む
-                this._drawTile( this.TF_billboards[ y + 2 ].children[ 0 ].children[ 0 ], tileId, dx, -this._tileHeight * 3 );
-            }else if( this.flags[ tileId ] & FLAG_ALL_DIR ){
-                // 通行不可設定のどれかがONだと書き割り
-                this._drawTile( this.TF_billboards[ y ].children[ 0 ].children[ 0 ], tileId, dx, -this._tileHeight );
-            }else{
-                // 全方向通行可の場合は通常の高層[☆]表示
-                this._drawTile( upperLayer, tileId, dx, dy );
-            }
-        } else {
+        if ( !this._isHigherTile( tileId ) ) {
             this._drawTile( lowerLayer, tileId, dx, dy );
+            return;
+        }
+    
+        if( ( this.flags[ tileId ] & FLOOR2_BOARD ) === FLOOR2_BOARD ){
+            //TODO:壁の場合は南位置のタイルによって階数を変更する
+            // 壁はA4・カウンター・通行可[○]の設定
+            // 2階設定は、ひとつ下の書き割りに書き込む
+            this._drawTile( this.TF_billboards[ y + 1 ].children[ 0 ].children[ 0 ], tileId, dx, -this._tileHeight * 2 );
+
+        }else if( ( this.flags[ tileId ] & FLOOR3_BOARD ) === FLOOR3_BOARD ){
+            //TODO:壁の場合は南位置のタイルによって階数を変更する
+            // 3階設定は、ふたつ下の書き割りに書き込む
+            this._drawTile( this.TF_billboards[ y + 2 ].children[ 0 ].children[ 0 ], tileId, dx, -this._tileHeight * 3 );
+
+        }else if( this.flags[ tileId ] & FLAG_ALL_DIR ){
+            // 通行不可設定のどれかがONだと書き割り
+            this._drawTile( this.TF_billboards[ y ].children[ 0 ].children[ 0 ], tileId, dx, -this._tileHeight );
+
+        }else{
+            // 全方向通行可の場合は通常の高層[☆]表示
+            this._drawTile( upperLayer, tileId, dx, dy );
         }
     }
     
@@ -314,6 +319,45 @@ ShaderTilemap.prototype._updateLayerPositions = function( startX, startY ) {
 };
 
 /*---- DataManager ---*/
+// オートタイル通行flag
+// 屋根 A3 奇数列
+const ROOF_PASS_EDGE = [
+    0, 2, 17, 17, 
+    4, 6, 17, 17, 
+    0, 2, 17, 17, 
+    4, 6, 17, 17, 
+];
+// 壁(上面) A4 奇数列
+const WALL_TOP_PASS_EDGE = [
+    0, 2, 4, 6, 0, 2, 4, 6,
+    0, 2, 4, 6, 0, 2, 4, 6,
+    2, 6, 2, 6, 17, 17, 17, 17,
+    4, 4, 6, 6, 0, 2, 4, 6,
+    6, 17, 17, 17, 17, 17, 4, 6,
+    2, 6, 17, 17, 6, 17, 17, 
+];
+// 壁(側面) A3・A4 偶数列 [○]
+const WALL_SIDE_PASS_EDGE = [
+    15, 15, 17, 17, 
+    15, 15, 17, 17, 
+    15, 15, 17, 17, 
+    15, 15, 17, 17, 
+];
+// 壁(側面) A3・A4 偶数列[×]
+const WALL_SIDE_PASS = [
+    25, 25, 26, 26, 
+    25, 25, 26, 26, 
+    17, 17, 17, 17, 
+    17, 17, 17, 17, 
+];
+/**
+ * 4ビット(8以上) = 1階
+ * 2ビット(& 2) = 3階
+ */
+function getFloor( patternNo ){
+    return ( patternNo & 8 )? 1 : ( patternNo & 2 )? 3 : 2;
+}
+
 /**
  * 読み込み直後に、タイルセットデータを書き換える
  */
@@ -321,11 +365,9 @@ const _DataManager_onLoad = DataManager.onLoad;
 DataManager.onLoad = function(object ){
     _DataManager_onLoad.call( this, object );
 
-    if( object === $dataTilesets ){
-        treatDataTilesets();
-    }
-
+    if( object === $dataTilesets ) treatDataTilesets();
     // end: onLoad
+
     /**
      * カウンター設定しているA3・A4オートタイルを回り込みに設定
      */
@@ -336,7 +378,7 @@ DataManager.onLoad = function(object ){
             const flags = curTileset.flags;
 
             // 屋根タイル(A3)を走査
-            for( let tileId = Tilemap.TILE_ID_A3; tileId < Tilemap.TILE_ID_A4; tileId += 48 ) {
+            for( let tileId = Tilemap.TILE_ID_A3; tileId < Tilemap.TILE_ID_A4; tileId += AUTOTILE_BLOCK ) {
                 if( !isCounterTile( flags[ tileId ] ) ) continue;
 
                 if( Tilemap.isRoofTile( tileId ) ){
@@ -347,7 +389,7 @@ DataManager.onLoad = function(object ){
             }
 
             // 壁タイル(A4)を走査
-            for( let tileId = Tilemap.TILE_ID_A4; tileId < Tilemap.TILE_ID_MAX; tileId += 48 ) {
+            for( let tileId = Tilemap.TILE_ID_A4; tileId < Tilemap.TILE_ID_MAX; tileId += AUTOTILE_BLOCK ) {
                 if( !isCounterTile( flags[ tileId ] ) ) continue;
 
                 if( Tilemap.isWallTopTile( tileId ) ){
@@ -433,7 +475,7 @@ Scene_Map.prototype.onMapLoaded = function( ){
                 // A3・A4のカウンター設定かつ高層[☆]なら、タイルを補完
                 setMapData( x, y, 1, tileId );
 
-                if( _supplementEnabled ){
+                if( _FillWithNorthTile ){
                     // 北タイルで補完
                     const upTileId = ( y === 0 )? getMapData( x, $dataMap.height - 1, 0 ) : getMapData( x, y - 1, 0 );
                     setMapData( x, y, 0, upTileId );
@@ -456,35 +498,6 @@ Scene_Map.prototype.onMapLoaded = function( ){
     }
 }
 
-// 屋根用通行設定
-const ROOF_PASS_EDGE = [
-    0, 2, 17, 17, 
-    4, 6, 17, 17, 
-    0, 2, 17, 17, 
-    4, 6, 17, 17, 
-];
-// 壁(上面)用通行設定
-const WALL_TOP_PASS_EDGE = [
-    0, 2, 4, 6, 0, 2, 4, 6,
-    0, 2, 4, 6, 0, 2, 4, 6,
-    2, 6, 2, 6, 17, 17, 17, 17,
-    4, 4, 6, 6, 0, 2, 4, 6,
-    6, 17, 17, 17, 17, 17, 4, 6,
-    2, 6, 17, 17, 6, 17, 17, 
-];
-// 壁(側面)用通行設定
-const WALL_SIDE_PASS_EDGE = [
-    15, 15, 17, 17, 
-    15, 15, 17, 17, 
-    15, 15, 17, 17, 
-    15, 15, 17, 17, 
-];
-const WALL_SIDE_PASS = [
-    25, 25, 25, 25, 
-    25, 25, 25, 25, 
-    17, 17, 17, 17, 
-    17, 17, 17, 17, 
-];
 
 
 /*---- Game_Map ----*/
