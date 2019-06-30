@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.5.0.0
+// Version :0.5.1.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -301,7 +301,7 @@ ShaderTilemap.prototype._paintTiles = function( startX, startY, x, y ) {
 
     // テーブルの描画
     if ( this._isTableTile( northTileId1 ) && !this._isTableTile( tileId1 ) ) {
-        if ( !this.isShadowingTile( tileId0 ) ) {
+        if ( !Tilemap.isShadowingTile( tileId0 ) ) {
             this._drawTableEdge( lowerLayer, northTileId1, dx, dy );
         }
     }
