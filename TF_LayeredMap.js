@@ -263,7 +263,8 @@ ShaderTilemap.prototype._paintTiles = function( startX, startY, x, y ) {
 
         let floorNumber = 1;
         if( priorityFloor === 2 ||  priorityFloor === 3 ){
-            const wallSideType = getWallSideType( this._readMapData( x, y + 1, 0 ) );
+            const wallSideType = getWallSideType( this._readMapData( mx, my + 1, 1 ) );
+            
             if( wallSideType === 1 ){
                 floorNumber = 2; 
             }else if( wallSideType === 2 ){
