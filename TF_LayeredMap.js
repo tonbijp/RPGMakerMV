@@ -15,12 +15,12 @@
  * 
  * @param FillWithNorthTile
  * @type boolean
- * @text Suply : ON(true) | 処理なし : OFF(false)
+ * @text Suply : ON(true) | DefaultLowerTile : OFF(false)
  * @desc Fill with north tile. It is function for A3 or A4 tile.
  * @default true
  * 
  * @param DefaultLowerTile
- * @desc 
+ * @desc If FillWithNorthTile option is OFF, fill with this tile.
  * Start with 0 at upper left A5 to right.
  * @default 16
  * 
@@ -31,6 +31,12 @@
  * 1. Set [counter]option for A3・A4 tile.
  *      [○] Behavior like[☆]
  *      [×] Hide only upper tile.
+ * 
+ * ※1 A3, A4 wall tile set by theory below.
+ * Next lower tile(in display) has...
+ *      ・If downer side is edge and upper side is continuous, floor 2.
+ *      ・If downer and upper both sides are continuous, floor 3.
+ * Otherwise, the priority floor.(up:edge + down:continuous = 3, up:continuous + down:continuous = 2 )
  * 
  * 2. set [☆] to BCDE tile, and set 4 direction setting.
  *      0x0 ↑→←↓ : [☆]  Same as no plugin.
@@ -71,8 +77,14 @@
  * デフォルトで未使用の設定で、タイルの重なりが変化します。
  * 
  * 1. A3・A4タイルに[カウンター]を設定
- *      [○] 下を通れる(ほぼ[☆]の状態)
+ *      [○] 下を通れる(ほぼ[☆]の状態) ※1
  *      [×] 上部タイルのみ後ろに回り込む
+ * 
+ * ※1 A3,A4の壁は以下の法則で配置されます。
+ * 南(画面下)に
+ *      ・接地面(上に接続)タイルがあれば、2階
+ *      ・中間(上下に接続)タイルがあれば、3階
+ *  それ以外ならば、元のタイルによって決まる優先階(上:端 + 下:接続 = 3, 上:接続 + 下:接続 = 2 )
  * 
  * 2. BCDEタイルに[☆]を指定したあと、通行設定(4方向)
  *      0x0 ↑→←↓ : [☆] 設定、全方向に 通行可(プラグインなしと同じ)
@@ -92,11 +104,6 @@
  *      0xE ・・・↓ : 未使用
  *      0xF ・・・・ : 未使用
  * 
- * ※1 A3,A4の壁は以下の法則で配置されます。
- * 南(画面下)に
- *      ・接地面(上に接続)タイルがあれば、2階
- *      ・中間(上下に接続)タイルがあれば、3階
- *      ・それ以外ならば、優先階
  * 
  * 利用規約 : MITライセンス
  */
@@ -120,8 +127,6 @@ const FLAG_WITHOUT_DIR_UPPER = 0xFFE0; // 方向と高層[☆]を除いたもの
 // 書割り設定
 const FLOOR2_BOARD = 0x9; // 09 書き割り、全方向に 通行可、2階
 const FLOOR3_BOARD = 0xA; // 10 書き割り、全方向に 通行可、3階
-//const FLOOR2_BOARD_AUTO = 0xD; // 13 書き割り、全方向に 通行可、2階優先オート
-//const FLOOR3_BOARD_AUTO = 0xE; // 14 書き割り、全方向に 通行可、3階優先オート
 
 const AUTOTILE_BLOCK = 48; // オートタイル1ブロック分のパターン数
 
@@ -246,28 +251,28 @@ ShaderTilemap.prototype._paintTiles = function( startX, startY, x, y ) {
             return;
         }
 
-        // 優先階(recommendFloor)を設定
-        let recommendFloor;
+        // 優先階(priorityFloor)を設定
+        let priorityFloor;
         if( ( this.flags[ tileId ] & FLOOR2_BOARD ) === FLOOR2_BOARD ){
-            recommendFloor = 2;
+            priorityFloor = 2;
         }else if(( this.flags[ tileId ] & FLOOR3_BOARD ) === FLOOR3_BOARD ){
-            recommendFloor = 3;
+            priorityFloor = 3;
         }else{
-            recommendFloor = 1;
+            priorityFloor = 1;
         }
 
         let floorNumber = 1;
-        if( recommendFloor === 2 ||  recommendFloor === 3 ){
+        if( priorityFloor === 2 ||  priorityFloor === 3 ){
             const wallSideType = getWallSideType( this._readMapData( x, y + 1, 0 ) );
             if( wallSideType === 1 ){
                 floorNumber = 2; 
             }else if( wallSideType === 2 ){
                 floorNumber = 3; 
             }else if( wallSideType === 3 ){
-                floorNumber = recommendFloor;
+                floorNumber = priorityFloor;
             }else{
                 // 壁ではない場合
-                floorNumber = recommendFloor;
+                floorNumber = priorityFloor;
                 // TODO : B〜E タイルのオート位置設定を行う…か?
             }
         }
