@@ -60,7 +60,7 @@
  *      0xB ・→・・ : undefined
  *      0xC ・・←↓ : undefined
  *      0xD ・・←・ : undefined
- *      0xE ・・・↓ : undefined
+ *      0xE ・・・↓ : Same as 0x1 but south half positions are passable.(for peg)(HalfMove.js is needed)
  *      0xF ・・・・ : undefined
  * 
  * Released under the MIT License.
@@ -113,7 +113,7 @@
  *      0xB ・→・・ : 未使用
  *      0xC ・・←↓ : 未使用
  *      0xD ・・←・ : 未使用
- *      0xE ・・・↓ : 未使用
+ *      0xE ・・・↓ : 0x1と同じだが南半歩ズレ通行可 （杭などに）(HalfMove.js が必要)
  *      0xF ・・・・ : 未使用
  * 
  * 
@@ -136,12 +136,14 @@ const FLAG_UPPER = 0x10; // 高層[☆]
 const FLAG_COUNTER = 0x80; // カウンター
 const FLAG_UPPER_COUNTER = 0x90;    // 高層[☆]とカウンター
 const FLAG_ALL_DIR = 0xF;  // 全方向の通行設定
+const FLAG_SOUTH_DIR = 0x01 // 南方向の通行設定
 const FLAG_NORTH_DIR = 0x08 // 北方向の通行設定
 const FLAG_WITHOUT_DIR_UPPER = 0xFFE0; // 方向と高層[☆]を除いたもの
 
 // 書割り設定
 const FLOOR2_BOARD = 0x9; // 09 書き割り、全方向に 通行可、2階
 const FLOOR3_BOARD = 0xA; // 10 書き割り、全方向に 通行可、3階
+const FLOOR1_PEG = 0xE; // 14 杭
 
 const AUTOTILE_BLOCK = 48; // オートタイル1ブロック分のパターン数
 
@@ -273,9 +275,9 @@ ShaderTilemap.prototype._paintTiles = function( startX, startY, x, y ){
 
         // 優先階(priorityFloor)を設定
         let priorityFloor;
-        if( ( this.flags[ tileId ] & FLOOR2_BOARD ) === FLOOR2_BOARD ){
+        if( ( this.flags[ tileId ] & FLAG_ALL_DIR ) === FLOOR2_BOARD ){
             priorityFloor = 2;
-        }else if(( this.flags[ tileId ] & FLOOR3_BOARD ) === FLOOR3_BOARD ){
+        }else if(( this.flags[ tileId ] & FLAG_ALL_DIR ) === FLOOR3_BOARD ){
             priorityFloor = 3;
         }else{
             priorityFloor = 1;
@@ -580,6 +582,50 @@ Scene_Map.prototype.onMapLoaded = function( ){
     }
 }
 
+
+
+/*---- Game_CharacterBase ----*/
+/**
+ * 指定方向への移動が可能か
+ * 杭(FLOOR1_PEG)の設定に限りキャラクタの位置が関係するので、ここで判定。
+ * @param {Number} x タイル数
+ * @param {Number} y タイル数
+ * @param {Number} d 向き(テンキー対応)
+ * @returns {Boolean} 移動可能か
+ */
+const _Game_CharacterBase_isMapPassable = Game_CharacterBase.prototype.isMapPassable;
+Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
+    if( this.x === parseInt( this.x ) ){
+        // キャラクタx座標が整数(のところしか杭はない)
+        if( d === 8 ){
+            // 上に移動
+            if( this.y !== parseInt( this.y ) ){
+                if( checkPeg( this.x, $gameMap.roundYWithDirection( this.y, d )  ) ) return false;
+            }
+         }else if( d === 2 ){
+            // 下に移動
+            if( this.y === parseInt( this.y ) ){
+                if( checkPeg( this.x, this.y ) ) return false;
+            }
+        }
+    }
+    return _Game_CharacterBase_isMapPassable.call( this, x, y, d );
+
+    /**
+     * 指定位置に杭設定があるか
+     * @param {Number} x タイル数
+     * @param {Number} y タイル数
+     * @returns {Boolean} 
+     */
+    function checkPeg( x, y ){
+        const flags = $gameMap.tilesetFlags();
+        const tiles = $gameMap.allTiles( x, y );
+        for ( let i = 0; i < tiles.length; i++ ){
+            if(  ( flags[ tiles[ i ] ] & FLAG_ALL_DIR ) === FLOOR1_PEG ) return true;
+        }
+        return false;
+    }
+}
 
 
 /*---- Game_Map ----*/
