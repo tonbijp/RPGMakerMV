@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.5.1.0
+// Version :0.6.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -15,14 +15,21 @@
  * 
  * @param FillWithNorthTile
  * @type boolean
- * @text Suply : ON(true) | DefaultLowerTile : OFF(false)
- * @desc Fill with north tile. It is function for A3 or A4 tile.
+ * @desc ON(true) | DefaultLowerTile : OFF(false)
+ * Fill with north tile.It is function for A3 or A4 tile.
  * @default true
  * 
  * @param DefaultLowerTile
  * @desc If FillWithNorthTile option is OFF, fill with this tile.
  * Start with 0 at upper left A5 to right.
  * @default 16
+ * 
+ * @param UseLayeredCounter
+ * @type boolean
+ * @desc ON(true) | Normal : OFF(false)
+ * Counter becomes layered.
+ * A2 counter tile can layered like billboard.
+ * @default true
  * 
  * 
  * @help
@@ -64,15 +71,23 @@
  * 
  * @param FillWithNorthTile
  * @type boolean
- * @text 北のタイルでの補完 : ON(true) | 指定タイルでの補完 : OFF(false)
- * @desc 低層を北位置のタイルで補完するか
+ * @text 北のタイルでの補完
+ * @desc 北のタイル ON(true) | [補完用タイル番号] : OFF(false)
+ * 低層(地面)を北(画面上では上)のタイルで補完するか
  * @default true
  * 
  * @param DefaultLowerTile
  * @text 補完用タイル番号
- * @desc 北のタイルでの補完がOFFの場合に使うタイルを指定
+ * @desc [北のタイルでの補完]がOFFの場合に使うタイル
  * 番号はA5左上を0として右への順。デフォルト:16(草原)
  * @default 16
+ * 
+ * @param UseLayeredCounter
+ * @type boolean
+ * @text カウンター回り込み
+ * @desc 回り込み : ON(true) | 通常 : OFF(false)
+ * A2のカウンターの後ろに回り込めるようにするか
+ * @default true
  * 
  * @help 
  * RPGツクールMVで未使用の設定で、タイルの重なりが変化します。
@@ -113,6 +128,9 @@ let _FillWithNorthTile = true;
 const DEFAULT_LOWER_TILE = 'DefaultLowerTile';
 let _defaultLowerTileId = 16;
 
+const USE_LAYERED_COUNTER = 'UseLayeredCounter';
+let _useLayeredCounter = true;
+
 // flag用定数
 const FLAG_UPPER = 0x10; // 高層[☆]
 const FLAG_COUNTER = 0x80; // カウンター
@@ -141,6 +159,10 @@ if( pluginParams[ DEFAULT_LOWER_TILE ] ){
 }
 _defaultLowerTileId += Tilemap.TILE_ID_A5;
 
+if( pluginParams[ USE_LAYERED_COUNTER ] ){
+    _useLayeredCounter = ( pluginParams[ USE_LAYERED_COUNTER ].toLowerCase() === 'true' );
+}
+
 
 /*---- Game_Interpreter ----*/
 /**
@@ -162,11 +184,11 @@ Game_Interpreter.prototype.pluginCommand = function ( command, args ){
  * マップ開始時に呼ばれる。
  */
 const _ShaderTilemaprefreshTileset = ShaderTilemap.prototype.refreshTileset;
-ShaderTilemap.prototype.refreshTileset = function() {
+ShaderTilemap.prototype.refreshTileset = function(){
     _ShaderTilemaprefreshTileset.call( this );
 
     // BitmapをPIXI.Textureにコンバート
-    const bitmaps = this.bitmaps.map( function( x ) {
+    const bitmaps = this.bitmaps.map( function( x ){
         return x._baseTexture ? new PIXI.Texture( x._baseTexture ) : x;
    } );
 
@@ -180,7 +202,7 @@ ShaderTilemap.prototype.refreshTileset = function() {
  * 書き割りレイヤーの生成と追加
  */
 const _ShaderTilemap_createLayers = ShaderTilemap.prototype._createLayers;
-ShaderTilemap.prototype._createLayers = function() {
+ShaderTilemap.prototype._createLayers = function(){
     _ShaderTilemap_createLayers.call(this);
 
     // 書き割り風オブジェクトを生成
@@ -206,7 +228,7 @@ ShaderTilemap.prototype._createLayers = function() {
  * 描画前に書き割りの中を空にしておく。
  */
 const _ShaderTilemap_paintAllTiles = ShaderTilemap.prototype._paintAllTiles;
-ShaderTilemap.prototype._paintAllTiles = function(startX, startY) {
+ShaderTilemap.prototype._paintAllTiles = function(startX, startY){
     for( let curItem of this.TF_billboards ){
         curItem.clear();
     }
@@ -223,7 +245,7 @@ ShaderTilemap.prototype._paintAllTiles = function(startX, startY) {
  * @param {Number} x 画面上の x座標(タイル数)
  * @param {Number} y 画面上の y座標(タイル数)
  */
-ShaderTilemap.prototype._paintTiles = function( startX, startY, x, y ) {
+ShaderTilemap.prototype._paintTiles = function( startX, startY, x, y ){
     const mx = startX + x; //  描画対象のマップ x座標(タイル数)
     const my = startY + y; //  描画対象のマップ y座標(タイル数)
     const dx = x * this._tileWidth; //  描画位置の x座標(ピクセル)
@@ -247,6 +269,7 @@ ShaderTilemap.prototype._paintTiles = function( startX, startY, x, y ) {
             this._drawTile( lowerLayer, tileId, dx, dy );
             return;
         }
+        if(Tilemap.isTileA2( tileId ) && ( this.flags[ tileId ]  & FLAG_COUNTER ) === FLAG_COUNTER ) console.log(`tileId : ${tileId}  flag : ${this.flags[ tileId ]}`);
 
         // 優先階(priorityFloor)を設定
         let priorityFloor;
@@ -300,14 +323,14 @@ ShaderTilemap.prototype._paintTiles = function( startX, startY, x, y ) {
     this._drawShadow( lowerLayer, shadowBits, dx, dy );
 
     // テーブルの描画
-    if ( this._isTableTile( northTileId1 ) && !this._isTableTile( tileId1 ) ) {
-        if ( !Tilemap.isShadowingTile( tileId0 ) ) {
+    if ( this._isTableTile( northTileId1 ) && !this._isTableTile( tileId1 ) ){
+        if ( !Tilemap.isShadowingTile( tileId0 ) ){
             this._drawTableEdge( lowerLayer, northTileId1, dx, dy );
         }
     }
 
     // 立体交差の描画
-    if ( this._isOverpassPosition( mx, my ) ) {
+    if ( this._isOverpassPosition( mx, my ) ){
         this._drawTile( upperLayer, tileId2, dx, dy );
         this._drawTile( upperLayer, tileId3, dx, dy );
     } else {
@@ -337,11 +360,11 @@ ShaderTilemap.prototype._paintTiles = function( startX, startY, x, y ) {
  * @param {Number} startY
  */
 const _ShaderTilemap_updateLayerPositions = ShaderTilemap.prototype._updateLayerPositions;
-ShaderTilemap.prototype._updateLayerPositions = function( startX, startY ) {
+ShaderTilemap.prototype._updateLayerPositions = function( startX, startY ){
     _ShaderTilemap_updateLayerPositions.call( this, startX, startY );
 
     let ox,oy;
-    if (this.roundPixels) {
+    if (this.roundPixels){
         ox = Math.floor(this.origin.x);
         oy = Math.floor(this.origin.y);
     } else {
@@ -353,7 +376,7 @@ ShaderTilemap.prototype._updateLayerPositions = function( startX, startY ) {
     const posX = startX * tw - ox;
     const posY = startY * th - oy
     const l = this.TF_billboards.length;
-    for( let i = 0; i < l; i++ ) {
+    for( let i = 0; i < l; i++ ){
         const curItem = this.TF_billboards[ i ];
         curItem.position.x = posX;
         curItem.position.y = posY + ( i + 1) * th;
@@ -362,6 +385,16 @@ ShaderTilemap.prototype._updateLayerPositions = function( startX, startY ) {
 
 /*---- DataManager ---*/
 // オートタイル通行flag
+// 
+// A2カウンター
+const COUNTER_PASS_EDGE = [
+    0, 2, 4, 6, 0, 2, 4, 6,
+    0, 2, 4, 6, 0, 2, 4, 6,
+    2, 6, 2, 6, 17, 17, 17, 17,
+    4, 4, 6, 6, 0, 2, 4, 6,
+    6, 17, 17, 17, 17, 17, 4, 6,
+    2, 6, 17, 17, 6, 17, 17, 
+];
 // 屋根 A3 奇数列
 const ROOF_PASS_EDGE = [
     0, 2, 17, 17, 
@@ -405,7 +438,7 @@ DataManager.onLoad = function(object ){
     // end: onLoad
 
     /**
-     * カウンター設定しているA3・A4オートタイルを回り込みに設定
+     * カウンター設定しているA2・A3・A4オートタイルを回り込みに設定
      */
     function treatDataTilesets(){
         // 全タイルセットに対して設定
@@ -413,8 +446,15 @@ DataManager.onLoad = function(object ){
             if( !curTileset ) continue;
             const flags = curTileset.flags;
 
+            if( _useLayeredCounter ){
+                // カウンタータイル(A2)を走査
+                for( let tileId = Tilemap.TILE_ID_A2; tileId < Tilemap.TILE_ID_A3; tileId ++ ){
+                    if( isCounterTile( flags[ tileId ] ) ) counter2UpperLayer( flags, tileId );
+                }
+            }
+
             // 屋根タイル(A3)を走査
-            for( let tileId = Tilemap.TILE_ID_A3; tileId < Tilemap.TILE_ID_A4; tileId += AUTOTILE_BLOCK ) {
+            for( let tileId = Tilemap.TILE_ID_A3; tileId < Tilemap.TILE_ID_A4; tileId += AUTOTILE_BLOCK ){
                 if( !isCounterTile( flags[ tileId ] ) ) continue;
 
                 if( Tilemap.isRoofTile( tileId ) ){
@@ -425,7 +465,7 @@ DataManager.onLoad = function(object ){
             }
 
             // 壁タイル(A4)を走査
-            for( let tileId = Tilemap.TILE_ID_A4; tileId < Tilemap.TILE_ID_MAX; tileId += AUTOTILE_BLOCK ) {
+            for( let tileId = Tilemap.TILE_ID_A4; tileId < Tilemap.TILE_ID_MAX; tileId += AUTOTILE_BLOCK ){
                 if( !isCounterTile( flags[ tileId ] ) ) continue;
 
                 if( Tilemap.isWallTopTile( tileId ) ){
@@ -442,6 +482,14 @@ DataManager.onLoad = function(object ){
         }
     }
 
+    // カウンターの通行設定
+    function counter2UpperLayer( flags, tileId ){
+        for( let i=0; i < 47; i++ ){
+            flags[ tileId + i  ] = 17;//flags[ tileId + i ] & FLAG_WITHOUT_DIR_UPPER | COUNTER_PASS_EDGE[ i ];
+            // TODO:
+        }
+    }
+    
     //  屋根の通行設定
     function roof2UpperLayer( flags, tileId ){
         if(  flags[ tileId + 15 ] & FLAG_ALL_DIR  ){
