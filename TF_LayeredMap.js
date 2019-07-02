@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.6.0.0
+// Version :0.6.1.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -102,7 +102,7 @@
  *      0x0 ↑→←↓ : [☆] 設定、全方向に 通行可(プラグインなしと同じ)
  *      0x1 ↑→←・ : 書き割り、北　西東 通行可、1階 【基本、柵とか】
  *      0x2 ↑→・↓ : 書き割り、北南　東 通行可、1階 （柵の西側とか）┃
- *      0x3 ↑→・・ : 書き割り、北　　東 通行可、1階（(柵の西南とか）┗
+ *      0x3 ↑→・・ : 書き割り、北　　東 通行可、1階 （柵の西南とか）┗
  *      0x4 ↑・←↓ : 書き割り、北南西　 通行可、1階 （柵の東側とか）   ┃
  *      0x5 ↑・←・ : 書き割り、北　西　 通行可、1階 （柵の東南とか）   ┛
  *      0x6 ↑・・↓ : 書き割り、北南　　 通行可、1階 （両脇に木とか）┃┃
@@ -269,7 +269,7 @@ ShaderTilemap.prototype._paintTiles = function( startX, startY, x, y ){
             this._drawTile( lowerLayer, tileId, dx, dy );
             return;
         }
-        if(Tilemap.isTileA2( tileId ) && ( this.flags[ tileId ]  & FLAG_COUNTER ) === FLAG_COUNTER ) console.log(`tileId : ${tileId}  flag : ${this.flags[ tileId ]}`);
+        
 
         // 優先階(priorityFloor)を設定
         let priorityFloor;
@@ -385,15 +385,14 @@ ShaderTilemap.prototype._updateLayerPositions = function( startX, startY ){
 
 /*---- DataManager ---*/
 // オートタイル通行flag
-// 
 // A2カウンター
 const COUNTER_PASS_EDGE = [
-    0, 2, 4, 6, 0, 2, 4, 6,
-    0, 2, 4, 6, 0, 2, 4, 6,
-    2, 6, 2, 6, 17, 17, 17, 17,
-    4, 4, 6, 6, 0, 2, 4, 6,
-    6, 17, 17, 17, 17, 17, 4, 6,
-    2, 6, 17, 17, 6, 17, 17, 
+    15, 15, 15, 15, 15, 15, 15, 15, 
+    15, 15, 15, 15, 15, 15, 15, 15, 
+    15, 15, 15, 15, 17, 17, 17, 17, 
+    15, 15, 15, 15, 15, 15, 15, 15, 
+    15, 17, 17, 17, 17, 17, 15, 15, 
+    15, 15, 17, 17, 15, 17, 17, 17, 
 ];
 // 屋根 A3 奇数列
 const ROOF_PASS_EDGE = [
@@ -409,7 +408,7 @@ const WALL_TOP_PASS_EDGE = [
     2, 6, 2, 6, 17, 17, 17, 17,
     4, 4, 6, 6, 0, 2, 4, 6,
     6, 17, 17, 17, 17, 17, 4, 6,
-    2, 6, 17, 17, 6, 17, 17, 
+    2, 6, 17, 17, 6, 17, 17, 17
 ];
 // 壁(側面) A3・A4 偶数列 [○]
 const WALL_SIDE_PASS_EDGE = [
@@ -448,7 +447,7 @@ DataManager.onLoad = function(object ){
 
             if( _useLayeredCounter ){
                 // カウンタータイル(A2)を走査
-                for( let tileId = Tilemap.TILE_ID_A2; tileId < Tilemap.TILE_ID_A3; tileId ++ ){
+                for( let tileId = Tilemap.TILE_ID_A2; tileId < Tilemap.TILE_ID_A3; tileId +=AUTOTILE_BLOCK ){
                     if( isCounterTile( flags[ tileId ] ) ) counter2UpperLayer( flags, tileId );
                 }
             }
@@ -485,8 +484,7 @@ DataManager.onLoad = function(object ){
     // カウンターの通行設定
     function counter2UpperLayer( flags, tileId ){
         for( let i=0; i < 47; i++ ){
-            flags[ tileId + i  ] = 17;//flags[ tileId + i ] & FLAG_WITHOUT_DIR_UPPER | COUNTER_PASS_EDGE[ i ];
-            // TODO:
+            flags[ tileId + i  ] = flags[ tileId + i ] & FLAG_WITHOUT_DIR_UPPER | COUNTER_PASS_EDGE[ i ];
         }
     }
     
