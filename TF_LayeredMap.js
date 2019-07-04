@@ -113,9 +113,9 @@
  *      0xA ・→・↓ : 書き割り、全方向に 通行可、3階
  *      0xB ・→・・ : 地面と同じだが北半分が通行不可 （棚などに）(HalfMove.js が必要)
  *      0xC ・・←↓ : 0x1 と同じだが南半分が通行不可 （机などに）(HalfMove.js が必要)
- *      0xD ・・←・ : 0xC と同じだが南半歩ズレ通行可 （椅子とか）(HalfMove.js が必要)
- *      0xE ・・・↓ : 0x1 と同じだが南半歩ズレ通行可 （杭などに）(HalfMove.js が必要)
- *      0xF ・・・・ : 未使用
+ *      0xD ・・←・ : 0xB と同じだが南半歩ズレ通行可 （椅子とか）(HalfMove.js が必要)
+ *      0xE ・・・↓ : 0xC と同じだが南半歩ズレ通行可 （椅子とか）(HalfMove.js が必要)
+ *      0xF ・・・・ : 0x1 と同じだが南半歩ズレ通行可 （杭などに）(HalfMove.js が必要)
  * 
  * 
  * 利用規約 : MITライセンス
@@ -132,23 +132,26 @@ let _defaultLowerTileId = 16;
 const USE_LAYERED_COUNTER = 'UseLayeredCounter';
 let _useLayeredCounter = true;
 
+// TODO : 書き割りのレイヤー設定
+
 // flag用定数
+const FLAG_NORTH_DIR = 0x08 // 北の通行設定
 const FLAG_UPPER = 0x10; // 高層[☆]
 const FLAG_COUNTER = 0x80; // カウンター
-const FLAG_UPPER_COUNTER = 0x90;    // 高層[☆]とカウンター
-const FLAG_NORTH_DIR = 0x08 // 北方向の通行設定
-const FLAG_WITHOUT_DIR_UPPER = 0xFFE0; // 方向と高層[☆]を除いたもの
+const FLAG_UPPER_COUNTER = 0x90; // 高層[☆]とカウンター用マスク
+const FLAG_WITHOUT_DIR_UPPER = 0xFFE0; // 方向と高層[☆]を除いたもの用マスク
 
 // 書割り設定
-const FLAG_ALL_DIR = 0xF;  // 通行設定
+const FLAG_ALL_DIR = 0xF; // 通行設定用マスク
 const FLOOR2_BOARD = 0x19; // 09 書き割り、全方向に 通行可、2階
 const FLOOR3_BOARD = 0x1A; // 10 書き割り、全方向に 通行可、3階
 
-const FLAG_UPPER_DIR = 0x1F;  // 高層[☆]と通行設定
-const FLOOR1_SHELF = 0x1B; // 11 棚
-const FLOOR1_TABLE = 0x1C; // 12 机
-const FLOOR1_CHAIR = 0x1D; // 13 椅子
-const FLOOR1_PEG = 0x1E; // 14 杭
+const FLAG_UPPER_DIR = 0x1F; // 高層[☆]と通行設定用マスク
+const FLOOR1_N_FULL = 0x1B; // 11 棚
+const FLOOR1_S_FULL = 0x1C; // 12 机
+const FLOOR1_N_HALF = 0x1D; // 13 椅子
+const FLOOR1_S_HALF = 0x1E; // 14 椅子
+const FLOOR1_S_FLAT = 0x1F; // 15 杭
 
 const AUTOTILE_BLOCK = 48; // オートタイル1ブロック分のパターン数
 
@@ -271,13 +274,14 @@ ShaderTilemap.prototype._paintTiles = function( startX, startY, x, y ){
      * @param {Number} tileId タイルID
      */
     const drawTile = ( tileId ) => {
-        if ( !this._isHigherTile( tileId ) ){
+        if ( !this._isHigherTile( tileId )
+        || ( this.flags[ tileId ] & FLAG_UPPER_DIR ) === FLOOR1_N_FULL
+        || ( this.flags[ tileId ] & FLAG_UPPER_DIR ) === FLOOR1_N_HALF ){
             // 高層タイルではない
             this._drawTile( lowerLayer, tileId, dx, dy );
             return;
         }
         
-
         // 優先階(priorityFloor)を設定
         let priorityFloor;
         if( ( this.flags[ tileId ] & FLAG_UPPER_DIR ) === FLOOR2_BOARD ){
@@ -592,8 +596,7 @@ Scene_Map.prototype.onMapLoaded = function( ){
 /*---- Game_CharacterBase ----*/
 /**
  * 指定方向への移動が可能か
- * 杭(FLOOR1_PEG)、椅子(FLOOR1_CHAIR)、机(FLOOR1_TABLE)、棚(FLOOR1_SHELF)
- * 設定に限りキャラクタ半分の位置が関係するので、ここで判定。
+ * キャラクタ半分の位置が関係するものは、ここで判定。
  * @param {Number} x タイル数
  * @param {Number} y タイル数
  * @param {Number} d 向き(テンキー対応)
@@ -603,37 +606,52 @@ const _Game_CharacterBase_isMapPassable = Game_CharacterBase.prototype.isMapPass
 Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
     const intX = parseInt( x + 0.5 );
     const intY = parseInt( y + 0.5 );
-    
-    /*
-    次に、棚の判定を行う
-        console.log( `x, y = ${x}, ${y}  intXY = ${intX}, ${intY}  d : ${d}`);
-    */
-    // 杭(FLOOR1_PEG)
-    if( d === 8 ){
-        if( intX <= x && y < intY && checkCollision( x, $gameMap.roundYWithDirection( y, d ), FLOOR1_PEG  )  ) return false;
-    }else if( d === 2){
-        if( intX <= x && intY <= y && checkCollision( x, y, FLOOR1_PEG ) ) return false;
-    }
 
-    //椅子(FLOOR1_CHAIR)
+    // FLOOR1_N_FULL
     if( d === 8 ||  d === 2 ){
-        if( intX <= x && y < intY && checkCollision( x, $gameMap.roundYWithDirection( y, d ), FLOOR1_CHAIR  )  ) return false;
-    }else if( d === 4 || d === 6 ){
-        if( x < intX && intY <= y && checkCollision( $gameMap.roundXWithDirection( x, d ), y, FLOOR1_CHAIR  )  ) return false;
-    }
-
-    //机(FLOOR1_TABLE)
-    if( d === 8 ||  d === 2 ){
-        if(  y < intY ){
-             if( checkCollision( x, $gameMap.roundYWithDirection( y, d ), FLOOR1_TABLE  )  ) return false;
+        if(  intY <= y ){
+             if( checkCollision( x, $gameMap.roundYWithDirection( y + 0.5, d ), FLOOR1_N_FULL  )  ) return false;
              if( 0.5 <= x % 1 ){ // キャラが西位置の場合に一つ東のタイルをチェック
-                if( checkCollision( $gameMap.roundX( x + 1 ), $gameMap.roundYWithDirection( y, d ), FLOOR1_TABLE  ) ) return false;
+                if( checkCollision( $gameMap.roundX( x + 1 ), $gameMap.roundYWithDirection( y + 0.5, d ), FLOOR1_N_FULL  ) ) return false;
              }
         }
     }else if( d === 4 ){
-        if( intY <= y && checkCollision( $gameMap.roundXWithDirection( x, d ), y, FLOOR1_TABLE  )  ) return false;
+        if( y < intY && checkCollision( $gameMap.roundXWithDirection( x, d ), y + 0.5, FLOOR1_N_FULL  )  ) return false;
     }else if( d === 6 ){
-        if( intY <= y && checkCollision( $gameMap.roundXWithDirection( x + 0.5, d ), y, FLOOR1_TABLE  )  ) return false;
+        if( y < intY && checkCollision( $gameMap.roundXWithDirection( x + 0.5, d ), y + 0.5, FLOOR1_N_FULL  )  ) return false;
+    }
+    //FLOOR1_S_FULL
+    if( d === 8 ||  d === 2 ){
+        if(  y < intY ){
+             if( checkCollision( x, $gameMap.roundYWithDirection( y, d ), FLOOR1_S_FULL  )  ) return false;
+             if( 0.5 <= x % 1 ){ // キャラが西位置の場合に一つ東のタイルをチェック
+                if( checkCollision( $gameMap.roundX( x + 1 ), $gameMap.roundYWithDirection( y, d ), FLOOR1_S_FULL  ) ) return false;
+             }
+        }
+    }else if( d === 4 ){
+        if( intY <= y && checkCollision( $gameMap.roundXWithDirection( x, d ), y, FLOOR1_S_FULL  )  ) return false;
+    }else if( d === 6 ){
+        if( intY <= y && checkCollision( $gameMap.roundXWithDirection( x + 0.5, d ), y, FLOOR1_S_FULL  )  ) return false;
+    }
+
+    // FLOOR1_N_HALF
+    if( d === 8 ||  d === 2 ){
+        if( intX <= x && intY <= y && checkCollision( x, $gameMap.roundYWithDirection( y + 0.5, d ), FLOOR1_N_HALF  )  ) return false;
+    }else if( d === 4 || d === 6 ){
+        if( x < intX && y < intY && checkCollision( $gameMap.roundXWithDirection( x, d ), y + 0.5, FLOOR1_N_HALF  )  ) return false;
+    }
+    // FLOOR1_S_HALF
+    if( d === 8 ||  d === 2 ){
+        if( intX <= x && y < intY && checkCollision( x, $gameMap.roundYWithDirection( y, d ), FLOOR1_S_HALF  )  ) return false;
+    }else if( d === 4 || d === 6 ){
+        if( x < intX && intY <= y && checkCollision( $gameMap.roundXWithDirection( x, d ), y, FLOOR1_S_HALF  )  ) return false;
+    }
+
+    // FLOOR1_S_FLAT
+    if( d === 8 ){
+        if( intX <= x && y < intY && checkCollision( x, $gameMap.roundYWithDirection( y, d ), FLOOR1_S_FLAT  )  ) return false;
+    }else if( d === 2){
+        if( intX <= x && intY <= y && checkCollision( x, y, FLOOR1_S_FLAT ) ) return false;
     }
 
     return _Game_CharacterBase_isMapPassable.call( this, x, y, d );
