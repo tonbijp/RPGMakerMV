@@ -57,11 +57,11 @@
  *      0x8 ・→←↓ : billboard,  all directtion , ground (for bush)
  *      0x9 ・→←・ : billboard,  all directtion , 2nd floor
  *      0xA ・→・↓ : billboard,  all directtion , 3rd floor
- *      0xB ・→・・ : undefined
- *      0xC ・・←↓ : undefined
- *      0xD ・・←・ : undefined
- *      0xE ・・・↓ : Same as 0x1 but south half positions are passable.(for peg)(HalfMove.js is needed)
- *      0xF ・・・・ : undefined
+ *      0xB ・→・・ : Same as [○] and north half blocked (for lower shelf) (HalfMove.js is needed)
+ *      0xC ・・←↓ : Same as 0x1 and south half blocked (for Barrel) (HalfMove.js is needed)
+ *      0xD ・・←・ : Same as 0xB and collision is half (for lower tree) (HalfMove.js is needed)
+ *      0xE ・・・↓ : Same as 0xC and collision is half  (for chair) (HalfMove.js is needed)
+ *      0xF ・・・・ : Same as 0x1 and collision is half (for peg)(HalfMove.js is needed)
  * 
  * Released under the MIT License.
  */
@@ -111,11 +111,11 @@
  *      0x8 ・→←↓ : 書き割り、全方向に 通行可、1階 （草むらなどに）
  *      0x9 ・→←・ : 書き割り、全方向に 通行可、2階
  *      0xA ・→・↓ : 書き割り、全方向に 通行可、3階
- *      0xB ・→・・ : 地面と同じだが北半分が通行不可 （棚などに）(HalfMove.js が必要)
+ *      0xB ・→・・ : 地面[○] 設定かつ北半分通行不可 （棚などに）(HalfMove.js が必要)
  *      0xC ・・←↓ : 0x1 と同じだが南半分が通行不可 （机などに）(HalfMove.js が必要)
- *      0xD ・・←・ : 0xB と同じだが南半歩ズレ通行可 （椅子とか）(HalfMove.js が必要)
- *      0xE ・・・↓ : 0xC と同じだが南半歩ズレ通行可 （椅子とか）(HalfMove.js が必要)
- *      0xF ・・・・ : 0x1 と同じだが南半歩ズレ通行可 （杭などに）(HalfMove.js が必要)
+ *      0xD ・・←・ : 0xB と同じだが北の両脇が通行可 （根元とか）(HalfMove.js が必要)
+ *      0xE ・・・↓ : 0xC と同じだが南の両脇が通行可 （椅子とか）(HalfMove.js が必要)
+ *      0xF ・・・・ : 0x1 と同じだが南の両脇が通行可 （杭などに）(HalfMove.js が必要)
  * 
  * 
  * 利用規約 : MITライセンス
