@@ -112,7 +112,7 @@
  *      0xA ・→・↓ : 書き割り、全方向に 通行可、3階
  *      0xB ・→・・ : 未使用
  *      0xC ・・←↓ : 0x1と同じだが南半分が通行不可 （机などに）(HalfMove.js が必要)
- *      0xD ・・←・ : 0xEと同じだが南半分が通行不可 （椅子とか）(HalfMove.js が必要)
+ *      0xD ・・←・ : 0xCと同じだが南半歩ズレ通行可 （椅子とか）(HalfMove.js が必要)
  *      0xE ・・・↓ : 0x1と同じだが南半歩ズレ通行可 （杭などに）(HalfMove.js が必要)
  *      0xF ・・・・ : 未使用
  * 
@@ -590,7 +590,7 @@ Scene_Map.prototype.onMapLoaded = function( ){
 /*---- Game_CharacterBase ----*/
 /**
  * 指定方向への移動が可能か
- * 杭(FLOOR1_PEG)の設定に限りキャラクタの位置が関係するので、ここで判定。
+ * 杭(FLOOR1_PEG)、椅子(FLOOR1_CHAIR)の設定に限りキャラクタの位置が関係するので、ここで判定。
  * @param {Number} x タイル数
  * @param {Number} y タイル数
  * @param {Number} d 向き(テンキー対応)
@@ -608,10 +608,19 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
     */
     if( intX <= x ){ // タイル中心を歩いている
         if( d === 8 ){ // 上に移動
-            if( y < intY && checkCollision( x, $gameMap.roundYWithDirection( y, d ), FLOOR1_PEG  )  ) return false;
+            if( y < intY ){
+                if( checkCollision( x, $gameMap.roundYWithDirection( y, d ), FLOOR1_PEG  )  ) return false;
+                if( checkCollision( x, $gameMap.roundYWithDirection( y, d ), FLOOR1_CHAIR  )  ) return false;
+            }
         }else if( d === 2 ){ // 下に移動
             if( intY <= y && checkCollision( x, y, FLOOR1_PEG ) ) return false;
+            if( y < intY && checkCollision( x, $gameMap.roundYWithDirection( y, d ), FLOOR1_CHAIR  )  ) return false;
         }
+    }
+    if( intY <= y){ // タイル中心を歩いている
+        if( d === 4 || d === 6 ){
+            if( x < intX && checkCollision( $gameMap.roundXWithDirection( x, d ), y, FLOOR1_CHAIR  )  ) return false;
+        }        
     }
     return _Game_CharacterBase_isMapPassable.call( this, x, y, d );
 
