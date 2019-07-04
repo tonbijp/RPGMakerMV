@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.6.1.0
+// Version :0.7.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -29,6 +29,7 @@
  * @desc ON(true) | Normal : OFF(false)
  * Counter becomes layered.
  * A2 counter tile can layered like billboard.
+ *  (HalfMove.js is needed)
  * @default true
  * 
  * @param BillboardPriority
