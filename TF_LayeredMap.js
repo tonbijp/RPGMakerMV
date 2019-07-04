@@ -111,8 +111,8 @@
  *      0x9 ・→←・ : 書き割り、全方向に 通行可、2階
  *      0xA ・→・↓ : 書き割り、全方向に 通行可、3階
  *      0xB ・→・・ : 未使用
- *      0xC ・・←↓ : 未使用
- *      0xD ・・←・ : 未使用
+ *      0xC ・・←↓ : 0x1と同じだが南半分が通行不可 （机などに）(HalfMove.js が必要)
+ *      0xD ・・←・ : 0xEと同じだが南半分が通行不可 （椅子とか）(HalfMove.js が必要)
  *      0xE ・・・↓ : 0x1と同じだが南半歩ズレ通行可 （杭などに）(HalfMove.js が必要)
  *      0xF ・・・・ : 未使用
  * 
@@ -135,15 +135,18 @@ let _useLayeredCounter = true;
 const FLAG_UPPER = 0x10; // 高層[☆]
 const FLAG_COUNTER = 0x80; // カウンター
 const FLAG_UPPER_COUNTER = 0x90;    // 高層[☆]とカウンター
-const FLAG_ALL_DIR = 0xF;  // 全方向の通行設定
-const FLAG_SOUTH_DIR = 0x01 // 南方向の通行設定
 const FLAG_NORTH_DIR = 0x08 // 北方向の通行設定
 const FLAG_WITHOUT_DIR_UPPER = 0xFFE0; // 方向と高層[☆]を除いたもの
 
 // 書割り設定
+const FLAG_ALL_DIR = 0xF;  // 通行設定
 const FLOOR2_BOARD = 0x9; // 09 書き割り、全方向に 通行可、2階
 const FLOOR3_BOARD = 0xA; // 10 書き割り、全方向に 通行可、3階
-const FLOOR1_PEG = 0xE; // 14 杭
+
+const FLAG_UPPER_DIR = 0x1F;  // 高層[☆]と通行設定
+const FLOOR1_TABLE = 0x1C; // 12 机
+const FLOOR1_CHAIR = 0x1D; // 13 椅子
+const FLOOR1_PEG = 0x1E; // 14 杭
 
 const AUTOTILE_BLOCK = 48; // オートタイル1ブロック分のパターン数
 
@@ -595,33 +598,38 @@ Scene_Map.prototype.onMapLoaded = function( ){
  */
 const _Game_CharacterBase_isMapPassable = Game_CharacterBase.prototype.isMapPassable;
 Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
-    if( this.x === parseInt( this.x ) ){
-        // キャラクタx座標が整数(のところしか杭はない)
-        if( d === 8 ){
-            // 上に移動
-            if( this.y !== parseInt( this.y ) ){
-                if( checkPeg( this.x, $gameMap.roundYWithDirection( this.y, d )  ) ) return false;
-            }
-         }else if( d === 2 ){
-            // 下に移動
-            if( this.y === parseInt( this.y ) ){
-                if( checkPeg( this.x, this.y ) ) return false;
-            }
+    const intX = parseInt( x + 0.5 );
+    const intY = parseInt( y + 0.5 );
+    
+    // 杭・椅子・机用の判定
+    /*
+    次に、椅子の判定を行う
+        console.log( `x, y = ${x}, ${y}  intXY = ${intX}, ${intY}  d : ${d}`);
+    */
+    if( intX <= x ){ // タイル中心を歩いている
+        if( d === 8 ){ // 上に移動
+            if( y < intY && checkCollision( x, $gameMap.roundYWithDirection( y, d ), FLOOR1_PEG  )  ) return false;
+        }else if( d === 2 ){ // 下に移動
+            if( intY <= y && checkCollision( x, y, FLOOR1_PEG ) ) return false;
         }
     }
     return _Game_CharacterBase_isMapPassable.call( this, x, y, d );
+
+//FLOOR1_TABLE = 0xC; // 14 机
+
 
     /**
      * 指定位置に杭設定があるか
      * @param {Number} x タイル数
      * @param {Number} y タイル数
+     * @param {Number} collisionType 調べるタイルのflag(高層[☆]と通行)
      * @returns {Boolean} 
      */
-    function checkPeg( x, y ){
+    function checkCollision( x, y, collisionType ){
         const flags = $gameMap.tilesetFlags();
         const tiles = $gameMap.allTiles( x, y );
         for ( let i = 0; i < tiles.length; i++ ){
-            if(  ( flags[ tiles[ i ] ] & FLAG_ALL_DIR ) === FLOOR1_PEG ) return true;
+            if( ( flags[ tiles[ i ] ] & FLAG_UPPER_DIR ) === collisionType ) return true;
         }
         return false;
     }
