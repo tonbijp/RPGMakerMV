@@ -31,6 +31,15 @@
  * A2 counter tile can layered like billboard.
  * @default true
  * 
+ * @param BillboardPriority
+ * @type select
+ * @option Put it front
+ * @value front
+ * @option Put it back
+ * @value back
+ * @desc Put billboard in front or back.
+ * @default back
+ * 
  * 
  * @help
  * Change tile behavior by use no effect option at default.
@@ -90,6 +99,16 @@
  * (HalfMove.js が必要)
  * @default true
  * 
+ * @param BillboardPriority
+ * @type select
+ * @option 手前
+ * @value front
+ * @option 奥(デフォルト)
+ * @value back
+ * @text 奥行き優先度
+ * @desc  書き割りの奥・手前配置の設定
+ * @default back
+ * 
  * @help 
  * RPGツクールMVで未使用の設定で、タイルの重なりが変化します。
  * 
@@ -132,7 +151,9 @@ let _defaultLowerTileId = 16;
 const USE_LAYERED_COUNTER = 'UseLayeredCounter';
 let _useLayeredCounter = true;
 
-// TODO : 書き割りのレイヤー設定
+const BILLBOARD_PRIORITY = 'BillboardPriority';
+let _BillboardPriority = -Infinity;
+
 
 // flag用定数
 const FLAG_NORTH_DIR = 0x08 // 北の通行設定
@@ -171,6 +192,10 @@ _defaultLowerTileId += Tilemap.TILE_ID_A5;
 
 if( pluginParams[ USE_LAYERED_COUNTER ] ){
     _useLayeredCounter = ( pluginParams[ USE_LAYERED_COUNTER ].toLowerCase() === 'true' );
+}
+
+if( pluginParams[ BILLBOARD_PRIORITY ] ){
+    _BillboardPriority = ( pluginParams[ BILLBOARD_PRIORITY ].toLowerCase() === 'front' ) ? Infinity : -Infinity;
 }
 
 
@@ -226,7 +251,7 @@ ShaderTilemap.prototype._createLayers = function(){
 
     for( let i = 0; i < tileRows; i++ ){
         const billboard = new PIXI.tilemap.ZLayer( this, 3 );
-        billboard.spriteId = Infinity;
+        billboard.spriteId = _BillboardPriority;
         this.addChild( billboard );
         this.TF_billboards.push( billboard );
         const layer = new PIXI.tilemap.CompositeRectTileLayer( 0, [], 0 );
