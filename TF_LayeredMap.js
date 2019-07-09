@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.7.0.0
+// Version :0.7.0.1
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -46,14 +46,10 @@
  * Change tile behavior by use no effect option at default.
  * 
  * 1. Set [counter]option for A3・A4 tile.
- *      [○] Behavior like[☆]
+ *      [○] Behavior like[☆]   ※
  *      [×] Hide only upper tile.
  * 
- * ※1 A3, A4 wall tile set by theory below.
- * Next lower tile(in display) has...
- *      ・If downer side is edge and upper side is continuous, floor 2.
- *      ・If downer and upper both sides are continuous, floor 3.
- * Otherwise, the priority floor.(up:edge + down:continuous = 3, up:continuous + down:continuous = 2 )
+ * ※ A3, A4 wall tile floor height set automaticaly.
  * 
  * 2. set [☆] to BCDE tile, and set 4 direction setting.
  *      0x0 ↑→←↓ : [☆]  Same as no plugin.
@@ -234,17 +230,18 @@ ShaderTilemap.prototype.refreshTileset = function(){
    }
 }
 
+
 /**
- * 書き割りレイヤーの生成と追加
+ * 書き割りレイヤーの生成と追加。
  */
 const _ShaderTilemap_createLayers = ShaderTilemap.prototype._createLayers;
 ShaderTilemap.prototype._createLayers = function(){
-    _ShaderTilemap_createLayers.call(this);
+    _ShaderTilemap_createLayers.call( this );
 
     // 書き割り風オブジェクトを生成
     // +3 はスクロールの際にはみ出す部分と2・3階用
     const th = this._tileHeight;
-    const tileRows = Math.ceil(this._height / th) + 3;
+    const tileRows = Math.ceil( this._height / th ) + 3;
 
     if( !this.hasOwnProperty( 'TF_billboards' ) ){
         this.TF_billboards = [];
@@ -264,7 +261,7 @@ ShaderTilemap.prototype._createLayers = function(){
  * 描画前に書き割りの中を空にしておく。
  */
 const _ShaderTilemap_paintAllTiles = ShaderTilemap.prototype._paintAllTiles;
-ShaderTilemap.prototype._paintAllTiles = function(startX, startY){
+ShaderTilemap.prototype._paintAllTiles = function( startX, startY ){
     for( let curItem of this.TF_billboards ){
         curItem.clear();
     }
@@ -312,7 +309,7 @@ ShaderTilemap.prototype._paintTiles = function( startX, startY, x, y ){
         let priorityFloor;
         if( ( this.flags[ tileId ] & FLAG_UPPER_DIR ) === FLOOR2_BOARD ){
             priorityFloor = 2;
-        }else if(( this.flags[ tileId ] & FLAG_UPPER_DIR ) === FLOOR3_BOARD ){
+        }else if( ( this.flags[ tileId ] & FLAG_UPPER_DIR ) === FLOOR3_BOARD ){
             priorityFloor = 3;
         }else{
             priorityFloor = 1;
@@ -465,9 +462,10 @@ const WALL_SIDE_PASS = [
 
 /**
  * 読み込み直後に、タイルセットデータを書き換える
+ * @param {Object} object 読み込んだデータ
  */
 const _DataManager_onLoad = DataManager.onLoad;
-DataManager.onLoad = function(object ){
+DataManager.onLoad = function( object ){
     _DataManager_onLoad.call( this, object );
 
     if( object === $dataTilesets ) treatDataTilesets();
@@ -527,15 +525,15 @@ DataManager.onLoad = function(object ){
     
     //  屋根の通行設定
     function roof2UpperLayer( flags, tileId ){
-        if(  flags[ tileId + 15 ] & FLAG_ALL_DIR  ){
+        if( flags[ tileId + 15 ] & FLAG_ALL_DIR ){
             // [×] : 上端を高層表示[☆]、適宜通行不可[・]
             for( let i=0; i < 16; i++ ){
-                flags[ tileId + i  ] = flags[ tileId + i ] & FLAG_WITHOUT_DIR_UPPER | ROOF_PASS_EDGE[ i ];
+                flags[ tileId + i ] = flags[ tileId + i ] & FLAG_WITHOUT_DIR_UPPER | ROOF_PASS_EDGE[ i ];
             }
         }else{
             // [○] : 全体を高層表示[☆]かつ通行可
             for( let i=0; i < 16; i++ ){
-                flags[ tileId + i  ] = flags[ tileId + i ] & FLAG_WITHOUT_DIR_UPPER | FLAG_UPPER;
+                flags[ tileId + i ] = flags[ tileId + i ] & FLAG_WITHOUT_DIR_UPPER | FLAG_UPPER;
             }
         }
     }
@@ -544,12 +542,12 @@ DataManager.onLoad = function(object ){
         if(  flags[ tileId + 46 ] & FLAG_ALL_DIR  ){
             // [×] : 上端を高層表示[☆]、適宜通行不可[・]
             for( let i=0; i < 47; i++ ){
-                flags[ tileId + i  ] = flags[ tileId + i ] & FLAG_WITHOUT_DIR_UPPER | WALL_TOP_PASS_EDGE[ i ];
+                flags[ tileId + i ] = flags[ tileId + i ] & FLAG_WITHOUT_DIR_UPPER | WALL_TOP_PASS_EDGE[ i ];
             }
         }else{
             // [○] : 全体を高層表示[☆]かつ通行可
             for( let i=0; i < 47; i++ ){
-                flags[ tileId + i  ] = flags[ tileId + i ] & FLAG_WITHOUT_DIR_UPPER | FLAG_UPPER;
+                flags[ tileId + i ] = flags[ tileId + i ] & FLAG_WITHOUT_DIR_UPPER | FLAG_UPPER;
             }
         }
     }
@@ -558,12 +556,12 @@ DataManager.onLoad = function(object ){
         if(  flags[ tileId + 15 ] & FLAG_ALL_DIR  ){
             // [×] : 上端を高層表示[☆]、適宜通行不可[・]
             for( let i=0; i < 16; i++ ){
-                flags[ tileId + i  ] = flags[ tileId + i ] & FLAG_WITHOUT_DIR_UPPER | WALL_SIDE_PASS_EDGE[ i ];
+                flags[ tileId + i ] = flags[ tileId + i ] & FLAG_WITHOUT_DIR_UPPER | WALL_SIDE_PASS_EDGE[ i ];
             }
         }else{
             // [○] : 全体を高層表示[☆]かつ通行可(一番下のみ通行不可)
             for( let i=0; i < 16; i++ ){
-                flags[ tileId + i  ] = flags[ tileId + i ] & FLAG_WITHOUT_DIR_UPPER | WALL_SIDE_PASS[ i ];
+                flags[ tileId + i ] = flags[ tileId + i ] & FLAG_WITHOUT_DIR_UPPER | WALL_SIDE_PASS[ i ];
             }
         }
     }
@@ -590,7 +588,7 @@ Scene_Map.prototype.onMapLoaded = function( ){
             for( let x = 0; x < $dataMap.width; x++ ){
                 const tileId = getMapData( x, y, 0 );
 
-                if( !( ( Tilemap.isTileA3( tileId ) || Tilemap.isTileA4( tileId ) ) && isUpperCounter( flags[ tileId ]) ) ) continue;
+                if( !( ( Tilemap.isTileA3( tileId ) || Tilemap.isTileA4( tileId ) ) && isUpperCounter( flags[ tileId ] ) ) ) continue;
                 // A3・A4のカウンター設定かつ高層[☆]なら、タイルを補完
                 setMapData( x, y, 1, tileId );
 
@@ -634,49 +632,49 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
     const intY = parseInt( y + 0.5 );
 
     // FLOOR1_N_FULL
-    if( d === 8 ||  d === 2 ){
+    if( d === 8 || d === 2 ){
         if(  intY <= y ){
-             if( checkCollision( x, $gameMap.roundYWithDirection( y + 0.5, d ), FLOOR1_N_FULL  )  ) return false;
+             if( checkCollision( x, $gameMap.roundYWithDirection( y + 0.5, d ), FLOOR1_N_FULL ) ) return false;
              if( 0.5 <= x % 1 ){ // キャラが西位置の場合に一つ東のタイルをチェック
-                if( checkCollision( $gameMap.roundX( x + 1 ), $gameMap.roundYWithDirection( y + 0.5, d ), FLOOR1_N_FULL  ) ) return false;
+                if( checkCollision( $gameMap.roundX( x + 1 ), $gameMap.roundYWithDirection( y + 0.5, d ), FLOOR1_N_FULL ) ) return false;
              }
         }
     }else if( d === 4 ){
-        if( y < intY && checkCollision( $gameMap.roundXWithDirection( x, d ), y + 0.5, FLOOR1_N_FULL  )  ) return false;
+        if( y < intY && checkCollision( $gameMap.roundXWithDirection( x, d ), y + 0.5, FLOOR1_N_FULL ) ) return false;
     }else if( d === 6 ){
-        if( y < intY && checkCollision( $gameMap.roundXWithDirection( x + 0.5, d ), y + 0.5, FLOOR1_N_FULL  )  ) return false;
+        if( y < intY && checkCollision( $gameMap.roundXWithDirection( x + 0.5, d ), y + 0.5, FLOOR1_N_FULL ) ) return false;
     }
     //FLOOR1_S_FULL
-    if( d === 8 ||  d === 2 ){
+    if( d === 8 || d === 2 ){
         if(  y < intY ){
-             if( checkCollision( x, $gameMap.roundYWithDirection( y, d ), FLOOR1_S_FULL  )  ) return false;
+             if( checkCollision( x, $gameMap.roundYWithDirection( y, d ), FLOOR1_S_FULL ) ) return false;
              if( 0.5 <= x % 1 ){ // キャラが西位置の場合に一つ東のタイルをチェック
-                if( checkCollision( $gameMap.roundX( x + 1 ), $gameMap.roundYWithDirection( y, d ), FLOOR1_S_FULL  ) ) return false;
+                if( checkCollision( $gameMap.roundX( x + 1 ), $gameMap.roundYWithDirection( y, d ), FLOOR1_S_FULL ) ) return false;
              }
         }
     }else if( d === 4 ){
-        if( intY <= y && checkCollision( $gameMap.roundXWithDirection( x, d ), y, FLOOR1_S_FULL  )  ) return false;
+        if( intY <= y && checkCollision( $gameMap.roundXWithDirection( x, d ), y, FLOOR1_S_FULL ) ) return false;
     }else if( d === 6 ){
-        if( intY <= y && checkCollision( $gameMap.roundXWithDirection( x + 0.5, d ), y, FLOOR1_S_FULL  )  ) return false;
+        if( intY <= y && checkCollision( $gameMap.roundXWithDirection( x + 0.5, d ), y, FLOOR1_S_FULL ) ) return false;
     }
 
     // FLOOR1_N_HALF
-    if( d === 8 ||  d === 2 ){
-        if( intX <= x && intY <= y && checkCollision( x, $gameMap.roundYWithDirection( y + 0.5, d ), FLOOR1_N_HALF  )  ) return false;
+    if( d === 8 || d === 2 ){
+        if( intX <= x && intY <= y && checkCollision( x, $gameMap.roundYWithDirection( y + 0.5, d ), FLOOR1_N_HALF ) ) return false;
     }else if( d === 4 || d === 6 ){
-        if( x < intX && y < intY && checkCollision( $gameMap.roundXWithDirection( x, d ), y + 0.5, FLOOR1_N_HALF  )  ) return false;
+        if( x < intX && y < intY && checkCollision( $gameMap.roundXWithDirection( x, d ), y + 0.5, FLOOR1_N_HALF ) ) return false;
     }
     // FLOOR1_S_HALF
-    if( d === 8 ||  d === 2 ){
-        if( intX <= x && y < intY && checkCollision( x, $gameMap.roundYWithDirection( y, d ), FLOOR1_S_HALF  )  ) return false;
+    if( d === 8 || d === 2 ){
+        if( intX <= x && y < intY && checkCollision( x, $gameMap.roundYWithDirection( y, d ), FLOOR1_S_HALF ) ) return false;
     }else if( d === 4 || d === 6 ){
-        if( x < intX && intY <= y && checkCollision( $gameMap.roundXWithDirection( x, d ), y, FLOOR1_S_HALF  )  ) return false;
+        if( x < intX && intY <= y && checkCollision( $gameMap.roundXWithDirection( x, d ), y, FLOOR1_S_HALF ) ) return false;
     }
 
     // FLOOR1_S_FLAT
     if( d === 8 ){
-        if( intX <= x && y < intY && checkCollision( x, $gameMap.roundYWithDirection( y, d ), FLOOR1_S_FLAT  )  ) return false;
-    }else if( d === 2){
+        if( intX <= x && y < intY && checkCollision( x, $gameMap.roundYWithDirection( y, d ), FLOOR1_S_FLAT ) ) return false;
+    }else if( d === 2 ){
         if( intX <= x && intY <= y && checkCollision( x, y, FLOOR1_S_FLAT ) ) return false;
     }
 
@@ -723,7 +721,7 @@ Game_Map.prototype.checkPassage = function( x, y, bit ){
 
         // 上通行不可[・]は特殊設定用のビットに使う
         // そのため通行判定として無視
-        if( flag & FLAG_NORTH_DIR  ) continue;
+        if( flag & FLAG_NORTH_DIR ) continue;
 
         // 高層[☆]の通行不可[・]設定は
         // 他の重なったタイルによらず通行不可
