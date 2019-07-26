@@ -160,15 +160,15 @@ const FLAG_UPPER_COUNTER = 0x90; // 高層[☆]とカウンター用マスク
 const FLAG_WITHOUT_DIR_UPPER = 0xFFE0; // 方向と高層[☆]を除いたもの用マスク
 
 // 書割り設定
-const FLAG_ALL_DIR = 0xF; // 通行設定用マスク
+const MASK_ALL_DIR = 0xF; // 通行設定用マスク
 const FLOOR2_BOARD = 0x19; // 09 書き割り、全方向に 通行可、2階
 const FLOOR3_BOARD = 0x1A; // 10 書き割り、全方向に 通行可、3階
 
-const FLAG_UPPER_DIR = 0x1F; // 高層[☆]と通行設定用マスク
+const MASK_UPPER_DIR = 0x1F; // 高層[☆]と通行設定用マスク
 const FLOOR1_N_FULL = 0x1B; // 11 棚
 const FLOOR1_S_FULL = 0x1C; // 12 机
-const FLOOR1_N_HALF = 0x1D; // 13 椅子
-const FLOOR1_S_HALF = 0x1E; // 14 椅子
+const FLOOR1_N_HALF = 0x1D; // 13 椅子(北)
+const FLOOR1_S_HALF = 0x1E; // 14 椅子(南)
 const FLOOR1_S_FLAT = 0x1F; // 15 杭
 
 const AUTOTILE_BLOCK = 48; // オートタイル1ブロック分のパターン数
@@ -298,8 +298,8 @@ ShaderTilemap.prototype._paintTiles = function( startX, startY, x, y ){
      */
     const drawTile = ( tileId ) => {
         if ( !this._isHigherTile( tileId )
-        || ( this.flags[ tileId ] & FLAG_UPPER_DIR ) === FLOOR1_N_FULL
-        || ( this.flags[ tileId ] & FLAG_UPPER_DIR ) === FLOOR1_N_HALF ){
+        || ( this.flags[ tileId ] & MASK_UPPER_DIR ) === FLOOR1_N_FULL
+        || ( this.flags[ tileId ] & MASK_UPPER_DIR ) === FLOOR1_N_HALF ){
             // 高層タイルではない
             this._drawTile( lowerLayer, tileId, dx, dy );
             return;
@@ -307,9 +307,9 @@ ShaderTilemap.prototype._paintTiles = function( startX, startY, x, y ){
         
         // 優先階(priorityFloor)を設定
         let priorityFloor;
-        if( ( this.flags[ tileId ] & FLAG_UPPER_DIR ) === FLOOR2_BOARD ){
+        if( ( this.flags[ tileId ] & MASK_UPPER_DIR ) === FLOOR2_BOARD ){
             priorityFloor = 2;
-        }else if( ( this.flags[ tileId ] & FLAG_UPPER_DIR ) === FLOOR3_BOARD ){
+        }else if( ( this.flags[ tileId ] & MASK_UPPER_DIR ) === FLOOR3_BOARD ){
             priorityFloor = 3;
         }else{
             priorityFloor = 1;
@@ -340,7 +340,7 @@ ShaderTilemap.prototype._paintTiles = function( startX, startY, x, y ){
             // 3階設定は、ふたつ下の書き割りに書き込む
             this._drawTile( this.TF_billboards[ y + 2 ].children[ 0 ].children[ 0 ], tileId, dx, -this._tileHeight * 3 );
 
-        }else if( this.flags[ tileId ] & FLAG_ALL_DIR ){
+        }else if( this.flags[ tileId ] & MASK_ALL_DIR ){
             // 通行不可設定のどれかがONだと書き割り
             this._drawTile( this.TF_billboards[ y ].children[ 0 ].children[ 0 ], tileId, dx, -this._tileHeight );
 
@@ -525,7 +525,7 @@ DataManager.onLoad = function( object ){
     
     //  屋根の通行設定
     function roof2UpperLayer( flags, tileId ){
-        if( flags[ tileId + 15 ] & FLAG_ALL_DIR ){
+        if( flags[ tileId + 15 ] & MASK_ALL_DIR ){
             // [×] : 上端を高層表示[☆]、適宜通行不可[・]
             for( let i=0; i < 16; i++ ){
                 flags[ tileId + i ] = flags[ tileId + i ] & FLAG_WITHOUT_DIR_UPPER | ROOF_PASS_EDGE[ i ];
@@ -539,7 +539,7 @@ DataManager.onLoad = function( object ){
     }
     //  壁(上面)の通行設定
     function wallTop2UpperLayer( flags, tileId ){
-        if(  flags[ tileId + 46 ] & FLAG_ALL_DIR  ){
+        if(  flags[ tileId + 46 ] & MASK_ALL_DIR  ){
             // [×] : 上端を高層表示[☆]、適宜通行不可[・]
             for( let i=0; i < 47; i++ ){
                 flags[ tileId + i ] = flags[ tileId + i ] & FLAG_WITHOUT_DIR_UPPER | WALL_TOP_PASS_EDGE[ i ];
@@ -553,7 +553,7 @@ DataManager.onLoad = function( object ){
     }
     //  壁(側面)の通行設定
     function wallSide2UpperLayer( flags, tileId ){
-        if(  flags[ tileId + 15 ] & FLAG_ALL_DIR  ){
+        if(  flags[ tileId + 15 ] & MASK_ALL_DIR  ){
             // [×] : 上端を高層表示[☆]、適宜通行不可[・]
             for( let i=0; i < 16; i++ ){
                 flags[ tileId + i ] = flags[ tileId + i ] & FLAG_WITHOUT_DIR_UPPER | WALL_SIDE_PASS_EDGE[ i ];
@@ -693,7 +693,7 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
         const tiles = $gameMap.allTiles( parseInt( x ), parseInt( y ) );
         
         for ( let i = 0; i < tiles.length; i++ ){
-            if( ( flags[ tiles[ i ] ] & FLAG_UPPER_DIR ) === collisionType ) return true;
+            if( ( flags[ tiles[ i ] ] & MASK_UPPER_DIR ) === collisionType ) return true;
         }
         return false;
     }
