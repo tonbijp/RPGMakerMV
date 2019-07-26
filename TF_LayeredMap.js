@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.7.0.1
+// Version :0.7.0.2
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -215,9 +215,9 @@ Game_Interpreter.prototype.pluginCommand = function ( command, args ){
  * タイルセットの画像を設定する。
  * マップ開始時に呼ばれる。
  */
-const _ShaderTilemaprefreshTileset = ShaderTilemap.prototype.refreshTileset;
+const _ShaderTilemap_refreshTileset = ShaderTilemap.prototype.refreshTileset;
 ShaderTilemap.prototype.refreshTileset = function(){
-    _ShaderTilemaprefreshTileset.call( this );
+    _ShaderTilemap_refreshTileset.call( this );
 
     // BitmapをPIXI.Textureにコンバート
     const bitmaps = this.bitmaps.map( function( x ){
