@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :0.0.0.1
+// Version :0.0.0.2
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -124,6 +124,17 @@ Game_CharacterBase.prototype.screenY = function() {
 const _Game_CharacterBase_updateMove = Game_CharacterBase.prototype.updateMove;
 Game_CharacterBase.prototype.updateMove = function() {
     const preRealX = this._realX;
+    if( this._realX != this.x && this.chaseCharacter === undefined ){
+        //移動中
+        const undulationType = checkUndulationType( Math.floor( this._realX + 0.5 ), Math.floor( this._realY + 0.5 ) );
+        if( undulationType !== -1 ){
+            const ratioXY = ( this.x < preRealX )? FLAG2RATIOL[ undulationType ] : FLAG2RATIOR[ undulationType ];
+            if( ratioXY ){
+                this._realX += this.distancePerFrame() * ratioXY[ 0 ];
+                this._realY += this.distancePerFrame() * ratioXY[ 1 ];
+            }
+        }
+    }
     _Game_CharacterBase_updateMove.call( this );
     if( preRealX === this.x ) return; // 止まってる
     if( this.chaseCharacter ) return; // follower
@@ -131,86 +142,39 @@ Game_CharacterBase.prototype.updateMove = function() {
     const undulationType = checkUndulationType( Math.floor( this._realX + 0.5 ), Math.floor( this._realY + 0.5 ) );
     if( undulationType === -1 ) return;
 
-    const shiftArrivalPos = ( dY )=>{
-        this._y = $gameMap.roundY( this._y + dY );
-        this._realY = this._y - dY;
-    }
-    if( this._realX === this.x ){ 
-        // 停止した場合の処理
-        // 坂でタイルの境であった場合
-        // TODO:坂の中腹と頂上だとY軸をずらす　向きを考慮する
+    if( this._realX === this.x ){
+        // 停止
         if( this.x < preRealX ){
-            return;
             // 左向き
-            if( getTileX( this._realX ) !== 0 ) return;
-            const x = Math.floor( this._realX + 0.5 ); 
-            const y = Math.floor( this._realY + 0.5 );
-            const undulationTypeL = checkUndulationType( $gameMap.roundX( x - 1 ), y );
-            const undulationTypeR = checkUndulationType( x, y );
-            if( undulationTypeR === FLAG_NL45 ){
-                this._realY = this._y = $gameMap.roundY( y - 1 );
-                if( this._characterName === '$Masha' ) console.log( `this._realX:${this._realY}  ` );
-            }
         }else{
-            const undulationType = checkUndulationType( this.x, this.y );
             //右向き
-
         }
 
     }else if( ( preRealX * 2 ) === Math.floor( preRealX * 2 ) ){
         //動き始め
-        if( this.x < preRealX ){
-            // 左向き
-            switch( undulationType ){
-                case FLAG_NL45:
-                    shiftArrivalPos( -0.5 );
-                    break;
-                case FLAG_NR45:
-                    shiftArrivalPos( 0.5 );
-                    break;
-            }
-        }else{
-            // 右向き
-            switch( undulationType ){
-                case FLAG_NL45:
-                    shiftArrivalPos( 0.5 );
-                    break;
-                case FLAG_NR45:
-                    shiftArrivalPos( -0.5 );
-                    break;
-            }
-        }
-        //if( this._characterName === '$Masha' ) console.log( `preRealX:${preRealX}` );
-
-    }else{
-        //動作中
-        console.log(this.distancePerFrame() * 0.4);
-        if( this.x < preRealX ){
-            // 左向き
-            switch( undulationType ){
-                case FLAG_NL45:
-                        this._realY = Math.max(this._realY - this.distancePerFrame() * 0.4, this._y);
-                        this._realX += this.distancePerFrame() * 0.6;
-                    break;
-                case FLAG_NR45:
-                    this._realY = Math.min(this._realY + this.distancePerFrame()* 0.4, this._y);
-                    this._realX += this.distancePerFrame() * 0.6;
-                    break;
-            }
-        }else{
-            switch( undulationType ){
-                case FLAG_NL45:
-                    this._realY = Math.min(this._realY + this.distancePerFrame()* 0.4, this._y);
-                    this._realX -= this.distancePerFrame() * 0.6;
-                    break;
-                case FLAG_NR45:
-                    this._realY = Math.max(this._realY - this.distancePerFrame()* 0.4, this._y);
-                    this._realX -= this.distancePerFrame() * 0.6;
-                    break;
-            }
+        const dY = ( this.x < preRealX )? FLAG2POSL[ undulationType ] : FLAG2POSR[ undulationType ];
+        if( dY ){
+            this._y = $gameMap.roundY( this._y + dY );
+            this._realY = this._y - dY;
         }
     }
 }
+
+// 移動速度の調整比率
+const FLAG2RATIOL = {};//左向き
+FLAG2RATIOL[ FLAG_NL45 ] = [ 0.2, 0.2 ]; // ↖︎
+FLAG2RATIOL[ FLAG_NR45 ] = [ 0.2, -0.2 ]; // ↙︎
+const FLAG2RATIOR = {};//右向き
+FLAG2RATIOR[ FLAG_NL45 ] = [ -0.2, -0.2 ]; // ↘︎
+FLAG2RATIOR[ FLAG_NR45 ] = [ -0.2, 0.2 ]; // ↗︎
+
+// 到達点の位置
+const FLAG2POSL= {};//左向き
+FLAG2POSL[ FLAG_NL45 ] = -0.5;
+FLAG2POSL[ FLAG_NR45 ] = 0.5;
+const FLAG2POSR= {};//右向き
+FLAG2POSR[ FLAG_NL45 ] = 0.5;
+FLAG2POSR[ FLAG_NR45 ] = -0.5;
 
 /**
  * 縦にずらすピクセル数を返す
@@ -226,29 +190,25 @@ Game_CharacterBase.prototype.shiftY = function(){
     if( -1 === undulationTypeL && -1 === undulationTypeR ) return shiftY;
 
     /**
-     * 高さ指定フラグに応じた高さを返す
-     * @param {Number} undulationType 高さ指定フラグ
-     * @returns {Number} 高さ(ピクセル)
+     * 段差指定フラグに応じた段差を返す
+     * @param {Number} undulationType 段差指定フラグ
+     * @returns {Number} 段差(ピクセル)
      */
     const getUndulation = ( undulationType )=>{
-        switch( undulationType ){
-        case -1:
-            return 0;
-        case FLAG_BUMP1:
-            return 8;
-        case FLAG_BUMP2:
-            return 16;
-        case FLAG_BUMP3:
-            return 24;
-        default:
-            return 0;
-        }
+        if( undulationType === -1 ) return 0;
+        const bump = FLAG2BUMP[ undulationType ];
+        if( bump ) return bump;
+        return 0;
     }
 
     const dYR = getUndulation( undulationTypeR );
     const dYL = getUndulation( undulationTypeL );
     return shiftY + Math.max( dYL, dYR);
 }
+const FLAG2BUMP= {}; // 段差
+FLAG2BUMP[ FLAG_BUMP1 ] = 8;
+FLAG2BUMP[ FLAG_BUMP2 ] = 16;
+FLAG2BUMP[ FLAG_BUMP3 ] = 24;
 
 /**
  * 指定位置に高低差flagがあれば返す
