@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :0.0.1.0
+// Version :0.0.2.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -38,28 +38,20 @@
  *      63°勾配 →↑↑横1:縦2(デフォルト : 0)
  * 
  * 2. A5BCDEタイルに地形番号(デフォルト : 1)を指定したあと、通行設定(4方向)
- * ↑■■■ : 北へ移動可
- * ■■■↓ : 南へ移動可
- * ↑■■↓ : 全体が階段(南北移動可)
- * ・■■・ : 全体が階段(南北移動不可)
- * ■・←■ : 東側が高い(／)
- * ■→・■ : 西側が高い(＼)
- * ■→←■ :頂上?
- * ■・・■ :谷?
  *      0x0 ↑→←↓ : 高さレベル1(規定値:8px)
  *      0x1 ↑→←・ : 高さレベル2(規定値:16px)
- *      0x2 ↑→・↓ : ＼ 63°
+ *      0x2 ↑→・↓ : \ 63°
  *      0x3 ↑→・・ : ＼ 45°
- *      0x4 ↑・←↓ : ／ 63°
+ *      0x4 ↑・←↓ : / 63°
  *      0x5 ↑・←・ : ／ 45°
  *      0x6 ↑・・↓ : 高さレベル3(規定値:24px)
  *      0x7 ↑・・・ : 未設定
  *      0x8 ・→←↓ : 未設定
  *      0x9 ・→←・ : 未設定
  *      0xA ・→・↓ : 未設定
- *      0xB ・→・・ : \  27°
+ *      0xB ・→・・ :  ＼ 27°
  *      0xC ・・←↓ : 未設定
- *      0xD ・・←・ : / 27°
+ *      0xD ・・←・ : ／ 27°
  *      0xE ・・・↓ : 未設定
  *      0xF ・・・・ : 未設定
  * 
@@ -69,22 +61,11 @@
 const PLUGIN_NAME = 'TF_Undulation';
 const TERRAIN_TAG = 'TerrainTag45';
 
-//坂の角度
 /*
-奥・手前と27には左側・右側、63には下側・上側が必要。
-…多すぎる。
-まずは45だけ作るか?
-TF_LayeredMapと組み合わせられるようにするか?
-63上側は二階とするか
-影はどうする?
-ベッドやなんかは?
-方向の指定で左右方向を
+まずは45だけ作る
 
 地形タグ+方向設定で16バリエーションが出せる。
 茂み・梯子・カウンターを加えればさらに複雑な設定が可能。
-マップ作るとき面倒だけどリージョンIDで代替できるようにしておくか?
-
-処理的には、飛行船やジャンプに似てるからその辺の処理の応用でできる?
 */
 
 
@@ -161,7 +142,11 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
  */
 const _Game_CharacterBase_updateMove = Game_CharacterBase.prototype.updateMove;
 Game_CharacterBase.prototype.updateMove = function() {
-    if( this.chaseCharacter ) return; // followerは除外
+    if( this.chaseCharacter ) {
+        // followerは除外
+        _Game_CharacterBase_updateMove.call( this );
+        return;
+    }
 
     const preRealX = this._realX;
     if( this._realX != this.x ){
