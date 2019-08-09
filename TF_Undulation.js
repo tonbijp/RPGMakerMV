@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :0.0.0.2
+// Version :0.0.1.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -48,18 +48,18 @@
  * ■・・■ :谷?
  *      0x0 ↑→←↓ : 高さレベル1(規定値:8px)
  *      0x1 ↑→←・ : 高さレベル2(規定値:16px)
- *      0x2 ↑→・↓ : 全面＼
- *      0x3 ↑→・・ : 北側＼
- *      0x4 ↑・←↓ : 全面／
- *      0x5 ↑・←・ : 北側／
+ *      0x2 ↑→・↓ : ＼ 63°
+ *      0x3 ↑→・・ : ＼ 45°
+ *      0x4 ↑・←↓ : ／ 63°
+ *      0x5 ↑・←・ : ／ 45°
  *      0x6 ↑・・↓ : 高さレベル3(規定値:24px)
  *      0x7 ↑・・・ : 未設定
  *      0x8 ・→←↓ : 未設定
  *      0x9 ・→←・ : 未設定
- *      0xA ・→・↓ : 南側＼
- *      0xB ・→・・ : 南北＼
- *      0xC ・・←↓ : 南側／
- *      0xD ・・←・ : 南北／
+ *      0xA ・→・↓ : 未設定
+ *      0xB ・→・・ : \  27°
+ *      0xC ・・←↓ : 未設定
+ *      0xD ・・←・ : / 27°
  *      0xE ・・・↓ : 未設定
  *      0xF ・・・・ : 未設定
  * 
@@ -100,35 +100,75 @@ if( pluginParams[ TERRAIN_TAG ] ){
     _TerrainTag = parseInt( pluginParams[ TERRAIN_TAG ], 10 );
 } 
 
-// SNは南北、LRは左右上がり
+// Wは西(左)上がり…＼ 　Eは東(右)上がり…／
 const MASK_UNDULATION = 0x001F; // 地形タグ、高層[☆]、通行設定を取り出すマスク
 const FLAG_BUMP1 = 0x0;
 const FLAG_BUMP2 = 0x1;
 const FLAG_BUMP3 = 0x6;
-const FLAG_NL45 = 0x2;
-const FLAG_NR45 = 0x4;
+const FLAG_W45 = 0x3;
+const FLAG_E45 = 0x5;
 
 
 /*---- Game_CharacterBase ----*/
+/**
+ * 指定方向への移動が可能か
+ * キャラクタ半分の位置が関係するものは、ここで判定。
+ * @param {Number} x タイル数
+ * @param {Number} y タイル数
+ * @param {Number} d 向き(テンキー対応)
+ * @returns {Boolean} 移動可能か
+ */
+const _Game_CharacterBase_isMapPassable = Game_CharacterBase.prototype.isMapPassable;
+Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
+    return _Game_CharacterBase_isMapPassable.call( this, x, y, d );
+    const intX = Math.floor( x + 0.5 );
+    const intY = Math.floor( y + 0.5 );
+    const tileX = ( this._realX + 0.5 ) - intX;
+    const undulationType = getUndulationType( intX, intY );
 
-Game_CharacterBase.prototype.screenY = function() {
-    var th = $gameMap.tileHeight();
-    const shiftY = this.shiftY();
-    //if( this._characterName === '$Masha')console.log(`_realX: ${this._realX} shiftY: ${shiftY}`);
-    return Math.round(this.scrolledY() * th + th - shiftY - this.jumpHeight());
-};
+    // FLAG_W45,  FLAG_E45
+    if( d === 2 ){
+        if( y === intY ){
+            if( FLAG2POS_W[ undulationType ] ) return false;
+            if( tileX === 0 ){
+                //if( FLAG2POS_W[ getUndulationType( $gameMap.roundX( intX -1 ), intY ) ] ) return false;
+            }
+        } else if( x === intX ){
+            if( FLAG2POS_W[ undulationType ] ) return false;
+        }
+    }else if( d === 4 ){
+        if( getUndulationType( x , intY) === FLAG_E45
+        && getUndulationType( x, $gameMap.roundY( y + 1 ) ) !== FLAG_E45
+        && undulationType !== FLAG_W45 ) return false;
+    }else if( d === 6 ){
+        if( getUndulationType( $gameMap.roundX( x + 0.5 ), intY ) === FLAG_W45
+        && getUndulationType( $gameMap.roundX( x + 0.5 ), $gameMap.roundY( y + 1 ) ) !== FLAG_W45
+        && undulationType !== FLAG_E45 ) return false;
+    }else if( d === 8 ){
+        if( FLAG2POS_W[ undulationType ] === undefined
+        && FLAG2POS_W[ getUndulationType( intX,  y ) ] ) return false;
+        if( tileX === 0 ){
+            if( FLAG2POS_W[ getUndulationType( $gameMap.roundX( x - 0.5 ), intY ) ] === undefined
+            && FLAG2POS_W[ getUndulationType( $gameMap.roundX( x - 0.5 ), y ) ] ) return false;
+        }
+    }
+
+    return _Game_CharacterBase_isMapPassable.call( this, x, y, d );
+}
 
 /**
  * 移動から停止・停止から移動に切り替わったタイミングを調べる。
  */
 const _Game_CharacterBase_updateMove = Game_CharacterBase.prototype.updateMove;
 Game_CharacterBase.prototype.updateMove = function() {
+    if( this.chaseCharacter ) return; // followerは除外
+
     const preRealX = this._realX;
-    if( this._realX != this.x && this.chaseCharacter === undefined ){
+    if( this._realX != this.x ){
         //移動中
-        const undulationType = checkUndulationType( Math.floor( this._realX + 0.5 ), Math.floor( this._realY + 0.5 ) );
+        const undulationType = getUndulationType( Math.floor( this._realX + 0.5 ), Math.floor( this._realY + 0.5 ) );
         if( undulationType !== -1 ){
-            const ratioXY = ( this.x < preRealX )? FLAG2RATIOL[ undulationType ] : FLAG2RATIOR[ undulationType ];
+            const ratioXY = ( this.x < preRealX )? FLAG2RATIO_W[ undulationType ] : FLAG2RATIO_E[ undulationType ];
             if( ratioXY ){
                 this._realX += this.distancePerFrame() * ratioXY[ 0 ];
                 this._realY += this.distancePerFrame() * ratioXY[ 1 ];
@@ -136,23 +176,14 @@ Game_CharacterBase.prototype.updateMove = function() {
         }
     }
     _Game_CharacterBase_updateMove.call( this );
-    if( preRealX === this.x ) return; // 止まってる
-    if( this.chaseCharacter ) return; // follower
+    if( preRealX === this.x || this._realX === this.x ) return;
  
-    const undulationType = checkUndulationType( Math.floor( this._realX + 0.5 ), Math.floor( this._realY + 0.5 ) );
+    const undulationType = getUndulationType( Math.floor( this._realX + 0.5 ), Math.floor( this._realY + 0.5 ) );
     if( undulationType === -1 ) return;
 
-    if( this._realX === this.x ){
-        // 停止
-        if( this.x < preRealX ){
-            // 左向き
-        }else{
-            //右向き
-        }
-
-    }else if( ( preRealX * 2 ) === Math.floor( preRealX * 2 ) ){
+    if( ( preRealX * 2 ) === Math.floor( preRealX * 2 ) ){
         //動き始め
-        const dY = ( this.x < preRealX )? FLAG2POSL[ undulationType ] : FLAG2POSR[ undulationType ];
+        const dY = ( this.x < preRealX )? FLAG2POS_W[ undulationType ] : FLAG2POS_E[ undulationType ];
         if( dY ){
             this._y = $gameMap.roundY( this._y + dY );
             this._realY = this._y - dY;
@@ -160,21 +191,21 @@ Game_CharacterBase.prototype.updateMove = function() {
     }
 }
 
-// 移動速度の調整比率
-const FLAG2RATIOL = {};//左向き
-FLAG2RATIOL[ FLAG_NL45 ] = [ 0.2, 0.2 ]; // ↖︎
-FLAG2RATIOL[ FLAG_NR45 ] = [ 0.2, -0.2 ]; // ↙︎
-const FLAG2RATIOR = {};//右向き
-FLAG2RATIOR[ FLAG_NL45 ] = [ -0.2, -0.2 ]; // ↘︎
-FLAG2RATIOR[ FLAG_NR45 ] = [ -0.2, 0.2 ]; // ↗︎
+// フラグから移動速度の調整比率を得る
+const FLAG2RATIO_W = {}; // 西(左)向き←
+FLAG2RATIO_W[ FLAG_W45 ] = [ 0.2, 0.2 ]; // ↖︎
+FLAG2RATIO_W[ FLAG_E45 ] = [ 0.2, -0.2 ]; // ↙︎
+const FLAG2RATIO_E = {}; // 東(右)向き→
+FLAG2RATIO_E[ FLAG_W45 ] = [ -0.2, -0.2 ]; // ↘︎
+FLAG2RATIO_E[ FLAG_E45 ] = [ -0.2, 0.2 ]; // ↗︎
 
-// 到達点の位置
-const FLAG2POSL= {};//左向き
-FLAG2POSL[ FLAG_NL45 ] = -0.5;
-FLAG2POSL[ FLAG_NR45 ] = 0.5;
-const FLAG2POSR= {};//右向き
-FLAG2POSR[ FLAG_NL45 ] = 0.5;
-FLAG2POSR[ FLAG_NR45 ] = -0.5;
+// フラグから階段(坂)の到達点の位置を得る
+const FLAG2POS_W= {}; // 西(左)向き←
+FLAG2POS_W[ FLAG_W45 ] = -0.5;
+FLAG2POS_W[ FLAG_E45 ] = 0.5;
+const FLAG2POS_E= {}; // 東(右)向き→
+FLAG2POS_E[ FLAG_W45 ] = 0.5;
+FLAG2POS_E[ FLAG_E45 ] = -0.5;
 
 /**
  * 縦にずらすピクセル数を返す
@@ -182,11 +213,11 @@ FLAG2POSR[ FLAG_NR45 ] = -0.5;
 const _Game_CharacterBase_shiftY = Game_CharacterBase.prototype.shiftY;
 Game_CharacterBase.prototype.shiftY = function(){
     const shiftY = _Game_CharacterBase_shiftY.call( this );
-    let tileX = getTileX( this._realX );
-    const x = Math.floor( this._realX + 0.5 );
-    const y = Math.floor( this._realY + 0.5 );
-    const undulationTypeL = ( tileX === 0 )? checkUndulationType( $gameMap.roundX( x - 1 ), y ) : -1;
-    const undulationTypeR = checkUndulationType( x, y );
+    let tileX = ( this._realX + 0.5 ) % 1;
+    const intX = Math.floor( this._realX + 0.5 );
+    const intY = Math.floor( this._realY + 0.5 );
+    const undulationTypeL = ( tileX === 0 )? getUndulationType( $gameMap.roundX( intX - 1 ), intY ) : -1;
+    const undulationTypeR = getUndulationType( intX, intY );
     if( -1 === undulationTypeL && -1 === undulationTypeR ) return shiftY;
 
     /**
@@ -194,18 +225,20 @@ Game_CharacterBase.prototype.shiftY = function(){
      * @param {Number} undulationType 段差指定フラグ
      * @returns {Number} 段差(ピクセル)
      */
-    const getUndulation = ( undulationType )=>{
+    const getBump = ( undulationType )=>{
         if( undulationType === -1 ) return 0;
         const bump = FLAG2BUMP[ undulationType ];
         if( bump ) return bump;
         return 0;
     }
 
-    const dYR = getUndulation( undulationTypeR );
-    const dYL = getUndulation( undulationTypeL );
+    const dYR = getBump( undulationTypeR );
+    const dYL = getBump( undulationTypeL );
     return shiftY + Math.max( dYL, dYR);
 }
-const FLAG2BUMP= {}; // 段差
+
+ // フラグから段差の量を得る
+const FLAG2BUMP= {};
 FLAG2BUMP[ FLAG_BUMP1 ] = 8;
 FLAG2BUMP[ FLAG_BUMP2 ] = 16;
 FLAG2BUMP[ FLAG_BUMP3 ] = 24;
@@ -217,24 +250,15 @@ FLAG2BUMP[ FLAG_BUMP3 ] = 24;
  * @param {Number} undulationType 調べるタイルのflag
  * @returns {Boolean} 見つかったflag、見つからない場合は-1
  */
-function checkUndulationType( x, y ){
+function getUndulationType( x, y ){
     const flags = $gameMap.tilesetFlags();
-    const tiles = $gameMap.allTiles( x, y );
+    const tiles = $gameMap.allTiles( Math.floor( x ), Math.floor( y ) );
     
     for ( let i = 0; i < tiles.length; i++ ){
         const flag = flags[ tiles[ i ] ];
         if ( ( flag  >> 12 ) === _TerrainTag ) return flag & MASK_UNDULATION;
     }    
     return -1;
-}
-
-/**
- * タイル幅での割合を表す0〜1(未満)の値を返す
- * @param {Number} realX 小数点以下を含むX座標(タイル数)
- * @return {Number} 0以上、1未満の数字
- */
-function getTileX( realX ){
-    return parseFloat( "0." + ( String( realX + 0.5 ) ).split( "." )[ 1 ] );
 }
 
 /*---- Game_Map ----*/
@@ -247,9 +271,14 @@ function getTileX( realX ){
  */
 const _Game_Map_checkPassage = Game_Map.prototype.checkPassage;
 Game_Map.prototype.checkPassage = function( x, y, bit ){
+    if( this.terrainTag( x, y ) !== _TerrainTag ) return  _Game_Map_checkPassage.call( this, x, y, bit );
 
-    // 高低差判定がある場合、通常の判定は無視
-    if( this.terrainTag( x, y ) === _TerrainTag ) return true;
+    const undulationType = getUndulationType( x, y );
+    // 高低差判定がある場合は全方向通行可
+    if( FLAG2BUMP[ undulationType ] ) return true;
+
+    // 下が同じタイルで繋がっている場合は全方向通行可
+    if( undulationType === getUndulationType( x, $gameMap.roundY( y + 1 ) ) ) return true;
 
     return _Game_Map_checkPassage.call( this, x, y, bit );
 };
