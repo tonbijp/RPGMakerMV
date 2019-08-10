@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :0.0.2.1
+// Version :0.0.2.2
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -244,15 +244,15 @@ function getUndulationType( x, y ){
 
 /*---- Game_Map ----*/
 /**
- * 指定位置の指定フラグビットが通行可か。
+ * 指定位置の指定方向が通行可か。
  * @param {Number} x タイル数
  * @param {Number} y タイル数
- * @param {Number} bit {@link RPG.Tileset}の flagsチェック用ビット
+ * @param {Number} d
  * @returns {Boolean} 
  */
-const _Game_Map_checkPassage = Game_Map.prototype.checkPassage;
-Game_Map.prototype.checkPassage = function( x, y, bit ){
-    if( this.terrainTag( x, y ) !== _TerrainTag ) return  _Game_Map_checkPassage.call( this, x, y, bit );
+const _Game_Map_isPassable = Game_Map.prototype.isPassable;
+Game_Map.prototype.isPassable = function( x, y, d ){
+    if( this.terrainTag( x, y ) !== _TerrainTag ) return  _Game_Map_isPassable.call( this, x, y, d );
 
     const undulationType = getUndulationType( x, y );
     // 高低差判定がある場合は全方向通行可
@@ -261,7 +261,7 @@ Game_Map.prototype.checkPassage = function( x, y, bit ){
     // 下が同じタイルで繋がっている場合は全方向通行可
     if( undulationType === getUndulationType( x, $gameMap.roundY( y + 1 ) ) ) return true;
 
-    return _Game_Map_checkPassage.call( this, x, y, bit );
+    return _Game_Map_isPassable.call( this, x, y, d );
 };
 
 })();
