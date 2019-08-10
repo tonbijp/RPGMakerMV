@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :0.0.2.2
+// Version :0.0.3.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -97,11 +97,25 @@ const FLAG_E45 = 0x5;
  */
 const _Game_CharacterBase_isMapPassable = Game_CharacterBase.prototype.isMapPassable;
 Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
-    return _Game_CharacterBase_isMapPassable.call( this, x, y, d );
     const intX = Math.floor( x + 0.5 );
     const intY = Math.floor( y + 0.5 );
     const tileX = ( this._realX + 0.5 ) - intX;
     const undulationType = getUndulationType( intX, intY );
+
+    // FLAG_W45,  FLAG_E45
+    // タイルの中央( x === n.0, y === n.5 )にいる場合
+    if( x === intX && y !== intY ){
+        if( ( d === 4 && undulationType === FLAG_W45 )
+        || ( d === 6 && undulationType === FLAG_E45 ) ) return true;
+
+        if( d === 2 ){
+            // 下が同じタイルで繋がってない
+            if( undulationType !== getUndulationType( intX, $gameMap.roundY( intY + 1 ) )
+            && ( undulationType === FLAG_W45 || undulationType === FLAG_E45 ) ) return false;
+        }
+    }
+
+    return _Game_CharacterBase_isMapPassable.apply( this, arguments );
 
     // FLAG_W45,  FLAG_E45
     if( d === 2 ){
@@ -130,7 +144,7 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
         }
     }
 
-    return _Game_CharacterBase_isMapPassable.call( this, x, y, d );
+    return _Game_CharacterBase_isMapPassable.apply( this, arguments );
 }
 
 /**
@@ -138,15 +152,13 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
  */
 const _Game_CharacterBase_updateMove = Game_CharacterBase.prototype.updateMove;
 Game_CharacterBase.prototype.updateMove = function() {
-    if( this.chaseCharacter ) {
-        // followerは除外
+    if( this.chaseCharacter ) { // followerは除外
         _Game_CharacterBase_updateMove.call( this );
         return;
     }
 
     const preRealX = this._realX;
-    if( this._realX != this.x ){
-        //移動中
+    if( this._realX != this.x ){ //移動中
         const undulationType = getUndulationType( Math.floor( this._realX + 0.5 ), Math.floor( this._realY + 0.5 ) );
         if( undulationType !== -1 ){
             const ratioXY = ( this.x < preRealX )? FLAG2RATIO_W[ undulationType ] : FLAG2RATIO_E[ undulationType ];
@@ -252,7 +264,7 @@ function getUndulationType( x, y ){
  */
 const _Game_Map_isPassable = Game_Map.prototype.isPassable;
 Game_Map.prototype.isPassable = function( x, y, d ){
-    if( this.terrainTag( x, y ) !== _TerrainTag ) return  _Game_Map_isPassable.call( this, x, y, d );
+    if( this.terrainTag( x, y ) !== _TerrainTag ) return  _Game_Map_isPassable.apply( this, arguments );
 
     const undulationType = getUndulationType( x, y );
     // 高低差判定がある場合は全方向通行可
@@ -261,7 +273,7 @@ Game_Map.prototype.isPassable = function( x, y, d ){
     // 下が同じタイルで繋がっている場合は全方向通行可
     if( undulationType === getUndulationType( x, $gameMap.roundY( y + 1 ) ) ) return true;
 
-    return _Game_Map_isPassable.call( this, x, y, d );
+    return _Game_Map_isPassable.apply( this, arguments );
 };
 
 })();
