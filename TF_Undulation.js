@@ -279,12 +279,12 @@ FLAG2BUMP[ FLAG_BUMP3 ] = 24;
  */
 var _Game_Player_executeMove = Game_Player.prototype.executeMove;
 Game_Player.prototype.executeMove = function( d ) {
-    const targetX =  (( d - 1 ) % 3 === 0) ? $gameMap.roundX( this.x - 0.5 ) : this.x ;
+    const tmpD = [ 0, 4, 2, 6, 4, 5, 6, 4, 8, 6 ][ d ];
+    const targetX =  ( tmpD === 6 ) ? $gameMap.roundX( this.x + 0.5 ) : this.x ;
     const undulationType = getUndulationType( targetX , this.y + 0.5 );
 
-    if( FLAG2RATIO_W[undulationType] ){
-        d = [ 0, 4, 2, 6, 4, 5, 6, 4, 8, 6 ][ d ];
-        this.moveStraight( d );
+    if( FLAG2RATIO_W[ undulationType ] ){
+        this.moveStraight( tmpD );
     }else{
         _Game_Player_executeMove.apply( this, arguments );
     }
