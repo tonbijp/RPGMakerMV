@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :0.0.3.0
+// Version :0.0.4.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -25,13 +25,12 @@
  * @default 1
  * 
  * 
- * 
  * @help
- * 地形番号と通行設定(4方向)の組み合わせで坂を指定します。
+ * 地形タグと通行設定(4方向)の組み合わせで坂を指定します。
  * 左右(←・→)に入力しておくだけで、自動で上下方向にも移動します。
  * 坂道や階段の上り下りの操作を自然にします。
  * 
- * 1. A5BCDEタイルに地形番号(デフォルト : 1)を指定
+ * 1. A5BCDEタイルに地形タグ(デフォルト : 1)を指定
  * 
  * 2. 通行設定(4方向)によって、詳細設定
  *      0x0 ↑→←↓ : 高さレベル1(規定値:8px)
@@ -101,46 +100,63 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
     const intY = Math.floor( y + 0.5 );
     const tileX = ( this._realX + 0.5 ) - intX;
     const undulationType = getUndulationType( intX, intY );
+    const isSameVerticalTile = ( dy )=>{
+        return undulationType === getUndulationType( intX, $gameMap.roundY( intY + dy ) );
+    };
 
-    // FLAG_W45,  FLAG_E45
-    // タイルの中央( x === n.0, y === n.5 )にいる場合
-    if( x === intX && y !== intY ){
-        if( ( d === 4 && undulationType === FLAG_W45 )
-        || ( d === 6 && undulationType === FLAG_E45 ) ) return true;
+    // FLAG_W45
+    if( undulationType === FLAG_W45 ){
+        if( x === intX ){    // x が 0 の区切り
+            if( y === intY ){   // y が 0 の区切り
+                if( d === 2 ){
+                    if( isSameVerticalTile( 1 ) ) return true;
+                }else if( d === 8 ){
+                    if( !isSameVerticalTile( -1 ) ) return false;
+                }
+            }else{   // y が 0.5 の区切り
+                if( d === 2 ){
+                    if( !isSameVerticalTile( 1 ) || !isSameVerticalTile( -1 ) ) return false;
+                }else if( d === 8 ){
+                    if( isSameVerticalTile( -1 ) ) return true;
+                }else if( d === 4 ){
+                    if( isSameVerticalTile( -1 ) ) return true;
+                }
+            }
 
-        if( d === 2 ){
-            // 下が同じタイルで繋がってない
-            if( undulationType !== getUndulationType( intX, $gameMap.roundY( intY + 1 ) )
-            && ( undulationType === FLAG_W45 || undulationType === FLAG_E45 ) ) return false;
+        }else{   // x が 0.5 の区切り
+            if( y === intY ){   // y が 0 の区切り
+                if( d === 2 ){
+                    if( !isSameVerticalTile( -1 ) ) return false;
+                }
+            }
         }
     }
 
-    return _Game_CharacterBase_isMapPassable.apply( this, arguments );
-
-    // FLAG_W45,  FLAG_E45
-    if( d === 2 ){
-        if( y === intY ){
-            if( FLAG2POS_W[ undulationType ] ) return false;
-            if( tileX === 0 ){
-                //if( FLAG2POS_W[ getUndulationType( $gameMap.roundX( intX -1 ), intY ) ] ) return false;
+    // FLAG_E45
+    if( undulationType === FLAG_E45 ){
+        if( x === intX ){    // x が 0 の区切り
+            if( y === intY ){   // y が 0 の区切り
+                if( d === 2 ){
+                    if( isSameVerticalTile( 1 ) ) return true;
+                }else if( d === 8 ){
+                    if( !isSameVerticalTile( -1 ) ) return false;
+                }
+            }else{   // y が 0.5 の区切り
+                if( d === 2 ){
+                    if( !isSameVerticalTile( 1 ) || !isSameVerticalTile( -1 ) ) return false;
+                }else if( d === 8 ){
+                    if( isSameVerticalTile( -1 ) ) return true;
+                }else if( d === 6 ){
+                    if( isSameVerticalTile( -1 ) ) return true;
+                }
             }
-        } else if( x === intX ){
-            if( FLAG2POS_W[ undulationType ] ) return false;
-        }
-    }else if( d === 4 ){
-        if( getUndulationType( x , intY) === FLAG_E45
-        && getUndulationType( x, $gameMap.roundY( y + 1 ) ) !== FLAG_E45
-        && undulationType !== FLAG_W45 ) return false;
-    }else if( d === 6 ){
-        if( getUndulationType( $gameMap.roundX( x + 0.5 ), intY ) === FLAG_W45
-        && getUndulationType( $gameMap.roundX( x + 0.5 ), $gameMap.roundY( y + 1 ) ) !== FLAG_W45
-        && undulationType !== FLAG_E45 ) return false;
-    }else if( d === 8 ){
-        if( FLAG2POS_W[ undulationType ] === undefined
-        && FLAG2POS_W[ getUndulationType( intX,  y ) ] ) return false;
-        if( tileX === 0 ){
-            if( FLAG2POS_W[ getUndulationType( $gameMap.roundX( x - 0.5 ), intY ) ] === undefined
-            && FLAG2POS_W[ getUndulationType( $gameMap.roundX( x - 0.5 ), y ) ] ) return false;
+
+        }else{   // x が 0.5 の区切り
+            if( y === intY ){   // y が 0 の区切り
+                if( d === 2 ){
+                    if( !isSameVerticalTile( -1 ) ) return false;
+                }
+            }
         }
     }
 
@@ -227,7 +243,7 @@ Game_CharacterBase.prototype.shiftY = function(){
 
     const dYR = getBump( undulationTypeR );
     const dYL = getBump( undulationTypeL );
-    return shiftY + Math.max( dYL, dYR);
+    return shiftY + Math.max( dYL, dYR );
 }
 
  // フラグから段差の量を得る
@@ -236,6 +252,55 @@ FLAG2BUMP[ FLAG_BUMP1 ] = 8;
 FLAG2BUMP[ FLAG_BUMP2 ] = 16;
 FLAG2BUMP[ FLAG_BUMP3 ] = 24;
 
+/*---- Game_Player ----*/
+/**
+ * 階段の上の場合、4方向移動に固定
+ * @param {Number} d 向き(テンキー対応)
+ */
+var _Game_Player_executeMove = Game_Player.prototype.executeMove;
+Game_Player.prototype.executeMove = function( d ) {
+    const targetX =  (( d - 1 ) % 3 === 0) ? $gameMap.roundX( this.x - 0.5 ) : this.x ;
+    const undulationType = getUndulationType( targetX , this.y + 0.5 );
+
+    if( FLAG2RATIO_W[undulationType] ){
+        d = [ 0, 4, 2, 6, 4, 5, 6, 4, 8, 6 ][ d ];
+        this.moveStraight( d );
+    }else{
+        _Game_Player_executeMove.apply( this, arguments );
+    }
+}
+
+/*---- Game_Map ----*/
+/**
+ * 指定位置の指定方向が通行可か。
+ * @param {Number} x タイル数
+ * @param {Number} y タイル数
+ * @param {Number} d 向き(テンキー対応)
+ * @returns {Boolean} 
+ */
+const _Game_Map_isPassable = Game_Map.prototype.isPassable;
+Game_Map.prototype.isPassable = function( x, y, d ){
+    if( this.terrainTag( x, y ) !== _TerrainTag ) return  _Game_Map_isPassable.apply( this, arguments );
+
+    const undulationType = getUndulationType( x, y );
+    // 高低差判定がある場合は全方向通行可
+    if( FLAG2BUMP[ undulationType ] ) return true;
+
+    // 上が別のタイルの場合は上の通過不可
+    //if( d === 8 && undulationType !== getUndulationType( intX, $gameMap.roundY( intY - 1 ) ) ) return false;
+
+    // 下が同じタイルで繋がっている場合は通行可
+    if( d === 4 ){
+        if( undulationType === FLAG_W45 && undulationType === getUndulationType( x, $gameMap.roundY( y + 1 ) ) ) return true;
+    }else if( d === 6 ){
+        if( undulationType === FLAG_E45 && undulationType === getUndulationType( x, $gameMap.roundY( y + 1 ) ) ) return true;
+    }
+    return _Game_Map_isPassable.apply( this, arguments );
+};
+
+
+
+/*---- ユーティリティ関数 ----*/
 /**
  * 指定位置に高低差flagがあれば返す
  * @param {Number} x タイル数
@@ -253,27 +318,4 @@ function getUndulationType( x, y ){
     }    
     return -1;
 }
-
-/*---- Game_Map ----*/
-/**
- * 指定位置の指定方向が通行可か。
- * @param {Number} x タイル数
- * @param {Number} y タイル数
- * @param {Number} d
- * @returns {Boolean} 
- */
-const _Game_Map_isPassable = Game_Map.prototype.isPassable;
-Game_Map.prototype.isPassable = function( x, y, d ){
-    if( this.terrainTag( x, y ) !== _TerrainTag ) return  _Game_Map_isPassable.apply( this, arguments );
-
-    const undulationType = getUndulationType( x, y );
-    // 高低差判定がある場合は全方向通行可
-    if( FLAG2BUMP[ undulationType ] ) return true;
-
-    // 下が同じタイルで繋がっている場合は全方向通行可
-    if( undulationType === getUndulationType( x, $gameMap.roundY( y + 1 ) ) ) return true;
-
-    return _Game_Map_isPassable.apply( this, arguments );
-};
-
 })();
