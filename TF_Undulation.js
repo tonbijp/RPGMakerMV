@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :0.0.4.0
+// Version :0.0.5.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -104,57 +104,77 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
         return undulationType === getUndulationType( intX, $gameMap.roundY( intY + dy ) );
     };
 
-    // FLAG_W45
-    if( undulationType === FLAG_W45 ){
-        if( x === intX ){    // x が 0 の区切り
-            if( y === intY ){   // y が 0 の区切り
-                if( d === 2 ){
-                    if( isSameVerticalTile( 1 ) ) return true;
-                }else if( d === 8 ){
-                    if( !isSameVerticalTile( -1 ) ) return false;
-                }
-            }else{   // y が 0.5 の区切り
+    // FLAG_E45
+    if( undulationType === FLAG_E45 ){
+        if( x === intX ){    // x just
+            if( y === intY ){   // y just
+                if( d === 8 && !isSameVerticalTile( -1 ) ) return false;
+            }else{   // y half
                 if( d === 2 ){
                     if( !isSameVerticalTile( 1 ) || !isSameVerticalTile( -1 ) ) return false;
-                }else if( d === 8 ){
-                    if( isSameVerticalTile( -1 ) ) return true;
-                }else if( d === 4 ){
+                }else if( d === 8 ||  d === 6 ){
                     if( isSameVerticalTile( -1 ) ) return true;
                 }
             }
 
-        }else{   // x が 0.5 の区切り
-            if( y === intY ){   // y が 0 の区切り
+        }else{   // x half
+            if( y === intY ){   // y just
                 if( d === 2 ){
-                    if( !isSameVerticalTile( -1 ) ) return false;
+                    return isSameVerticalTile( -1 ) && isSameVerticalTile( 1 );
+                }
+            }else{
+                if( d === 8 ){
+                    if( isSameVerticalTile( -1 ) ){
+                        return ( isSameVerticalTile( - 2 ) );
+                    }
                 }
             }
         }
     }
+    // FLAG_E45 北東の処理
+    if( d === 8 && x !== intX ){
+        const leftUndulationType = getUndulationType( $gameMap.roundY( intX - 1 ), intY );
+        if( leftUndulationType === FLAG_E45 
+        && leftUndulationType !== getUndulationType( $gameMap.roundY( intX - 1 ), $gameMap.roundY( intY - 1 ) ) ){
+            if( leftUndulationType ===  getUndulationType( $gameMap.roundY( intX - 1 ), $gameMap.roundY( intY + 1 ) )  ){
+                if( y !== intY ) return false;
+            }else{
+                if(  y === intY ) return false;
+            }
+        }
+    }
 
-    // FLAG_E45
-    if( undulationType === FLAG_E45 ){
-        if( x === intX ){    // x が 0 の区切り
-            if( y === intY ){   // y が 0 の区切り
-                if( d === 2 ){
-                    if( isSameVerticalTile( 1 ) ) return true;
-                }else if( d === 8 ){
-                    if( !isSameVerticalTile( -1 ) ) return false;
-                }
-            }else{   // y が 0.5 の区切り
+
+    // FLAG_W45
+    if( undulationType === FLAG_W45 ){
+        if( x === intX ){    // x just
+            if( y === intY ){   // y just
+                if( d === 8 && !isSameVerticalTile( -1 ) ) return false;
+            }else{   // y half
                 if( d === 2 ){
                     if( !isSameVerticalTile( 1 ) || !isSameVerticalTile( -1 ) ) return false;
-                }else if( d === 8 ){
-                    if( isSameVerticalTile( -1 ) ) return true;
-                }else if( d === 6 ){
-                    if( isSameVerticalTile( -1 ) ) return true;
-                }
+                }else if( ( d === 8 || d === 4 ) && isSameVerticalTile( -1 ) ) return true;
             }
 
-        }else{   // x が 0.5 の区切り
-            if( y === intY ){   // y が 0 の区切り
-                if( d === 2 ){
-                    if( !isSameVerticalTile( -1 ) ) return false;
+        }else{   // x half
+            if( y === intY ){   // y just
+                if( d === 2 && isSameVerticalTile( 1 ) ) return  isSameVerticalTile( 2 );
+            }else if( d === 8 && !isSameVerticalTile( -1 ) ) return false;
+        }
+    }
+    if( x !== intX && y === intY && d === 2 && getUndulationType( intX, $gameMap.roundY( intY + 1 ) ) === FLAG_W45 ) return false;
+    // FLAG_W45 北東の処理
+    if( x !== intX ){
+        const leftUndulationType = getUndulationType( $gameMap.roundY( intX - 1 ), intY );
+        if( leftUndulationType === FLAG_W45 ){
+            if( d === 8 ){
+                if( leftUndulationType === getUndulationType( $gameMap.roundY( intX - 1 ), $gameMap.roundY( intY - 1 ) )
+                && leftUndulationType !== getUndulationType( $gameMap.roundY( intX - 1 ), $gameMap.roundY( intY - 2 ) )){
+                    if( y !== intY ) return false;
+                }
+            }else if( d === 2 ){
+                if( leftUndulationType !== getUndulationType( $gameMap.roundY( intX - 1 ), $gameMap.roundY( intY - 1 ) ) ){
+                    if( y === intY ) return false;
                 }
             }
         }
@@ -283,6 +303,9 @@ Game_Map.prototype.isPassable = function( x, y, d ){
     if( this.terrainTag( x, y ) !== _TerrainTag ) return  _Game_Map_isPassable.apply( this, arguments );
 
     const undulationType = getUndulationType( x, y );
+    const isSameVerticalTile = ( dy )=>{
+        return undulationType === getUndulationType( x, $gameMap.roundY( y + dy ) );
+    };
     // 高低差判定がある場合は全方向通行可
     if( FLAG2BUMP[ undulationType ] ) return true;
 
@@ -290,11 +313,15 @@ Game_Map.prototype.isPassable = function( x, y, d ){
     //if( d === 8 && undulationType !== getUndulationType( intX, $gameMap.roundY( intY - 1 ) ) ) return false;
 
     // 下が同じタイルで繋がっている場合は通行可
-    if( d === 4 ){
-        if( undulationType === FLAG_W45 && undulationType === getUndulationType( x, $gameMap.roundY( y + 1 ) ) ) return true;
-    }else if( d === 6 ){
-        if( undulationType === FLAG_E45 && undulationType === getUndulationType( x, $gameMap.roundY( y + 1 ) ) ) return true;
-    }
+    if( FLAG2RATIO_W[ undulationType ] && isSameVerticalTile( 1 ) ) return true;
+    // if( d === 4 ){
+    //     if( undulationType === FLAG_W45 && isSameVerticalTile(1) ) return true;
+    // }else if( d === 6 ){
+    //     if( undulationType === FLAG_E45 && isSameVerticalTile(1) ) return true;
+    // } else if( d === 2 || d === 8 ){
+    //     if( ( undulationType === FLAG_W45 || undulationType === FLAG_E45 ) && isSameVerticalTile(1) ) return true;
+    // }
+
     return _Game_Map_isPassable.apply( this, arguments );
 };
 
