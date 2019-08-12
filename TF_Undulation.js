@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :0.0.6.0
+// Version :0.2.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -128,140 +128,108 @@ const _Game_CharacterBase_isMapPassable = Game_CharacterBase.prototype.isMapPass
 Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
     const intX = Math.floor( x + 0.5 );
     const intY = Math.floor( y + 0.5 );
+    const isJustX = ( this._realX % 1 ) === 0;
+    const isJustY = ( this._realY % 1 ) === 0;
     const undulationType = getUndulationType( intX, intY );
     const isSameVerticalTile = ( dy )=>{
-        return undulationType === getUndulationType( intX, $gameMap.roundY( intY + dy ) );
+        return undulationType === getUndulationType( intX, intY + dy );
     };
 
     // FLAG_W63
     if( undulationType === FLAG_W63 ){
-        if( x === intX ){    // x just
-            if( y === intY ){   // y just
+        if( isJustX ){
+            if( isJustY ){
                 if( d === 2 && !isSameVerticalTile( 1 ) ) return false;
-            }else{   // y half
-                if( d === 2 || d === 4 ){
-                    if( !isSameVerticalTile( -1 ) ) return false;
-                }else if( d === 8 && isSameVerticalTile( -1 ) && !isSameVerticalTile( -2 ) ) return false;
-            }
+            }else if( d === 2 || d === 4 ){
+                if( !isSameVerticalTile( -1 ) ) return false;
+            }else if( d === 8 && isSameVerticalTile( -1 ) && !isSameVerticalTile( -2 ) ) return false;
             if( d === 4 ) return true;
-        }else if( y !== intY && d === 8 && !isSameVerticalTile( -1 ) ) return false;
-    }
-    if( x === intX ){    // x just
-        if( y !== intY && d === 8
-            && getUndulationType( intX, $gameMap.roundY( intY - 1 ) ) === FLAG_W63
+        }else if( !isJustY && d === 8 && !isSameVerticalTile( -1 ) ) return false;
+    }else if( isJustX ){
+        if( !isJustY && d === 8
+            && getUndulationType( intX, intY - 1 ) === FLAG_W63
             && !isSameVerticalTile( -1 )
         ) return false;
-    }else if( y === intY ){   // y just
+    }else if( isJustY ){
         if( d === 4 ){
-            const wUndulationType = getUndulationType( $gameMap.roundX( intX - 1 ),  intY );
-            if( wUndulationType === FLAG_W63 
-                && wUndulationType !== getUndulationType( $gameMap.roundX( intX - 1 ),  $gameMap.roundY( intY - 1 ) )
+            if( getUndulationType( intX - 1,  intY ) === FLAG_W63 
+                && getUndulationType( intX - 1,  intY - 1 ) !== FLAG_W63
             ) return false;
-        }else if( d === 2 ){
-            const sUndulationType = getUndulationType( intX, $gameMap.roundY( intY + 1 ) );
-            if( sUndulationType === FLAG_W63 && !isSameVerticalTile( 1 ) ) return false;
-        }
+        }else if( d === 2 && getUndulationType( intX, intY + 1 ) === FLAG_W63 && !isSameVerticalTile( 1 ) ) return false;
     }
 
     // FLAG_E63
     if( undulationType === FLAG_E63 ){
-        if( x === intX ){    // x just
-            if( y === intY ){   // y just
+        if( isJustX ){
+            if( isJustY ){
                 if( d === 2 && !isSameVerticalTile( 1 ) ) return false;
-            }else{   // y half
-                if( d === 2 || d === 6 ){
-                    if( !isSameVerticalTile( -1 ) ) return false;
-                }else if( d === 8 && isSameVerticalTile( -1 ) && !isSameVerticalTile( -2 ) ) return false;
-            }
+            }else if( d === 2 || d === 6 ){
+                if( !isSameVerticalTile( -1 ) ) return false;
+            }else if( d === 8 && isSameVerticalTile( -1 ) && !isSameVerticalTile( -2 ) ) return false;
             if( d === 6 ) return true;
-        }else if( y === intY && d === 6 && !isSameVerticalTile( -1 ) ) return false;
-    }
-    if( x === intX ){    // x just
-        if( y !== intY && d === 8
-            && getUndulationType( intX, $gameMap.roundY( intY - 1 ) ) === FLAG_E63
+        }else if( isJustY && d === 6 && !isSameVerticalTile( -1 ) ) return false;
+    }else if( isJustX ){
+        if( !isJustY && d === 8
+            && getUndulationType( intX, intY - 1 ) === FLAG_E63
             && !isSameVerticalTile( -1 )
         ) return false;
-    }else if( y === intY ){   // y just
-        if( d === 2 ){
-            const sUndulationType = getUndulationType( $gameMap.roundX( intX - 1 ), $gameMap.roundY( intY + 1 ) );
-            if( sUndulationType === FLAG_E63
-                && sUndulationType !== getUndulationType( $gameMap.roundX( intX - 1 ), intY )
-            ) return false;
+    }
+    if( isJustY ){
+        if( d === 2 
+            && getUndulationType( intX - 1, intY + 1 ) === FLAG_E63
+            && getUndulationType( intX - 1, intY ) !== FLAG_E63
+        ) return false;
+    }else if( d === 8 ){
+        if( getUndulationType( intX - 1, intY ) === FLAG_E63 ){
+            if( getUndulationType( intX - 1, intY - 1 ) !== FLAG_E63 ) return false;
+        }else if( getUndulationType( intX - 1, intY - 1 ) === FLAG_E63 ){
+            return false;
         }
-    }else if( d === 8
-        && getUndulationType( $gameMap.roundX( intX - 1 ), intY ) !== getUndulationType( $gameMap.roundX( intX - 1 ), $gameMap.roundY( intY - 1 ) )
-    ) return false;
+    }
 
 
     // FLAG_W45
     if( undulationType === FLAG_W45 ){
-        if( x === intX ){    // x just
-            if( y === intY ){   // y just
+        if( isJustX ){
+            if( isJustY ){
                 if( d === 8 && !isSameVerticalTile( -1 ) ) return false;
-            }else{   // y half
-                if( d === 2 ){
-                    if( !isSameVerticalTile( 1 ) || !isSameVerticalTile( -1 ) ) return false;
-                }else if( ( d === 8 || d === 4 ) && isSameVerticalTile( -1 ) ) return true;
-            }
-        }else{   // x half
-            if( y === intY ){   // y just
-                if( d === 2 && isSameVerticalTile( 1 ) ) return  isSameVerticalTile( 2 );
-            }else if( d === 8 && !isSameVerticalTile( -1 ) ) return false;
-        }
-    }
-    if( x !== intX && y === intY && d === 2 && getUndulationType( intX, $gameMap.roundY( intY + 1 ) ) === FLAG_W45 ) return false;
-    // FLAG_W45 北東の処理
-    if( x !== intX ){
-        const wUndulationType = getUndulationType( $gameMap.roundY( intX - 1 ), intY );
-        if( wUndulationType === FLAG_W45 ){
-            if( d === 8 ){
-                if( wUndulationType === getUndulationType( $gameMap.roundY( intX - 1 ), $gameMap.roundY( intY - 1 ) )
-                && wUndulationType !== getUndulationType( $gameMap.roundY( intX - 1 ), $gameMap.roundY( intY - 2 ) )){
-                    if( y !== intY ) return false;
-                }
             }else if( d === 2 ){
-                if( wUndulationType !== getUndulationType( $gameMap.roundY( intX - 1 ), $gameMap.roundY( intY - 1 ) ) ){
-                    if( y === intY ) return false;
-                }
-            }
+                if( !isSameVerticalTile( 1 ) || !isSameVerticalTile( -1 ) ) return false;
+            }else if( ( d === 8 || d === 4 ) && isSameVerticalTile( -1 ) ) return true;
+        }else if( isJustY ){
+            if( d === 2 && isSameVerticalTile( 1 ) ) return  isSameVerticalTile( 2 );
+        }else if( d === 8 && !isSameVerticalTile( -1 ) ) return false;
+    }else if( !isJustX && isJustY && d === 2 && getUndulationType( intX, intY + 1 ) === FLAG_W45 ){
+         return false;
+    }else if( !isJustX ){
+        if( getUndulationType( intX - 1, intY ) === FLAG_W45 ){
+            if( d === 8 ){
+                if( !isJustY
+                    && getUndulationType( intX - 1, intY - 1 ) === FLAG_W45
+                    && getUndulationType( intX - 1, intY - 2 ) !== FLAG_W45
+                ) return false;
+            }else if( d === 2 && isJustY && getUndulationType( intX - 1, intY - 1 ) !== FLAG_W45 ) return false;
         }
     }
 
     // FLAG_E45
     if( undulationType === FLAG_E45 ){
-        if( x === intX ){    // x just
-            if( y === intY ){   // y just
+        if( isJustX ){
+            if( isJustY ){
                 if( d === 8 && !isSameVerticalTile( -1 ) ) return false;
-            }else{   // y half
-                if( d === 2 ){
-                    if( !isSameVerticalTile( 1 ) || !isSameVerticalTile( -1 ) ) return false;
-                }else if( d === 8 ||  d === 6 ){
-                    if( isSameVerticalTile( -1 ) ) return true;
-                }
-            }
-        }else{   // x half
-            if( y === intY ){   // y just
-                if( d === 2 ){
-                    return isSameVerticalTile( -1 ) && isSameVerticalTile( 1 );
-                }
+            }else if( d === 2 ){
+                if( !isSameVerticalTile( 1 ) || !isSameVerticalTile( -1 ) ) return false;
+            }else if( ( d === 8 ||  d === 6 ) && isSameVerticalTile( -1 ) ) return true;
+        }else if( isJustY ){
+            if( d === 2 ) return isSameVerticalTile( -1 ) && isSameVerticalTile( 1 );
+        }else if( d === 8 && isSameVerticalTile( -1 ) ) return ( isSameVerticalTile( - 2 ) );
+    }else if( d === 8 && !isJustX ){
+        if( getUndulationType( intX - 1, intY ) === FLAG_E45 
+        && getUndulationType( intX - 1, intY - 1 ) !== FLAG_E45 ){
+            if( getUndulationType( intX - 1, intY + 1 ) === FLAG_E45 ){
+                if( !isJustY ) return false;
             }else{
-                if( d === 8 ){
-                    if( isSameVerticalTile( -1 ) ){
-                        return ( isSameVerticalTile( - 2 ) );
-                    }
-                }
-            }
-        }
-    }
-    // FLAG_E45 北東の処理
-    if( d === 8 && x !== intX ){
-        const wUndulationType = getUndulationType( $gameMap.roundY( intX - 1 ), intY );
-        if( wUndulationType === FLAG_E45 
-        && wUndulationType !== getUndulationType( $gameMap.roundY( intX - 1 ), $gameMap.roundY( intY - 1 ) ) ){
-            if( wUndulationType ===  getUndulationType( $gameMap.roundY( intX - 1 ), $gameMap.roundY( intY + 1 ) )  ){
-                if( y !== intY ) return false;
-            }else{
-                if(  y === intY ) return false;
+                if(  isJustY ) return false;
             }
         }
     }
@@ -339,7 +307,7 @@ Game_CharacterBase.prototype.shiftY = function(){
     let tileX = ( this._realX + 0.5 ) % 1;
     const intX = Math.floor( this._realX + 0.5 );
     const intY = Math.floor( this._realY + 0.5 );
-    const undulationTypeL = ( tileX === 0 )? getUndulationType( $gameMap.roundX( intX - 1 ), intY ) : -1;
+    const undulationTypeL = ( tileX === 0 )? getUndulationType( intX - 1, intY ) : -1;
     const undulationTypeR = getUndulationType( intX, intY );
     if( -1 === undulationTypeL && -1 === undulationTypeR ) return shiftY;
 
@@ -371,7 +339,7 @@ Game_Player.prototype.executeMove = function( d ) {
     const tmpD = [ 0, 4, 2, 6, 4, 5, 6, 4, 8, 6 ][ d ];
     const targetX =  ( tmpD === 6 ) ? $gameMap.roundX( this.x + 0.5 ) : this.x ;
 
-    if( FLAG2RATIO_W[ getUndulationType( targetX , this.y + 0.5 ) ] ){
+    if( FLAG2RATIO_W[ getUndulationType( targetX , this.y ) ] || FLAG2RATIO_W[ getUndulationType( targetX , $gameMap.roundY( this.y + 0.5 ) ) ]  ){
         this.moveStraight( tmpD );
     }else{
         _Game_Player_executeMove.apply( this, arguments );
@@ -392,7 +360,7 @@ Game_Map.prototype.isPassable = function( x, y, d ){
 
     const undulationType = getUndulationType( x, y );
     const isSameVerticalTile = ( dy )=>{
-        return undulationType === getUndulationType( x, $gameMap.roundY( y + dy ) );
+        return undulationType === getUndulationType( x, y + dy );
     };
     // 高低差判定がある場合は全方向通行可
     if( FLAG2BUMP[ undulationType ] ) return true;
@@ -414,8 +382,10 @@ Game_Map.prototype.isPassable = function( x, y, d ){
  * @returns {Boolean} 見つかったflag、見つからない場合は-1
  */
 function getUndulationType( x, y ){
+    x = Math.floor( $gameMap.roundX( x ) );
+    y = Math.floor( $gameMap.roundY( y ) );
     const flags = $gameMap.tilesetFlags();
-    const tiles = $gameMap.allTiles( Math.floor( x ), Math.floor( y ) );
+    const tiles = $gameMap.allTiles( x, y );
     
     for ( let i = 0; i < tiles.length; i++ ){
         const flag = flags[ tiles[ i ] ];
