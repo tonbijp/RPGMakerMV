@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :0.5.1.0
+// Version :0.4.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -71,6 +71,7 @@ const TERRAIN_TAG = 'TerrainTag';
  * パラメータを受け取る
  */
 const pluginParams = PluginManager.parameters( PLUGIN_NAME );
+
 
 let _TerrainTag = 1;    // 地形タグ規定値
 
@@ -162,6 +163,8 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
 
     const isNorthTile = undulationType !== undulationTypeN;
     const isSouthTile = undulationType !== undulationTypeS;
+    const isNorthTileW = undulationTypeW !== getUndulationType( intX - 1, intY - 1 );
+    const isSouthTileW = undulationTypeW !== getUndulationType( intX - 1, intY + 1 );
     
     const isSameVerticalTile = ( dy )=>{
         return undulationType === getUndulationType( intX, intY + dy );
@@ -186,13 +189,14 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
     const isW27Tile = ( undulationType )=>{
         return undulationType === FLAG_W27A ||  undulationType === FLAG_W27B
     };
+    
     if( undulationType === FLAG_W27A 
         && !isJustX && !isJustY && d === 8 && !isSameVerticalW27ABTile( -1 )
     ) return false;
     if( undulationTypeE === FLAG_W27A && isJustX && d === 6 ){
-        const undulationTypeNE = getUndulationType( intX + 1, intY - 1 );
-        if( !isW27Tile( undulationTypeNE ) ) return true;
-    };
+            const undulationTypeNE = getUndulationType( intX + 1, intY - 1 );
+            if( !isW27Tile( undulationTypeNE ) ) return true;
+    }
     if( undulationTypeW === FLAG_W27A ){
         const undulationTypeNW = getUndulationType( intX - 1, intY - 1 );
         const undulationTypeSW = getUndulationType( intX - 1, intY + 1 );
@@ -200,58 +204,38 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
             if( isJustY && d === 4 && !isW27Tile( undulationTypeSW ) ) return false;
         }else if( isJustY ){
             if( d === 8 && !isW27Tile( undulationTypeNW ) ) return false;
-        }else if( d === 8 ){
-            if( !isW27Tile( undulationTypeSW ) ) return true;
-        }else if( d === 2 ){
-            if( !isW27Tile( undulationTypeNW ) ) return false;
-            if( !isW27Tile( undulationTypeSW ) ) return false;
+        }else{
+            if( d === 8 ){
+                if( !isW27Tile( undulationTypeSW ) ) return true;
+            }else if( d === 2 ){
+                if( !isW27Tile( undulationTypeNW ) ) return false;
+                if( !isW27Tile( undulationTypeSW ) ) return false;
+            }
         }
     }
-    if( undulationTypeS === FLAG_W27A && isJustY && d === 2 ){
-        if( isW27Tile( undulationType ) ){
-            if( !isJustX && !isSameVerticalW27ABTile( 2 ) ) return false;
-        } else return false;
-    }
-    if( !isJustX && !isJustY 
-        && d === 8 && !isW27Tile( undulationTypeW )
+    if( undulationTypeS === FLAG_W27A && isJustY && d === 2 && !isW27Tile( undulationType ) ) return false;
+    if( !isJustX && !isJustY && d === 8
+        && !isW27Tile( undulationTypeW )
         && getUndulationType( intX - 1, intY - 1 ) === FLAG_W27A
     ) return false;
-    if( !isJustX && isJustY
-        && d === 2 && isW27Tile( undulationTypeW )
+    if( isW27Tile( undulationType )
+        && !isJustX && isJustY && d === 2 && undulationTypeS === FLAG_W27A
+        && !isSameVerticalW27ABTile( 2 )
+    ) return false;
+    if( isW27Tile( undulationTypeW )
+        && !isJustX && isJustY && d === 2
         && getUndulationType( intX - 1, intY + 1 ) === FLAG_W27A
-         && !isSameVerticalW27ABTile( 2 ) 
-    ) return true
+    ){
+        const undulationTypeS2W = getUndulationType( intX - 1, intY + 2 );
+        if( !isW27Tile( undulationTypeS2W ) ) return true;
+    }
 
     // ／ FLAG_E27A
     const isE27Tile = ( undulationType )=>{
         return undulationType === FLAG_E27A ||  undulationType === FLAG_E27B
     };
-    if( undulationType === FLAG_E27A && !isJustX ){
-        if( isJustY ){
-            if( d === 8 && !isE27Tile( undulationTypeN ) ) return false;
-        }else if( d === 8 ){
-            if( !isE27Tile( undulationTypeS ) ) return true;
-        }else if( d === 2 ){
-            if( !isE27Tile( undulationTypeN ) ) return false;
-            if( !isE27Tile( undulationTypeS ) ) return false;
-        }
+    if( undulationType === FLAG_E27A ){
     }
-    if( isJustY && d === 2 && !isE27Tile( undulationType ) ){
-        if( undulationTypeS === FLAG_E27A && isJustX ) return false;
-        if( getUndulationType( intX - 1, intY + 1 ) === FLAG_E27A && !isJustX ) return false;
-    }
-    if( undulationTypeE === FLAG_E27A 
-        && isJustX && isJustY && d === 6
-        && !isE27Tile( getUndulationType( intX + 1, intY + 1 ) )
-    ) return false;
-    if( undulationTypeN === FLAG_E27A && isE27Tile( undulationType )
-        && !isJustX && !isJustY && d === 8
-        && !isSameVerticalW27ABTile( -2 )
-    ) return true;
-    if( undulationTypeW === FLAG_E27A 
-        && !isJustX && !isJustY && d === 8
-        && !isE27Tile( getUndulationType( intX - 1, intY - 1 ) )
-    ) return false;
 
     // FLAG_W27A・FLAG_E27Aの下部タイル
     if( d === 8 && !isJustY ){
@@ -295,18 +279,37 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
         }
     }else if( undulationTypeW === FLAG_E27B ){
         if( isJustX ){
-            if( !isJustY && d === 4 && !isE27Tile( getUndulationType( intX - 1, intY +1 ) ) ) return true;
+            if( !isJustY && d === 4 && !isSameVerticalTileW( 1 ) ) return true;
         }else if( isJustY ){
             if( d === 2 ) return true;
-            if( d === 8 &&  !isE27Tile( getUndulationType( intX - 1, intY - 1 ) ) ) return false;
+            if( d === 8 &&  !isSameVerticalTileW( -1 ) ) return false;
         }else if( d === 2 ){
-            if( !isE27Tile( getUndulationType( intX - 1, intY - 1 ) ) || !isE27Tile( getUndulationType( intX - 1, intY +1 ) ) ) return false;
-        }else if( d === 8 && !isE27Tile( getUndulationType( intX - 1, intY +1 ) ) ) return true;
+            if( !isSameVerticalTileW( -1 ) || !isSameVerticalTileW( 1 ) ) return false;
+        }else if( d === 8 && !isSameVerticalTileW( 1 ) ) return true;
     }
-    if( undulationTypeW === FLAG_E27B && !isJustX && isJustY && d === 8
-        && !isE27Tile( getUndulationType( intX - 1, intY - 1 ) )
-    ) return false;
 
+    // \  FLAG_W63
+    if( undulationType === FLAG_W63 ){
+        if( isJustX ){
+            if( isJustY ){
+                if( d === 2 && !isSouthTile ) return false;
+            }else if( d === 2 || d === 4 ){
+                if( !isNorthTile ) return false;
+            }else if( d === 8 && isNorthTile && !isSameVerticalTile( -2 ) ) return false;
+            if( d === 4 ) return true;
+        }else if( !isJustY && d === 8 && !isNorthTile ) return false;
+    }else if( isJustX ){
+        if( !isJustY && d === 8
+            && undulationTypeN === FLAG_W63
+            && !isNorthTile
+        ) return false;
+    }else if( isJustY ){
+        if( d === 4 ){
+            if( undulationTypeW === FLAG_W63  && !isSameVerticalTileW( - 1 )
+            ) return false;
+        }else if( d === 2 && undulationTypeS === FLAG_W63 && !isSouthTile ) return false;
+    }
+    
     // FLAG_W27A・FLAG_W27B・FLAG_E27A・FLAG_E27B 共通の中央部分タイル
     if( d === 2 || d === 8 ){
         if( isSameVerticalW27ABTile( 1 ) && isSameVerticalW27ABTile( -1 ) ) return true;
@@ -314,48 +317,28 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
     }
 
 
-    // \  FLAG_W63
-    if( undulationType === FLAG_W63 ){
-        if( isJustX ){
-            if( isJustY ){
-                if( d === 2 && isSouthTile ) return false;
-            }else if( d === 2 || d === 4 ){
-                if( isNorthTile ) return false;
-            }else if( d === 8 && !isNorthTile && !isSameVerticalTile( -2 ) ) return false;
-            if( d === 4 ) return true;
-        }else if( !isJustY && d === 8 && isNorthTile ) return false;
-    }else if( isJustX ){
-        if( undulationTypeN === FLAG_W63
-            && !isJustY && d === 8 && isNorthTile
-        ) return false;
-    }else if( isJustY ){
-        if( d === 4 ){
-            if( undulationTypeW === FLAG_W63  && !isSameVerticalTileW( - 1 )
-            ) return false;
-        }else if( d === 2 && undulationTypeS === FLAG_W63 && isSouthTile ) return false;
-    }
 
     //  / FLAG_E63
     if( undulationType === FLAG_E63 ){
         if( isJustX ){
             if( isJustY ){
-                if( d === 2 && isSouthTile ) return false;
+                if( d === 2 && !isSouthTile ) return false;
             }else if( d === 2 || d === 6 ){
-                if( isNorthTile ) return false;
-            }else if( d === 8 && !isNorthTile && !isSameVerticalTile( -2 ) ) return false;
+                if( !isNorthTile ) return false;
+            }else if( d === 8 && isNorthTile && !isSameVerticalTile( -2 ) ) return false;
             if( d === 6 ) return true;
-        }else if( isJustY && d === 6 && isNorthTile ) return false;
+        }else if( isJustY && d === 6 && !isNorthTile ) return false;
     }else if( isJustX ){
-        if( undulationTypeN === FLAG_E63
-            && !isJustY && d === 8 && isNorthTile
+        if( !isJustY && d === 8
+            && undulationTypeN === FLAG_E63
+            && !isNorthTile
         ) return false;
     }
-
     if( !isJustX ){ // FLAG_E63に乗っている時も使うので else でつなげていない
         if( isJustY ){
             if( d === 2
                 && undulationTypeW !== FLAG_E63
-                && getUndulationType( intX - 1, intY + 1 ) === FLAG_E63
+                && isSameVerticalTileW( intX - 1, intY + 1 ) === FLAG_E63
             ) return false;
         }else if( d === 8 ){
             if( undulationTypeW === FLAG_E63 ){
@@ -368,13 +351,13 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
     if( undulationType === FLAG_W45 ){
         if( isJustX ){
             if( isJustY ){
-                if( d === 8 && isNorthTile ) return false;
+                if( d === 8 && !isNorthTile ) return false;
             }else if( d === 2 ){
-                if( isSouthTile || isNorthTile ) return false;
-            }else if( ( d === 8 || d === 4 ) && !isNorthTile ) return true;
+                if( !isSouthTile || !isNorthTile ) return false;
+            }else if( ( d === 8 || d === 4 ) && isNorthTile ) return true;
         }else if( isJustY ){
-            if( d === 2 && !isSouthTile ) return  isSameVerticalTile( 2 );
-        }else if( d === 8 && isNorthTile ) return false;
+            if( d === 2 && isSouthTile ) return  isSameVerticalTile( 2 );
+        }else if( d === 8 && !isNorthTile ) return false;
     }else if( !isJustX ){
         if( isJustY ){
             if( d === 2 ){
@@ -389,13 +372,13 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
     if( undulationType === FLAG_E45 ){
         if( isJustX ){
             if( isJustY ){
-                if( d === 8 && isNorthTile ) return false;
+                if( d === 8 && !isNorthTile ) return false;
             }else if( d === 2 ){
-                if( isSouthTile || isNorthTile ) return false;
-            }else if( ( d === 8 ||  d === 6 ) && !isNorthTile ) return true;
+                if( !isSouthTile || !isNorthTile ) return false;
+            }else if( ( d === 8 ||  d === 6 ) && isNorthTile ) return true;
         }else if( isJustY ){
-            if( d === 2 ) return !isNorthTile && !isSouthTile;
-        }else if( d === 8 && !isNorthTile ) return isSameVerticalTile( - 2 );
+            if( d === 2 ) return isNorthTile && isSouthTile;
+        }else if( d === 8 && isNorthTile ) return isSameVerticalTile( - 2 );
     }else if( undulationTypeW === FLAG_E45 && !isJustX && d === 8 && !isSameVerticalTileW( - 1 ) ){
         if( isSameVerticalTileW( 1 ) ){
             if( !isJustY ) return false;
@@ -512,7 +495,7 @@ Game_Player.prototype.executeMove = function( d ) {
     const tmpD = [ 0, 4, 2, 6, 4, 5, 6, 4, 8, 6 ][ d ];
     const targetX =  ( tmpD === 6 ) ? $gameMap.roundX( this.x + 0.5 ) : this.x ;
 
-    if( FLAG2RATIO_W[ getUndulationType( targetX , $gameMap.roundY( this.y - 0.5 ) ) ] || FLAG2RATIO_W[ getUndulationType( targetX , $gameMap.roundY( this.y + 0.5 ) ) ]  ){
+    if( FLAG2RATIO_W[ getUndulationType( targetX , this.y ) ] || FLAG2RATIO_W[ getUndulationType( targetX , $gameMap.roundY( this.y + 0.5 ) ) ]  ){
         this.moveStraight( tmpD );
     }else{
         _Game_Player_executeMove.apply( this, arguments );
