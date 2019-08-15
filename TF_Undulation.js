@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :0.5.3.0
+// Version :0.5.4.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -16,14 +16,12 @@
  * @plugindesc 階段など高さの違う箇所を自然に歩く
  * @author とんび@鳶嶋工房
  * 
- * 
  * @param TerrainTag
  * @desc この地形タグ+通行設定(4方向)で詳細な段差設定を行う。
  * @type number
  * @min 1
  * @max 7
  * @default 1
- * 
  * 
  * @help
  * 注意 : トリアコンタンさんの HalfMove.js の利用を前提としています。
@@ -58,14 +56,6 @@
 (function(){'use strict';
 const PLUGIN_NAME = 'TF_Undulation';
 const TERRAIN_TAG = 'TerrainTag';
-
-/*
-まずは45だけ作る
-
-地形タグ+方向設定で16バリエーションが出せる。
-茂み・梯子・カウンターを加えればさらに複雑な設定が可能。
-*/
-
 
 /**
  * パラメータを受け取る
@@ -186,6 +176,7 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
 
 
     // ＼ FLAG_W27N
+
     if( undulationType === FLAG_W27N && !isJustX && !isJustY && d === 8 && !isSameVerticalW27ABTile( -1 )) return false;
 
     if( undulationTypeE === FLAG_W27N && isJustX && d === 6 && !isW27Tile( getUndulationType( intX + 1, intY - 1 ) ) ) return true;
@@ -212,6 +203,11 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
     }
 
     if( !isJustY && d === 8 && !isW27Tile( undulationTypeW ) && getUndulationType( intX - 1, intY - 1 ) === FLAG_W27N ) return false;
+
+    if( !isJustX && isJustY && d === 2
+        && getUndulationType( intX - 1, intY + 1 ) === FLAG_W27N
+        &&  !isW27Tile( getUndulationType( intX - 1, intY + 2 ) )
+    ) return true;
 
 
     // ／ FLAG_E27N
