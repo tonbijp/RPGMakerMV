@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :0.5.2.1
+// Version :0.5.3.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -46,10 +46,10 @@
  *      0x7 ↑・・・ : 段差レベル4(規定値:24px)
  *      0x8 ・→←↓ : 未設定
  *      0x9 ・→←・ : 未設定
- *      0xA ・→・↓ : ＼ 27° A 上より
- *      0xB ・→・・ : ＼ 27° B 下より
- *      0xC ・・←↓ : ／ 27° A 上より
- *      0xD ・・←・ : ／ 27° B 下より
+ *      0xA ・→・↓ : ＼ 27° N 北より
+ *      0xB ・→・・ : ＼ 27° S 南より
+ *      0xC ・・←↓ : ／ 27° N 北より
+ *      0xD ・・←・ : ／ 27° S 南より
  *      0xE ・・・↓ : 未設定
  *      0xF ・・・・ : 未設定
  * 
@@ -211,14 +211,7 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
         }else return false;
     }
 
-    if( !isJustX ){
-        if( isJustY ){
-            if( d === 2 && isW27Tile( undulationTypeW )
-                && getUndulationType( intX - 1, intY + 1 ) === FLAG_W27N
-                && !isW27Tile( getUndulationType( intX - 1, intY + 1 ) ) 
-            ) return true;
-        }else if( d === 8 && !isW27Tile( undulationTypeW ) && getUndulationType( intX - 1, intY - 1 ) === FLAG_W27N ) return false;
-    }
+    if( !isJustY && d === 8 && !isW27Tile( undulationTypeW ) && getUndulationType( intX - 1, intY - 1 ) === FLAG_W27N ) return false;
 
 
     // ／ FLAG_E27N
@@ -250,6 +243,7 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
         if( undulationTypeN === FLAG_W27N && !isW27Tile( undulationType ) ) return false;
         if( undulationTypeN === FLAG_E27N && !isE27Tile( undulationType ) ) return false;
     }
+    
 
 
     // ＼ FLAG_W27S
@@ -271,12 +265,10 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
         }else if( d === 8 && !isW27Tile( getUndulationType( intX - 1, intY + 1 ) ) ) return true;
     }
 
-    if( !isJustX ){
+    if( !isJustX){
         if( d === 2 ){
             if( isJustY && getUndulationType( intX - 1, intY + 1 ) === FLAG_W27S && !isW27Tile( getUndulationType( intX - 1, intY + 2 ) ) ) return true;
-        }else  if( d === 8 ){
-            if( !isJustY && getUndulationType( intX - 1, intY - 1 ) === FLAG_W27S && !isW27Tile( getUndulationType( intX - 1, intY - 2 ) ) ) return false;
-        }
+        }else  if( d === 8 && !isJustY && getUndulationType( intX - 1, intY - 1 ) === FLAG_W27S && !isW27Tile( getUndulationType( intX - 1, intY - 2 ) ) ) return false;
     }
 
 
