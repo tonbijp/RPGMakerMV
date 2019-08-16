@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :0.6.3.0
+// Version :0.6.4.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -180,72 +180,6 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
     };
 
 
-    // ＼ W27N
-    if( undulation === W27N && !isJustX && !isJustY && d === 8 && !isSameW27SN( -1 )) return false;
-
-    if( undulationE === W27N && isJustX && d === 6 && !isW27( getUndulation( intX + 1, intY - 1 ) ) ) return true;
-
-    if( undulationW === W27N ){
-        const undulationNW = getUndulation( intX - 1, intY - 1 );
-        const undulationSW = getUndulation( intX - 1, intY + 1 );
-        if( isJustX ){
-            if( isJustY && d === 4 && !isW27( undulationSW ) ) return false;
-        }else if( isJustY ){
-            if( d === 8 && !isW27( undulationNW ) ) return false;
-        }else if( d === 8 ){
-            if( !isW27( undulationSW ) ) return true;
-        }else if( d === 2 ){
-            if( !isW27( undulationNW ) ) return false;
-            if( !isW27( undulationSW ) ) return false;
-        }
-    }
-
-    if( undulationS === W27N && isJustY && d === 2 ){
-        if( isW27( undulation ) ){
-            if( !isJustX && !isSameW27SN( 2 ) ) return false;
-        }else return false;
-    }
-
-    if( !isJustX && isJustY && d === 2
-        && getUndulation( intX - 1, intY + 1 ) === W27N
-        &&  !isW27( getUndulation( intX - 1, intY + 2 ) )
-    ) return true;
-
-
-    // ／ E27N
-    if( undulation === E27N && !isJustX ){
-        if( isJustY ){
-            if( d === 8 && !isE27( undulationN ) ) return false;
-        }else if( d === 8 ){
-            if( !isE27( undulationS ) ) return true;
-        }else if( d === 2 ){
-            if( !isE27( undulationN ) ) return false;
-            if( !isE27( undulationS ) ) return false;
-        }
-    }
-
-    if( undulationS === E27N && !isJustX && isJustY && !isE27( getUndulation( intX, intY + 2 ) ) ) return true;
-
-    if( d === 2 ){
-        if( isJustY && !isE27( undulation ) ){
-            if( isJustX && undulationS === E27N ) return false;
-            if( !isJustX && getUndulation( intX - 1, intY + 1 ) === E27N ) return false;
-        }
-    }
-
-    if( d === 6 ){
-        if( undulationE === E27N && isJustX && isJustY && !isE27( getUndulation( intX + 1, intY + 1 ) ) ) return false;
-    }else if( d === 8 && !isJustY ){
-        if( !isJustX ){
-            if( getUndulation( intX - 1, intY - 1 ) === E27N && !isE27( getUndulation( intX - 1, intY - 2 ) )  ) return true;
-            if( undulationN === E27N && isE27( undulation ) && !isSameW27SN( -2 ) ) return true;
-            if( undulationW === E27N && !isSameW27SNW( - 1 ) ) return false;
-        }
-        // W27N・E27Nの下部タイル
-        if( undulationN === W27N && !isW27( undulation ) ) return false;
-        if( undulationN === E27N && !isE27( undulation ) ) return false;
-    }
-
 
     // ＼ W27S
     if( !isJustX ){
@@ -321,6 +255,73 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
     if( d === 8 && !isJustX && !isJustY && undulationN === E27S && !isE27( getUndulation( intX, intY - 2 ) )) return false;
     if( d === 2 && !isJustX && isJustY && getUndulation( intX - 1, intY + 1 ) === E27S
         && !isSameE27SNW( 2 ) ) return true;
+
+
+    // ＼ W27N
+    if( undulation === W27N && !isJustX && !isJustY && d === 8 && !isSameW27SN( -1 )) return false;
+
+    if( undulationE === W27N && isJustX && d === 6 && !isW27( getUndulation( intX + 1, intY - 1 ) ) ) return true;
+
+    if( undulationW === W27N ){
+        const undulationNW = getUndulation( intX - 1, intY - 1 );
+        const undulationSW = getUndulation( intX - 1, intY + 1 );
+        if( isJustX ){
+            if( isJustY && d === 4 && !isW27( undulationSW ) ) return false;
+        }else if( isJustY ){
+            if( d === 8 && !isW27( undulationNW ) ) return false;
+        }else if( d === 8 ){
+            if( !isW27( undulationSW ) ) return true;
+        }else if( d === 2 ){
+            if( !isW27( undulationNW ) ) return false;
+            if( !isW27( undulationSW ) ) return false;
+        }
+    }
+
+    if( isJustY ){
+        if( d === 2 ){
+            if( undulationS === W27N ){
+                if( isW27( undulation ) ){
+                    if( !isJustX && !isSameW27SN( 2 ) ) return false;
+                }else return false;
+            }
+            if( !isJustX && getUndulation( intX - 1, intY + 1 ) === W27N && !isW27( getUndulation( intX - 1, intY + 2 ) ) ) return true;
+        }
+    }else if( !isJustX && d === 8 && !isW27( undulation ) && getUndulation( intX - 1, intY - 1 ) === W27N ) return false;
+
+
+    // ／ E27N
+    if( undulation === E27N && !isJustX ){
+        if( isJustY ){
+            if( d === 8 && !isE27( undulationN ) ) return false;
+        }else if( d === 8 ){
+            if( !isE27( undulationS ) ) return true;
+        }else if( d === 2 ){
+            if( !isE27( undulationN ) ) return false;
+            if( !isE27( undulationS ) ) return false;
+        }
+    }
+
+    if( undulationS === E27N && !isJustX && isJustY && !isE27( getUndulation( intX, intY + 2 ) ) ) return true;
+
+    if( d === 2 ){
+        if( isJustY && !isE27( undulation ) ){
+            if( isJustX && undulationS === E27N ) return false;
+            if( !isJustX && getUndulation( intX - 1, intY + 1 ) === E27N ) return false;
+        }
+    }
+
+    if( d === 6 ){
+        if( undulationE === E27N && isJustX && isJustY && !isE27( getUndulation( intX + 1, intY + 1 ) ) ) return false;
+    }else if( d === 8 && !isJustY ){
+        if( !isJustX ){
+            if( getUndulation( intX - 1, intY - 1 ) === E27N && !isE27( getUndulation( intX - 1, intY - 2 ) )  ) return true;
+            if( undulationN === E27N && isE27( undulation ) && !isSameW27SN( -2 ) ) return true;
+            if( undulationW === E27N && !isSameW27SNW( - 1 ) ) return false;
+        }
+        // W27N・E27Nの下部タイル
+        if( undulationN === W27N && !isW27( undulation ) ) return false;
+        if( undulationN === E27N && !isE27( undulation ) ) return false;
+    }
 
     // W27N・W27S・E27N・E27S 共通の中央部分タイル
     if( d === 2 || d === 8 ){
