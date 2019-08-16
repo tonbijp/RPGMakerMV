@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :0.6.2.0
+// Version :0.6.3.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -265,21 +265,22 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
             }
         }else if( d === 2 ){
             if( !isSameW27SN( 1 ) || !isSameW27SN( -1 ) ) return false;
-        }else if( d === 8 && !isSameW27SN( 1 ) ) return true;
+        }else if( d === 8 && !isSameW27SN( 1 ) ) return isSameW27SN( -1 );
     }else if( undulationE === W27S ){
         if( isJustX && !isJustY && d === 6 && getUndulation( intX + 1, intY + 1 ) !== W27S ) return true;
     }
     
-    if( undulationW === W27S && !isJustX && isJustY && d === 2 && !isSameW27SNW( -1 ) ) return false;
-
-    if( undulationS === W27S && !isJustX && d === 2 ){
-
+    if( undulationW === W27S && !isJustX && !isSameW27SNW( -1 ) ){
+        if( isJustY ){
+            if( d === 2 ) return false;
+            if( d === 8 && !isSameW27SNW( 1 ) ) return false;
+        }else if( d === 2 && !isSameW27SNW( 1 ) ) return false;
     }
 
-    if( !isJustX ){
-        if( d === 2 ){
-            if( isJustY && getUndulation( intX - 1, intY + 1 ) === W27S && !isSameW27SNW( 2 ) ) return true;
-        }
+    if( isJustY && d === 2 ){
+        if( isJustX ){
+            if( undulationS === W27S && !isSameW27SN( 1 ) && !isW27( getUndulation( intX, intY + 2 ) ) ) return false;
+        }else if( getUndulation( intX - 1, intY + 1 ) === W27S && !isSameW27SNW( 2 ) ) return true;
     }
 
     // ／ E27S
