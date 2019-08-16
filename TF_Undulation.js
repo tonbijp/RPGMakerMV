@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :0.6.1.0
+// Version :0.6.2.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -153,97 +153,97 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
     const isNorthTile = undulation !== undulationN;
     const isSouthTile = undulation !== undulationS;
     
-    const isSameVerticalTile = ( dy )=>{
+    const isSame = ( dy )=>{
         return undulation === getUndulation( intX, intY + dy );
     };
-    const isSameVerticalTileW = ( dy )=>{
+    const isSameW = ( dy )=>{
         return undulationW === getUndulation( intX - 1, intY + dy );
     };
 
-    const isW27Tile = ( undulation )=>{
+    const isW27 = ( undulation )=>{
         return undulation === W27N ||  undulation === W27S
     };
-    const isSameVerticalW27SNTile = ( dy )=>{
-        return isW27Tile( undulation ) && isW27Tile( getUndulation( intX, intY + dy ) );
+    const isSameW27SN = ( dy )=>{
+        return isW27( undulation ) && isW27( getUndulation( intX, intY + dy ) );
     };
-    const isSameVerticalW27SNTileW = ( dy )=>{
-        return isW27Tile( undulationW ) && isW27Tile( getUndulation( intX - 1, intY + dy ) );
+    const isSameW27SNW = ( dy )=>{
+        return isW27( undulationW ) && isW27( getUndulation( intX - 1, intY + dy ) );
     };
-    const isE27Tile = ( undulation )=>{
+    const isE27 = ( undulation )=>{
         return undulation === E27N ||  undulation === E27S
     };
-    const isSameVerticalE27SNTile = ( dy )=>{
-        return isE27Tile( undulation ) && isE27Tile( getUndulation( intX, intY + dy ) );
+    const isSameE27SN = ( dy )=>{
+        return isE27( undulation ) && isE27( getUndulation( intX, intY + dy ) );
     };
-    const isSameVerticalE27SNTileW = ( dy )=>{
-        return isE27Tile( undulationW ) && isE27Tile( getUndulation( intX - 1, intY + dy ) );
+    const isSameE27SNW = ( dy )=>{
+        return isE27( undulationW ) && isE27( getUndulation( intX - 1, intY + dy ) );
     };
 
 
     // ＼ W27N
-    if( undulation === W27N && !isJustX && !isJustY && d === 8 && !isSameVerticalW27SNTile( -1 )) return false;
+    if( undulation === W27N && !isJustX && !isJustY && d === 8 && !isSameW27SN( -1 )) return false;
 
-    if( undulationE === W27N && isJustX && d === 6 && !isW27Tile( getUndulation( intX + 1, intY - 1 ) ) ) return true;
+    if( undulationE === W27N && isJustX && d === 6 && !isW27( getUndulation( intX + 1, intY - 1 ) ) ) return true;
 
     if( undulationW === W27N ){
         const undulationNW = getUndulation( intX - 1, intY - 1 );
         const undulationSW = getUndulation( intX - 1, intY + 1 );
         if( isJustX ){
-            if( isJustY && d === 4 && !isW27Tile( undulationSW ) ) return false;
+            if( isJustY && d === 4 && !isW27( undulationSW ) ) return false;
         }else if( isJustY ){
-            if( d === 8 && !isW27Tile( undulationNW ) ) return false;
+            if( d === 8 && !isW27( undulationNW ) ) return false;
         }else if( d === 8 ){
-            if( !isW27Tile( undulationSW ) ) return true;
+            if( !isW27( undulationSW ) ) return true;
         }else if( d === 2 ){
-            if( !isW27Tile( undulationNW ) ) return false;
-            if( !isW27Tile( undulationSW ) ) return false;
+            if( !isW27( undulationNW ) ) return false;
+            if( !isW27( undulationSW ) ) return false;
         }
     }
 
     if( undulationS === W27N && isJustY && d === 2 ){
-        if( isW27Tile( undulation ) ){
-            if( !isJustX && !isSameVerticalW27SNTile( 2 ) ) return false;
+        if( isW27( undulation ) ){
+            if( !isJustX && !isSameW27SN( 2 ) ) return false;
         }else return false;
     }
 
     if( !isJustX && isJustY && d === 2
         && getUndulation( intX - 1, intY + 1 ) === W27N
-        &&  !isW27Tile( getUndulation( intX - 1, intY + 2 ) )
+        &&  !isW27( getUndulation( intX - 1, intY + 2 ) )
     ) return true;
 
 
     // ／ E27N
     if( undulation === E27N && !isJustX ){
         if( isJustY ){
-            if( d === 8 && !isE27Tile( undulationN ) ) return false;
+            if( d === 8 && !isE27( undulationN ) ) return false;
         }else if( d === 8 ){
-            if( !isE27Tile( undulationS ) ) return true;
+            if( !isE27( undulationS ) ) return true;
         }else if( d === 2 ){
-            if( !isE27Tile( undulationN ) ) return false;
-            if( !isE27Tile( undulationS ) ) return false;
+            if( !isE27( undulationN ) ) return false;
+            if( !isE27( undulationS ) ) return false;
         }
     }
 
-    if( undulationS === E27N && !isJustX && isJustY && !isE27Tile( getUndulation( intX, intY + 2 ) ) ) return true;
+    if( undulationS === E27N && !isJustX && isJustY && !isE27( getUndulation( intX, intY + 2 ) ) ) return true;
 
     if( d === 2 ){
-        if( isJustY && !isE27Tile( undulation ) ){
+        if( isJustY && !isE27( undulation ) ){
             if( isJustX && undulationS === E27N ) return false;
             if( !isJustX && getUndulation( intX - 1, intY + 1 ) === E27N ) return false;
         }
     }
 
     if( d === 6 ){
-        if( undulationE === E27N && isJustX && isJustY && !isE27Tile( getUndulation( intX + 1, intY + 1 ) ) ) return false;
+        if( undulationE === E27N && isJustX && isJustY && !isE27( getUndulation( intX + 1, intY + 1 ) ) ) return false;
     }else if( d === 8 && !isJustY ){
         if( !isJustX ){
-            if( getUndulation( intX - 1, intY - 1 ) === E27N && !isE27Tile( getUndulation( intX - 1, intY - 2 ) )  ) return true;
-            if( undulationN === E27N && isE27Tile( undulation ) && !isSameVerticalW27SNTile( -2 ) ) return true;
-            if( undulationW === E27N && !isSameVerticalW27SNTileW( - 1 ) ) return false;
+            if( getUndulation( intX - 1, intY - 1 ) === E27N && !isE27( getUndulation( intX - 1, intY - 2 ) )  ) return true;
+            if( undulationN === E27N && isE27( undulation ) && !isSameW27SN( -2 ) ) return true;
+            if( undulationW === E27N && !isSameW27SNW( - 1 ) ) return false;
         }
         // W27N・E27Nの下部タイル
-        if( undulationN === W27N && !isW27Tile( undulation ) ) return false;
-        if( undulationN === E27N && !isE27Tile( undulation ) ) return false;
+        if( undulationN === W27N && !isW27( undulation ) ) return false;
+        if( undulationN === E27N && !isE27( undulation ) ) return false;
     }
 
 
@@ -251,61 +251,80 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
     if( !isJustX ){
         if( d === 8 && !isJustY 
             && getUndulation( intX - 1, intY - 1 ) === W27S
-            &&  !isW27Tile( getUndulation( intX - 1, intY - 2 ) )
+            &&  !isW27( getUndulation( intX - 1, intY - 2 ) )
         ) return false;
     }
 
     if( undulation === W27S ){
         if( isJustX ){
-            if( !isJustY && d === 2 && !isSameVerticalW27SNTile( -1 ) ) return false;
+            if( !isJustY && d === 2 && !isSameW27SN( -1 ) ) return false;
         }else if( isJustY ){
-            if( !isW27Tile( undulationN ) ){
+            if( !isW27( undulationN ) ){
                 if( d === 2 ) return true;
                 if( d === 8 ) return false;
             }
         }else if( d === 2 ){
-            if( !isSameVerticalW27SNTile( 1 ) || !isSameVerticalW27SNTile( -1 ) ) return false;
-        }else if( d === 8 && !isSameVerticalW27SNTile( 1 ) ) return true;
+            if( !isSameW27SN( 1 ) || !isSameW27SN( -1 ) ) return false;
+        }else if( d === 8 && !isSameW27SN( 1 ) ) return true;
     }else if( undulationE === W27S ){
         if( isJustX && !isJustY && d === 6 && getUndulation( intX + 1, intY + 1 ) !== W27S ) return true;
     }
     
-    if( undulationW === W27S && !isJustX && isJustY && d === 2 && !isSameVerticalW27SNTileW( -1 ) ) return false;
+    if( undulationW === W27S && !isJustX && isJustY && d === 2 && !isSameW27SNW( -1 ) ) return false;
+
+    if( undulationS === W27S && !isJustX && d === 2 ){
+
+    }
 
     if( !isJustX ){
         if( d === 2 ){
-            if( isJustY && getUndulation( intX - 1, intY + 1 ) === W27S && !isSameVerticalW27SNTileW( 2 ) ) return true;
+            if( isJustY && getUndulation( intX - 1, intY + 1 ) === W27S && !isSameW27SNW( 2 ) ) return true;
         }
     }
 
     // ／ E27S
     if( undulation === E27S ){
         if( isJustX ){
-            if( !isJustY && d === 2 && !isSameVerticalE27SNTile( -1 ) ) return false;
-        }else if( isJustY && d === 2 && !isSameVerticalE27SNTile( -1 ) ) return false;
+            if( !isJustY && d === 2 && !isSameE27SN( -1 ) ) return false;
+        }else if( !isSameE27SN( -1 ) ){
+            if( isJustY ){
+                if( d === 2 ) return false;
+                if( d === 8 && !isSameE27SN( 1 ) ) return false;
+            }else if( d === 2 && !isSameE27SN( 1 ) ) return false;
+        }
+    }
+
+    if( isJustY && d === 2 ){
+        if( isJustX ){
+            if( undulationS === E27S && !isSameE27SN( 1 ) && !isE27( getUndulation( intX, intY + 2 ) ) ) return false;
+        }else if( getUndulation( intX - 1, intY + 1 ) === E27S
+            && !isSameE27SNW( 1 ) && !isE27( getUndulation( intX - 1, intY + 2 ) )
+        ) return false;
     }
 
     if( undulationW === E27S ){
         if( isJustX ){
-            if( !isJustY && d === 4 && !isSameVerticalE27SNTileW( 1 ) ) return true;
+            if( !isJustY && d === 4 && !isSameE27SNW( 1 ) ) return true;
         }else if( isJustY ){
-            if( !isSameVerticalE27SNTileW( -1 ) ){
+            if( !isSameE27SNW( -1 ) ){
                 if( d === 2 ) return true;
                 if( d === 8 ) return false;
             }
         }else if( d === 2 ){
-            if( !isSameVerticalE27SNTileW( - 1 ) || !isSameVerticalE27SNTileW( 1 ) ) return false;
-        }else if( d === 8 && !isSameVerticalE27SNTileW( 1 ) ) return true;
+            if( !isSameE27SNW( - 1 ) || !isSameE27SNW( 1 ) ) return false;
+        }else if( d === 8 && !isSameE27SNW( 1 ) ){
+            return isSameE27SNW( -1 );
+        }
     }
 
-    if( d === 8 && !isJustX && !isJustY && undulationN === E27S && !isE27Tile( getUndulation( intX, intY - 2 ) )) return false;
+    if( d === 8 && !isJustX && !isJustY && undulationN === E27S && !isE27( getUndulation( intX, intY - 2 ) )) return false;
     if( d === 2 && !isJustX && isJustY && getUndulation( intX - 1, intY + 1 ) === E27S
-        && !isSameVerticalE27SNTileW( 2 ) ) return true;
+        && !isSameE27SNW( 2 ) ) return true;
 
     // W27N・W27S・E27N・E27S 共通の中央部分タイル
     if( d === 2 || d === 8 ){
-        if( isSameVerticalW27SNTile( 1 ) && isSameVerticalW27SNTile( -1 ) ) return true;
-        if( isSameVerticalE27SNTile( 1 ) && isSameVerticalE27SNTile( -1 ) ) return true;
+        if( isSameW27SN( 1 ) && isSameW27SN( -1 ) ) return true;
+        if( isSameE27SN( 1 ) && isSameE27SN( -1 ) ) return true;
     }
 
 
@@ -316,14 +335,14 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
                 if( d === 2 && isSouthTile ) return false;
             }else if( d === 2 || d === 4 ){
                 if( isNorthTile ) return false;
-            }else if( d === 8 && !isNorthTile && !isSameVerticalTile( -2 ) ) return false;
+            }else if( d === 8 && !isNorthTile && !isSame( -2 ) ) return false;
             if( d === 4 ) return true;
         }else if( !isJustY && d === 8 && isNorthTile ) return false;
     }else if( isJustX ){
         if( undulationN === W63 && !isJustY && d === 8 && isNorthTile ) return false;
     }else if( isJustY ){
         if( d === 4 ){
-            if( undulationW === W63  && !isSameVerticalTileW( - 1 ) ) return false;
+            if( undulationW === W63  && !isSameW( - 1 ) ) return false;
         }else if( d === 2 && undulationS === W63 && isSouthTile ) return false;
     }
 
@@ -334,7 +353,7 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
                 if( d === 2 && isSouthTile ) return false;
             }else if( d === 2 || d === 6 ){
                 if( isNorthTile ) return false;
-            }else if( d === 8 && !isNorthTile && !isSameVerticalTile( -2 ) ) return false;
+            }else if( d === 8 && !isNorthTile && !isSame( -2 ) ) return false;
             if( d === 6 ) return true;
         }else if( isJustY && d === 6 && isNorthTile ) return false;
     }else if( isJustX && undulationN === E63 && !isJustY && d === 8 && isNorthTile ) return false;
@@ -344,7 +363,7 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
             if( d === 2 && undulationW !== E63 && getUndulation( intX - 1, intY + 1 ) === E63 ) return false;
         }else if( d === 8 ){
             if( undulationW === E63 ){
-                if( !isSameVerticalTileW( - 1 ) ) return false;
+                if( !isSameW( - 1 ) ) return false;
             }else if( getUndulation( intX - 1, intY - 1 ) === E63 ) return false;
         }
     }
@@ -353,25 +372,25 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
     if( undulation === W45 ){
         if( isJustX ){
             if( isJustY ){
-                if( d === 2 && !isSameVerticalTile( 2 ) ) return true;
+                if( d === 2 && !isSame( 2 ) ) return true;
                 if( d === 8 && isNorthTile ) return false;
             }else if( d === 2 ){
                 if( isSouthTile || isNorthTile ) return false;
             }else if( ( d === 8 || d === 4 ) && !isNorthTile ) return true;
         }else if( isJustY ){
-            if( d === 2 && !isSouthTile ) return  isSameVerticalTile( 2 );
+            if( d === 2 && !isSouthTile ) return  isSame( 2 );
         }else if( d === 8 && isNorthTile ) return false;
     }
 
     if( undulationW === W45 && !isJustX ){
         if( isJustY ){
             if( d === 2 ){
-                if( !isSameVerticalTileW( - 1 ) ) return false;
-                if( isSameVerticalTileW( 1 ) && !isSameVerticalTileW( 2 ) ) return true;
+                if( !isSameW( - 1 ) ) return false;
+                if( isSameW( 1 ) && !isSameW( 2 ) ) return true;
             }
         }else if( d === 8 ){
-            if( isSameVerticalTileW( - 1 ) && !isSameVerticalTileW( - 2 ) ) return false;
-            if( !isSameVerticalTileW( 1 ) ) return true;
+            if( isSameW( - 1 ) && !isSameW( - 2 ) ) return false;
+            if( !isSameW( 1 ) ) return true;
         }
     }
 
@@ -382,18 +401,18 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
     if( undulation === E45 ){
         if( isJustX ){
             if( isJustY ){
-                if( d === 2 && !isSameVerticalTile( 2 ) ) return true;
+                if( d === 2 && !isSame( 2 ) ) return true;
                 if( d === 8 && isNorthTile ) return false;
             }else if( d === 2 ){
                 if( isSouthTile || isNorthTile ) return false;
             }else if( ( d === 8 ||  d === 6 ) && !isNorthTile ) return true;
         }else if( isJustY ){
             if( d === 2 ) return !isNorthTile && !isSouthTile;
-        }else if( d === 8 && !isNorthTile ) return isSameVerticalTile( - 2 );
+        }else if( d === 8 && !isNorthTile ) return isSame( - 2 );
     }
     
-    if( undulationW === E45 && !isJustX && d === 8 && !isSameVerticalTileW( - 1 ) ){
-        if( isSameVerticalTileW( 1 ) ){
+    if( undulationW === E45 && !isJustX && d === 8 && !isSameW( - 1 ) ){
+        if( isSameW( 1 ) ){
             if( !isJustY ) return false;
         }else if( isJustY ) return false;
     }
