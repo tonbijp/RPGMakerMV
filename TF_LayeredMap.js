@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.7.0.2
+// Version :0.7.0.3
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -202,7 +202,7 @@ if( pluginParams[ BILLBOARD_PRIORITY ] ){
  */
 const _Game_Interpreter_pluginCommand = Game_Interpreter.prototype.pluginCommand;
 Game_Interpreter.prototype.pluginCommand = function ( command, args ){
-    _Game_Interpreter_pluginCommand.call( this, command, args );
+    _Game_Interpreter_pluginCommand.apply( this, arguments );
 
     if( command.toUpperCase() !== SUPPLEMENT_ENABLED ) return;
 
@@ -266,7 +266,7 @@ ShaderTilemap.prototype._paintAllTiles = function( startX, startY ){
         curItem.clear();
     }
 
-    _ShaderTilemap_paintAllTiles.call( this, startX, startY );
+    _ShaderTilemap_paintAllTiles.apply( this, arguments );
 }
 
 /**
@@ -395,7 +395,7 @@ ShaderTilemap.prototype._paintTiles = function( startX, startY, x, y ){
  */
 const _ShaderTilemap_updateLayerPositions = ShaderTilemap.prototype._updateLayerPositions;
 ShaderTilemap.prototype._updateLayerPositions = function( startX, startY ){
-    _ShaderTilemap_updateLayerPositions.call( this, startX, startY );
+    _ShaderTilemap_updateLayerPositions.apply( this, arguments );
 
     let ox,oy;
     if (this.roundPixels){
@@ -466,7 +466,7 @@ const WALL_SIDE_PASS = [
  */
 const _DataManager_onLoad = DataManager.onLoad;
 DataManager.onLoad = function( object ){
-    _DataManager_onLoad.call( this, object );
+    _DataManager_onLoad.apply( this, arguments );
 
     if( object === $dataTilesets ) treatDataTilesets();
     // end: onLoad
@@ -628,8 +628,8 @@ Scene_Map.prototype.onMapLoaded = function( ){
  */
 const _Game_CharacterBase_isMapPassable = Game_CharacterBase.prototype.isMapPassable;
 Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
-    const intX = parseInt( x + 0.5 );
-    const intY = parseInt( y + 0.5 );
+    const intX = Math.floor( x + 0.5 );
+    const intY = Math.floor( y + 0.5 );
 
     // FLOOR1_N_FULL
     if( d === 8 || d === 2 ){
@@ -678,7 +678,7 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
         if( intX <= x && intY <= y && checkCollision( x, y, FLOOR1_S_FLAT ) ) return false;
     }
 
-    return _Game_CharacterBase_isMapPassable.call( this, x, y, d );
+    return _Game_CharacterBase_isMapPassable.apply( this, arguments );
 
 
     /**
@@ -690,7 +690,7 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
      */
     function checkCollision( x, y, collisionType ){
         const flags = $gameMap.tilesetFlags();
-        const tiles = $gameMap.allTiles( parseInt( x ), parseInt( y ) );
+        const tiles = $gameMap.allTiles( Math.floor( x ), Math.floor( y ) );
         
         for ( let i = 0; i < tiles.length; i++ ){
             if( ( flags[ tiles[ i ] ] & MASK_UPPER_DIR ) === collisionType ) return true;
@@ -727,6 +727,6 @@ Game_Map.prototype.checkPassage = function( x, y, bit ){
         // 他の重なったタイルによらず通行不可
         if(  ( flag & bit ) === bit ) return false;
     }
-    return _Game_Map_checkPassage.call( this, x, y, bit );
+    return _Game_Map_checkPassage.apply( this, arguments );
 };
 })();
