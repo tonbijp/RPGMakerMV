@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :0.6.5.0
+// Version :0.6.6.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -303,12 +303,17 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
 
     if( d === 2 ){
         if( isJustY && !isE27( undulation ) ){
-            if( isJustX && undulationS === E27N ) return false;
-            if( !isJustX && getUndulation( intX - 1, intY + 1 ) === E27N ) return false;
+            if( isJustX ){
+                if( undulationS === E27N ) return false;
+            } else if( getUndulation( intX - 1, intY + 1 ) === E27N ){
+                if( isE27( undulationW ) ){
+                    return isE27( getUndulation( intX - 1, intY + 2 ) );
+                }else{
+                    return false;
+                }
+            }
         }
-    }
-
-    if( d === 6 ){
+    }else if( d === 6 ){
         if( undulationE === E27N && isJustX && isJustY && !isE27( getUndulation( intX + 1, intY + 1 ) ) ) return false;
     }else if( d === 8 && !isJustY ){
         if( !isJustX ){
