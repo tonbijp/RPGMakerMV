@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :0.6.6.0
+// Version :0.6.7.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -37,16 +37,16 @@
  *      0x0 ↑→←↓ : 段差レベル1(規定値:6px)
  *      0x1 ↑→←・ : 段差レベル2(規定値:12px)
  *      0x2 ↑→・↓ : \  63°
- *      0x3 ↑→・・ : ＼ 27° S 南より
+ *      0x3 ↑→・・ : ＼ 27° 南より
  *      0x4 ↑・←↓ :  / 63°
- *      0x5 ↑・←・ : ／ 27° S 南より
+ *      0x5 ↑・←・ : ／ 27° 南より
  *      0x6 ↑・・↓ : 段差レベル3(規定値:18px)
  *      0x7 ↑・・・ : 段差レベル4(規定値:24px)
  *      0x8 ・→←↓ : 未設定
  *      0x9 ・→←・ : 未設定
- *      0xA ・→・↓ : ＼ 27° N 北より
+ *      0xA ・→・↓ : ＼ 27° 北より
  *      0xB ・→・・ : ＼ 45°
- *      0xC ・・←↓ : ／ 27° N 北より
+ *      0xC ・・←↓ : ／ 27° 北より
  *      0xD ・・←・ : ／ 45°
  *      0xE ・・・↓ : 未設定
  *      0xF ・・・・ : 未設定
@@ -317,13 +317,12 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
         if( undulationE === E27N && isJustX && isJustY && !isE27( getUndulation( intX + 1, intY + 1 ) ) ) return false;
     }else if( d === 8 && !isJustY ){
         if( !isJustX ){
-            if( getUndulation( intX - 1, intY - 1 ) === E27N && !isE27( getUndulation( intX - 1, intY - 2 ) )  ) return true;
             if( undulationN === E27N && isE27( undulation ) && !isSameW27SN( -2 ) ) return true;
-            if( undulationW === E27N && !isSameW27SNW( - 1 ) ) return false;
+            if( undulationW === E27N && !isE27( getUndulation( intX - 1, intY - 1 ) ) )  return false;
         }
         // W27N・E27Nの下部タイル
-        if( undulationN === W27N && !isW27( undulation ) ) return false;
-        if( undulationN === E27N && !isE27( undulation ) ) return false;
+        if( ( undulationN === W27N && !isW27( undulation ) )
+          || ( undulationN === E27N && !isE27( undulation ) ) ) return false;
     }
 
     // W27N・W27S・E27N・E27S 共通の中央部分タイル
