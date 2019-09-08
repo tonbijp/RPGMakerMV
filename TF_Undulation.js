@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :0.7.4.0
+// Version :0.7.5.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -437,28 +437,28 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
 
     //  / E63
     if( d === 2 ){
-    }else if( d === 4 ){
+        if( halfPos === 1 ){
+            if( isTileLayoutNorth( E63, 5 ) ) return false;
+        }else if( halfPos === 2 ){
+            if( isTileLayoutNorth( E63, 1 ) ) return false;
+        }else if( halfPos === 3 ){
+            if( isTileLayoutSouth( E63, 5 ) ) return false;
+        }
     }else if( d === 6 ){
+        if( halfPos === 1 ){
+            if( isTileLayoutNorth( E63, 5 ) ) return false;
+            if( isTileLayoutSouth( E63, 5 ) ) return true;
+        }else if( halfPos === 2 ){
+            if( isTileLayoutNorth( E63, 5 ) ) return false;
+        }else if( halfPos === 3 ){
+            if( isTileLayoutSouth( E63, 5 ) ) return true;
+        }
     }else if( d === 8 ){
-    }
-    if( undulation5 === E63 ){
-        if( isJustX ){
-            if( isJustY ){
-                if( d === 2 && isSouthTile ) return false;
-            }else if( d === 2 || d === 6 ){
-                if( isNorthTile ) return false;
-            }else if( d === 8 && !isNorthTile && !isSame( -2 ) ) return false;
-            if( d === 6 ) return true;
-        }else if( isJustY && d === 6 && isNorthTile ) return false;
-    }else if( isJustX && undulation8 === E63 && !isJustY && d === 8 && isNorthTile ) return false;
-
-    if( !isJustX ){
-        if( isJustY ){
-            if( d === 2 && undulation4 !== E63 && getUndulation( intX - 1, intY + 1 ) === E63 ) return false;
-        }else if( d === 8 ){
-            if( undulation4 === E63 ){
-                if( !isSameW( - 1 ) ) return false;
-            }else if( getUndulation( intX - 1, intY - 1 ) === E63 ) return false;
+        if( halfPos === 0 ){
+            if( isTileLayoutNorth( E63, 4 ) ) return false;
+        }else if( halfPos === 1 ){
+            if( isTileLayoutNorth( E63, 8 ) ) return false;
+            if( isTileLayoutSouth( E63, 8 ) ) return false;
         }
     }
 
