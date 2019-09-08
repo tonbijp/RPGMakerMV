@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :0.7.1.0
+// Version :0.7.2.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -145,15 +145,15 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
     const halfPos = ( isJustX ? 1 : 0 ) + ( isJustY ? 2 : 0 );  // タイル内の位置( 0:左上, 1:上, 2:左下, 3:下 )
 
     // 高低差タイプ(テンキー対応)
-    const undulation1 = getUndulation( intX - 1,  intY + 1 );  // 南西↙
-    const undulation2 = getUndulation( intX,         intY + 1 ); // 南↓
-    const undulation3 = getUndulation( intX + 1,  intY + 1 ); // 南東↘
-    const undulation4 = getUndulation( intX - 1,  intY        ); // 西←
-    const undulation5 = getUndulation( intX,         intY        ); // 現在地
-    const undulation6 = getUndulation( intX + 1,  intY        ); // 東→
-    const undulation7 = getUndulation( intX - 1,  intY - 1 );  // 北西↖
-    const undulation8 = getUndulation( intX,         intY - 1 ); // 北↑
-    const undulation9 = getUndulation( intX + 1,  intY - 1 ); // 北東 ↗︎
+    const undulation1 = getUndulation( intX - 1, intY + 1 );  // 南西↙
+    const undulation2 = getUndulation( intX,        intY + 1 ); // 南↓
+    const undulation3 = getUndulation( intX + 1, intY + 1 ); // 南東↘
+    const undulation4 = getUndulation( intX - 1, intY        ); // 西←
+    const undulation5 = getUndulation( intX,        intY        ); // 現在地
+    const undulation6 = getUndulation( intX + 1, intY        ); // 東→
+    const undulation7 = getUndulation( intX - 1, intY - 1 );  // 北西↖
+    const undulation8 = getUndulation( intX,        intY - 1 ); // 北↑
+    const undulation9 = getUndulation( intX + 1, intY - 1 ); // 北東 ↗︎
 
     const isNorthTile = undulation5 !== undulation8;
     const isSouthTile = undulation5 !== undulation2;
@@ -306,12 +306,12 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
         }
     }else if( d === 8 ){
         if( halfPos === 0 ){
-            if( isTileLayoutNorthW27( W27S,  7 ) ) return false;
-            if( isTileLayoutSouthW27( W27S,  4 ) ) return true;
+            if( isTileLayoutNorthW27( W27S, 7 ) ) return false;
+            if( isTileLayoutSouthW27( W27S, 4 ) ) return true;
         }else if( halfPos === 1 ){
-            if( isTileLayoutSouthW27( W27S,  8 ) ) return false;
+            if( isTileLayoutSouthW27( W27S, 8 ) ) return false;
         }else if( halfPos === 2 ){
-            if( isTileLayoutNorthW27( W27S,  5 ) ) return false;
+            if( isTileLayoutNorthW27( W27S, 5 ) ) return false;
         }
     }
 
@@ -346,79 +346,37 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
 
     // ＼ W27N
     if( d === 2 ){
+        if( halfPos === 0 ){
+            if( isTileLayoutSouthW27( W27N, 4 ) ) return false;
+        }else if( halfPos === 2 ){
+            if( isTileLayoutNorthW27( W27N, 1 ) || isTileLayoutNorthW27( W27N, 2 ) || isTileLayoutSouthW27( W27N, 2 ) ) return false;
+            if( isTileLayoutSouthW27( W27N, 1 ) ) return true;
+        }else if( halfPos === 3 ){
+            if( isTileLayoutNorthW27( W27N, 2 ) ) return false;
+        }
     }else if( d === 4 ){
-    }else if( d === 6 ){
+        if( halfPos === 1 ){
+            if( isTileLayoutNorthW27( W27N, 4 ) ) return false;
+        }else if( halfPos === 3 ){
+            if( isTileLayoutSouthW27( W27N, 4 ) ) return false;
+        }
     }else if( d === 8 ){
-    }
-    if( undulation5 === W27N && !isJustX && !isJustY && d === 8 && !isSameW27SN( -1 )) return false;
-
-    if( undulation6 === W27N && isJustX && d === 6 && !isW27( getUndulation( intX + 1, intY - 1 ) ) ) return true;
-
-    if( undulation4 === W27N ){
-        const undulation9 = getUndulation( intX - 1, intY - 1 );
-        const undulation1 = getUndulation( intX - 1, intY + 1 );
-        if( isJustX ){
-            if( isJustY && d === 4 && !isW27( undulation1 ) ) return false;
-        }else if( isJustY ){
-            if( d === 8 && !isW27( undulation9 ) ) return false;
-        }else if( d === 8 ){
-            if( !isW27( undulation1 ) ) return true;
-        }else if( d === 2 ){
-            if( !isW27( undulation9 ) ) return false;
-            if( !isW27( undulation1 ) ) return false;
+        if( halfPos === 0 ){
+            if( isTileLayoutNorthW27( W27N, 5 ) || isTileLayoutSouthW27( W27N, 7 ) ) return false;
+            if( isTileLayoutSouthW27( W27N, 4 ) ) return true;
+        }else if( halfPos === 2 ){
+            if( isTileLayoutNorthW27( W27N, 4 ) ) return false;
         }
     }
-
-    if( isJustY ){
-        if( d === 2 ){
-            if( undulation2 === W27N ){
-                if( isW27( undulation5 ) ){
-                    if( !isJustX && !isSameW27SN( 2 ) ) return false;
-                }else return false;
-            }
-            if( !isJustX && getUndulation( intX - 1, intY + 1 ) === W27N && !isW27( getUndulation( intX - 1, intY + 2 ) ) ) return true;
-        }
-    }else if( !isJustX && d === 8 && !isW27( undulation5 ) && getUndulation( intX - 1, intY - 1 ) === W27N ) return false;
-
 
     // ／ E27N
     if( d === 2 ){
     }else if( d === 4 ){
-    }else if( d === 6 ){
     }else if( d === 8 ){
     }
-    if( undulation5 === E27N && !isJustX ){
-        if( isJustY ){
-            if( d === 8 && !isE27( undulation8 ) ) return false;
-        }else if( d === 8 ){
-            if( !isE27( undulation2 ) ) return true;
-        }else if( d === 2 ){
-            if( !isE27( undulation8 ) ) return false;
-            if( !isE27( undulation2 ) ) return false;
-        }
-    }
 
-    if( undulation2 === E27N && !isJustX && isJustY && !isE27( getUndulation( intX, intY + 2 ) ) ) return true;
-
-    if( d === 2 ){
-        if( isJustY && !isE27( undulation5 ) ){
-            if( undulation2 === E27N ) return false;
-            if( getUndulation( intX - 1, intY + 1 ) === E27N ){
-                if( isE27( undulation4 ) ){
-                    return isE27( getUndulation( intX - 1, intY + 2 ) );
-                }else{
-                    return false;
-                }
-            }
-        }
-    }else if( d === 6 ){
-        if( undulation6 === E27N && isJustX && isJustY && !isE27( getUndulation( intX + 1, intY + 1 ) ) ) return false;
-    }else if( d === 8 && !isJustY ){
-        if( !isJustX ){
-            if( undulation8 === E27N && isE27( undulation5 ) && !isSameW27SN( -2 ) ) return true;
-            if( undulation4 === E27N && !isE27( getUndulation( intX - 1, intY - 1 ) ) )  return false;
-        }
-        // W27N・E27Nの下部タイル
+    // W27N・E27Nの下部タイル
+    if( d === 8 && !isJustY ){
         if( ( undulation8 === W27N && !isW27( undulation5 ) )
           || ( undulation8 === E27N && !isE27( undulation5 ) ) ) return false;
     }
