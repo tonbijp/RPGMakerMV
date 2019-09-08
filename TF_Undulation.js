@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :0.7.2.0
+// Version :0.7.4.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -171,17 +171,11 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
     const isSameW27SN = ( dy )=>{
         return isW27( undulation5 ) && isW27( getUndulation( intX, intY + dy ) );
     };
-    const isSameW27SNW = ( dy )=>{
-        return isW27( undulation4 ) && isW27( getUndulation( intX - 1, intY + dy ) );
-    };
     const isE27 = ( undulation5 )=>{
         return undulation5 === E27N ||  undulation5 === E27S
     };
     const isSameE27SN = ( dy )=>{
         return isE27( undulation5 ) && isE27( getUndulation( intX, intY + dy ) );
-    };
-    const isSameE27SNW = ( dy )=>{
-        return isE27( undulation4 ) && isE27( getUndulation( intX - 1, intY + dy ) );
     };
 
     // 上下方向のレイアウト
@@ -232,6 +226,12 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
             return ( tileS === undulation ) ? LAYOUT_NORTH : LAYOUT_SINGLE;
         }
     };
+    const isTileLayoutNorth = ( undulation, d )=>{
+        return isLayoutNorth( getTileLayout( undulation, d ) );
+    }
+    const isTileLayoutSouth = ( undulation, d )=>{
+        return isLayoutSouth( getTileLayout( undulation, d ) );
+    }
 
    const isLayoutNorth = ( layout )=>{
         return layout === LAYOUT_NORTH || layout === LAYOUT_SINGLE;
@@ -369,10 +369,30 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
         }
     }
 
+
     // ／ E27N
     if( d === 2 ){
-    }else if( d === 4 ){
+        if( halfPos === 0 ){
+            if( isTileLayoutSouthE27( E27N, 5 ) ) return false;
+        }else if( halfPos === 2 ){
+            if( isTileLayoutNorthE27( E27N, 2 ) ) return false;
+            if( isTileLayoutNorthE27( E27N, 1 ) ) return false;
+        }else if( halfPos === 3 ){
+            if( isTileLayoutNorthE27( E27N, 2 ) ) return false;
+        }
+    }else if( d === 6 ){
+        if( halfPos === 1 ){
+            if( isTileLayoutNorthE27( E27N, 6 ) ) return false;
+        }else if( halfPos === 3 ){
+            if( isTileLayoutSouthE27( E27N, 6 ) ) return false;
+        }
     }else if( d === 8 ){
+        if( halfPos === 0 ){
+            if( isTileLayoutSouthE27( E27N, 5 ) ) return true;
+            if( isTileLayoutNorthE27( E27N, 4 ) ) return false;
+        }else if( halfPos === 2 ){
+            if( isTileLayoutNorthE27( E27N, 5 ) ) return false;
+        }
     }
 
     // W27N・E27Nの下部タイル
@@ -390,25 +410,29 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
 
     // \  W63
     if( d === 2 ){
+        if( halfPos === 1 ){
+            if( isTileLayoutNorth( W63, 5 ) ) return false;
+        }else if( halfPos === 2 ){
+            if( isTileLayoutNorth( W63, 2 ) ) return false;
+        }else if( halfPos === 3 ){
+            if( isTileLayoutSouth( W63, 5 ) ) return false;
+        }
     }else if( d === 4 ){
-    }else if( d === 6 ){
+        if( halfPos === 1 ){
+            if( isTileLayoutNorth( W63, 5 ) ) return false;
+            if( isTileLayoutSouth( W63, 5 ) ) return true;
+        }else if( halfPos === 2 ){
+            if( isTileLayoutNorth( W63, 4 ) ) return false;
+        }else if( halfPos === 3 ){
+            if( isTileLayoutSouth( W63, 5 ) ) return true;
+        }
     }else if( d === 8 ){
-    }
-    if( undulation5 === W63 ){
-        if( isJustX ){
-            if( isJustY ){
-                if( d === 2 && isSouthTile ) return false;
-            }else if( d === 2 || d === 4 ){
-                if( isNorthTile ) return false;
-            }else if( d === 8 && !isNorthTile && !isSame( -2 ) ) return false;
-            if( d === 4 ) return true;
-        }else if( !isJustY && d === 8 && isNorthTile ) return false;
-    }else if( isJustX ){
-        if( undulation8 === W63 && !isJustY && d === 8 && isNorthTile ) return false;
-    }else if( isJustY ){
-        if( d === 4 ){
-            if( undulation4 === W63  && !isSameW( - 1 ) ) return false;
-        }else if( d === 2 && undulation2 === W63 && isSouthTile ) return false;
+        if( halfPos === 0 ){
+            if( isTileLayoutNorth( W63, 5 ) ) return false;
+            if( isTileLayoutSouth( W63, 8 ) ) return false;
+        }else if( halfPos === 1 ){
+            if( isTileLayoutNorth( W63, 8 ) || isTileLayoutSouth( W63, 8 ) ) return false;
+        }
     }
 
     //  / E63
