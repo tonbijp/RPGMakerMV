@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :0.7.0.0
+// Version :0.7.1.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -262,28 +262,6 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
     const isTileLayoutSouthW27 = ( undulation, d )=>{
         return isLayoutSouth( getTileLayoutW27( undulation, d ) );
     }
- 
-    /**
-    * 移動先の地形を調べて配置タイプを返す。W27版。
-    * @param {Number} undulation 調査する高低差
-     * @param {Number} d 向き(テンキー対応)
-    * @returns {Number} 配置の種類( LAYOUT_NORTH, LAYOUT_CENTER, LAYOUT_SOUTH, LAYOUT_SINGLE, LAYOUT_NONE )
-    */
-    const getTileLayoutW27 = ( undulation, d )=>{
-        const [ tileN, tileC, tileS ] = getTileNCS( d );
-        if( tileC !== undulation ) return LAYOUT_NONE;
-        if( isW27( tileN ) ){
-            return isW27( tileS ) ? LAYOUT_CENTER : LAYOUT_SOUTH;
-        }else{
-            return isW27( tileS ) ? LAYOUT_NORTH : LAYOUT_SINGLE;
-        }
-    };
-    const isTileLayoutNorthW27 = ( undulation, d )=>{
-        return isLayoutNorth( getTileLayoutW27( undulation, d ) );
-    }
-    const isTileLayoutSouthW27 = ( undulation, d )=>{
-        return isLayoutSouth( getTileLayoutW27( undulation, d ) );
-    }
 
     /**
     * 移動先の地形を調べて配置タイプを返す。E27版。
@@ -338,51 +316,40 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
     }
 
     // ／ E27S
-    if( undulation5 === E27S ){
-        if( isJustX ){
-            if( !isJustY && d === 2 && !isSameE27SN( -1 ) ) return false;
-        }else if( !isSameE27SN( -1 ) ){
-            if( isJustY ){
-                if( d === 2 ) return false;
-                if( d === 8 && !isSameE27SN( 1 ) ) return false;
-            }else if( d === 2 && !isSameE27SN( 1 ) ) return false;
+    if( d === 2 ){
+        if( halfPos === 0 ){
+            if( isTileLayoutNorthE27( E27S, 5 ) ) return false;
+            if( isTileLayoutSouthE27( E27S, 4 ) ) return false;
+        }else if( halfPos === 2 ){
+            if( isTileLayoutNorthE27( E27S, 1 ) ) return false;
+            if( isTileLayoutSouthE27( E27S, 1 ) ) return true;
+        }else if( halfPos === 3 ){
+            if( isTileLayoutNorthE27( E27S, 2 ) ) return false;
         }
-    }else if(
-        undulation5 !== E27N && undulation6 === E27S &&
-        isJustX && d === 6 && !isE27( getUndulation( intX + 1, intY - 1 ) )
-    ) return false;
-
-    if( isJustY && d === 2 ){
-        if( isJustX ){
-            if( undulation2 === E27S && !isSameE27SN( 1 ) && !isE27( getUndulation( intX, intY + 2 ) ) ) return false;
-        }else if( getUndulation( intX - 1, intY + 1 ) === E27S
-            && !isSameE27SNW( 1 ) && !isE27( getUndulation( intX - 1, intY + 2 ) )
-        ) return false;
-    }
-    
-
-    if( undulation4 === E27S ){
-        if( isJustX ){
-            if( !isJustY && d === 4 && !isSameE27SNW( 1 ) ) return true;
-        }else if( isJustY ){
-            if( d === 2 ) return ( getUndulation( intX - 1, intY + 1 ) !== E27N || isE27( getUndulation( intX - 1, intY + 2 ) ) );
-            if( !isSameE27SNW( -1 ) ){
-                if( d === 2 ) return true;
-                if( d === 8 ) return false;
-            }
-        }else if( d === 2 ){
-            if( !isSameE27SNW( - 1 ) || !isSameE27SNW( 1 ) ) return false;
-        }else if( d === 8 && !isSameE27SNW( 1 ) ){
-            return isSameE27SNW( -1 );
+    }else if( d === 4 ){
+        if( halfPos === 1 ){
+            if( isTileLayoutNorthE27( E27S, 4 ) ) return false;
+            if( isTileLayoutSouthE27( E27S, 4 ) ) return true;
+        }
+    }else if( d === 6 ){
+        if( halfPos === 3 ){
+            if( isTileLayoutNorthE27( E27S, 6 ) ) return false;
+        }
+    }else if( d === 8 ){
+        if( halfPos === 0 ){
+            if( isTileLayoutNorthE27( E27S, 8 ) ) return false;
+        }else if( halfPos === 2 ){
+            if( isTileLayoutNorthE27( E27S, 4 ) ) return false;
         }
     }
-
-    if( d === 8 && !isJustX && !isJustY && undulation8 === E27S && !isE27( getUndulation( intX, intY - 2 ) )) return false;
-    if( d === 2 && !isJustX && isJustY && getUndulation( intX - 1, intY + 1 ) === E27S
-        && !isSameE27SNW( 2 ) ) return true;
 
 
     // ＼ W27N
+    if( d === 2 ){
+    }else if( d === 4 ){
+    }else if( d === 6 ){
+    }else if( d === 8 ){
+    }
     if( undulation5 === W27N && !isJustX && !isJustY && d === 8 && !isSameW27SN( -1 )) return false;
 
     if( undulation6 === W27N && isJustX && d === 6 && !isW27( getUndulation( intX + 1, intY - 1 ) ) ) return true;
@@ -415,6 +382,11 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
 
 
     // ／ E27N
+    if( d === 2 ){
+    }else if( d === 4 ){
+    }else if( d === 6 ){
+    }else if( d === 8 ){
+    }
     if( undulation5 === E27N && !isJustX ){
         if( isJustY ){
             if( d === 8 && !isE27( undulation8 ) ) return false;
@@ -459,6 +431,11 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
 
 
     // \  W63
+    if( d === 2 ){
+    }else if( d === 4 ){
+    }else if( d === 6 ){
+    }else if( d === 8 ){
+    }
     if( undulation5 === W63 ){
         if( isJustX ){
             if( isJustY ){
@@ -477,6 +454,11 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
     }
 
     //  / E63
+    if( d === 2 ){
+    }else if( d === 4 ){
+    }else if( d === 6 ){
+    }else if( d === 8 ){
+    }
     if( undulation5 === E63 ){
         if( isJustX ){
             if( isJustY ){
@@ -499,6 +481,11 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
     }
 
     // ＼ W45
+    if( d === 2 ){
+    }else if( d === 4 ){
+    }else if( d === 6 ){
+    }else if( d === 8 ){
+    }
     if( undulation5 === W45 ){
         if( isJustX ){
             if( isJustY ){
@@ -528,6 +515,11 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
 
 
     // ／ E45
+    if( d === 2 ){
+    }else if( d === 4 ){
+    }else if( d === 6 ){
+    }else if( d === 8 ){
+    }
     if( undulation5 === E45 ){
         if( isJustX ){
             if( isJustY ){
