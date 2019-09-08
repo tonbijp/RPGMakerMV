@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :0.7.5.0
+// Version :0.7.6.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -457,71 +457,71 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
         if( halfPos === 0 ){
             if( isTileLayoutNorth( E63, 4 ) ) return false;
         }else if( halfPos === 1 ){
-            if( isTileLayoutNorth( E63, 8 ) ) return false;
-            if( isTileLayoutSouth( E63, 8 ) ) return false;
+            if( isTileLayoutNorth( E63, 8 ) || isTileLayoutSouth( E63, 8 ) ) return false;
         }
     }
 
     // ＼ W45
     if( d === 2 ){
+        if( halfPos === 0 ){
+            if( isTileLayoutNorth( W45, 4 ) ) return false;
+        }else if( halfPos === 1 ){
+            if( isTileLayoutSouth( W45, 5 ) ) return false;
+        }else if( halfPos === 2 ){
+            if( isTileLayoutNorth( W45, 2 ) ) return false;
+            if( isTileLayoutSouth( W45, 1 ) ) return true;
+        }else if( halfPos === 3 ){
+            if( isTileLayoutNorth( W45, 2 ) ) return false;
+            if( isTileLayoutSouth( W45, 2 ) ) return true;
+        }
     }else if( d === 4 ){
-    }else if( d === 6 ){
+        if( halfPos === 0 ){
+        }else if( halfPos === 1 ){
+            if( isTileLayoutSouth( W45, 5 ) ) return true;
+        }else if( halfPos === 2 ){
+        }else if( halfPos === 3 ){
+            if( isTileLayoutNorth( W45, 4 ) ) return false;
+        }
     }else if( d === 8 ){
-    }
-    if( undulation5 === W45 ){
-        if( isJustX ){
-            if( isJustY ){
-                if( d === 2 && !isSame( 2 ) ) return true;
-                if( d === 8 && isNorthTile ) return false;
-            }else if( d === 2 ){
-                if( isSouthTile || isNorthTile ) return false;
-            }else if( ( d === 8 || d === 4 ) && !isNorthTile ) return true;
-        }else if( isJustY ){
-            if( d === 2 && !isSouthTile ) return  isSame( 2 );
-        }else if( d === 8 && isNorthTile ) return false;
-    }
-
-    if( undulation4 === W45 && !isJustX ){
-        if( isJustY ){
-            if( d === 2 ){
-                if( !isSameW( - 1 ) ) return false;
-                if( isSameW( 1 ) && !isSameW( 2 ) ) return true;
-            }
-        }else if( d === 8 ){
-            if( isSameW( - 1 ) && !isSameW( - 2 ) ) return false;
-            if( !isSameW( 1 ) ) return true;
+        if( halfPos === 0 ){
+            if( isTileLayoutNorth( W45, 7 ) ) return false;
+            if( isTileLayoutNorth( W45, 5 ) ) return false;
+            if( isTileLayoutSouth( W45, 4 ) ) return true;
+        }else if( halfPos === 1 ){
+            if( isTileLayoutSouth( W45, 5 ) ) return true;
+        }else if( halfPos === 2 ){
+        }else if( halfPos === 3 ){
+            if( isTileLayoutNorth( W45, 5 ) ) return false;
         }
     }
-
-    if( undulation2 === W45 && !isJustX && isJustY && d === 2 ) return false;
 
 
     // ／ E45
     if( d === 2 ){
+        if( halfPos === 0 ){
+        }else if( halfPos === 1 ){
+        }else if( halfPos === 2 ){
+        }else if( halfPos === 3 ){
+        }
     }else if( d === 4 ){
+        if( halfPos === 0 ){
+        }else if( halfPos === 1 ){
+        }else if( halfPos === 2 ){
+        }else if( halfPos === 3 ){
+        }
     }else if( d === 6 ){
+        if( halfPos === 0 ){
+        }else if( halfPos === 1 ){
+        }else if( halfPos === 2 ){
+        }else if( halfPos === 3 ){
+        }
     }else if( d === 8 ){
+        if( halfPos === 0 ){
+        }else if( halfPos === 1 ){
+        }else if( halfPos === 2 ){
+        }else if( halfPos === 3 ){
+        }
     }
-    if( undulation5 === E45 ){
-        if( isJustX ){
-            if( isJustY ){
-                if( d === 2 && !isSame( 2 ) ) return true;
-                if( d === 8 && isNorthTile ) return false;
-            }else if( d === 2 ){
-                if( isSouthTile || isNorthTile ) return false;
-            }else if( ( d === 8 ||  d === 6 ) && !isNorthTile ) return true;
-        }else if( isJustY ){
-            if( d === 2 ) return !isNorthTile && !isSouthTile;
-        }else if( d === 8 && !isNorthTile ) return isSame( - 2 );
-    }
-    
-    if( undulation4 === E45 && !isJustX && d === 8 && !isSameW( - 1 ) ){
-        if( isSameW( 1 ) ){
-            if( !isJustY ) return false;
-        }else if( isJustY ) return false;
-    }
-
-    if( !isJustX && isJustY &&  d === 2 && undulation4 !== E45 && getUndulation( intX -1, intY + 1 ) === E45 ) return false;
 
 
     return _Game_CharacterBase_isMapPassable.apply( this, arguments );
