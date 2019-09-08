@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :0.6.7.0
+// Version :0.7.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -141,81 +141,204 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
     const intX = Math.floor( x + 0.5 );
     const intY = Math.floor( y + 0.5 );
     const isJustX = ( this._realX % 1 ) === 0;
-    const isJustY =  ( this._realY % 1 ) === 0;
+    const isJustY = ( this._realY % 1 ) === 0;
+    const halfPos = ( isJustX ? 1 : 0 ) + ( isJustY ? 2 : 0 );  // タイル内の位置( 0:左上, 1:上, 2:左下, 3:下 )
 
-    // 高低差タイプ
-    const undulation = getUndulation( intX, intY );             // 現在地
-    const undulationE = getUndulation( intX + 1, intY );   // 東→
-    const undulationW = getUndulation( intX - 1,  intY ); // 西←
-    const undulationS = getUndulation( intX, intY + 1 );   // 南↓
-    const undulationN = getUndulation( intX, intY - 1 );   // 北↑
+    // 高低差タイプ(テンキー対応)
+    const undulation1 = getUndulation( intX - 1,  intY + 1 );  // 南西↙
+    const undulation2 = getUndulation( intX,         intY + 1 ); // 南↓
+    const undulation3 = getUndulation( intX + 1,  intY + 1 ); // 南東↘
+    const undulation4 = getUndulation( intX - 1,  intY        ); // 西←
+    const undulation5 = getUndulation( intX,         intY        ); // 現在地
+    const undulation6 = getUndulation( intX + 1,  intY        ); // 東→
+    const undulation7 = getUndulation( intX - 1,  intY - 1 );  // 北西↖
+    const undulation8 = getUndulation( intX,         intY - 1 ); // 北↑
+    const undulation9 = getUndulation( intX + 1,  intY - 1 ); // 北東 ↗︎
 
-    const isNorthTile = undulation !== undulationN;
-    const isSouthTile = undulation !== undulationS;
+    const isNorthTile = undulation5 !== undulation8;
+    const isSouthTile = undulation5 !== undulation2;
     
     const isSame = ( dy )=>{
-        return undulation === getUndulation( intX, intY + dy );
+        return undulation5 === getUndulation( intX, intY + dy );
     };
     const isSameW = ( dy )=>{
-        return undulationW === getUndulation( intX - 1, intY + dy );
+        return undulation4 === getUndulation( intX - 1, intY + dy );
     };
 
-    const isW27 = ( undulation )=>{
-        return undulation === W27N ||  undulation === W27S
+    const isW27 = ( undulation5 )=>{
+        return undulation5 === W27N ||  undulation5 === W27S
     };
     const isSameW27SN = ( dy )=>{
-        return isW27( undulation ) && isW27( getUndulation( intX, intY + dy ) );
+        return isW27( undulation5 ) && isW27( getUndulation( intX, intY + dy ) );
     };
     const isSameW27SNW = ( dy )=>{
-        return isW27( undulationW ) && isW27( getUndulation( intX - 1, intY + dy ) );
+        return isW27( undulation4 ) && isW27( getUndulation( intX - 1, intY + dy ) );
     };
-    const isE27 = ( undulation )=>{
-        return undulation === E27N ||  undulation === E27S
+    const isE27 = ( undulation5 )=>{
+        return undulation5 === E27N ||  undulation5 === E27S
     };
     const isSameE27SN = ( dy )=>{
-        return isE27( undulation ) && isE27( getUndulation( intX, intY + dy ) );
+        return isE27( undulation5 ) && isE27( getUndulation( intX, intY + dy ) );
     };
     const isSameE27SNW = ( dy )=>{
-        return isE27( undulationW ) && isE27( getUndulation( intX - 1, intY + dy ) );
+        return isE27( undulation4 ) && isE27( getUndulation( intX - 1, intY + dy ) );
     };
 
+    // 上下方向のレイアウト
+    const LAYOUT_NONE = 0;
+    const LAYOUT_SINGLE = 1;
+    const LAYOUT_NORTH = 8;
+    const LAYOUT_CENTER = 5;
+    const LAYOUT_SOUTH = 2;
+    /**
+     * 指定方向+南北の地形を返す。
+     * @param {Number} d 向き(テンキー対応)
+     * @returns {Array} 配置の種類
+     */
+    const getTileNCS = ( d )=>{
+        switch( d ){
+            case 1:
+                return [ undulation4, undulation1, getUndulation( intX - 1, intY + 2 ) ];
+            case 2:
+                return [ undulation5, undulation2, getUndulation( intX, intY + 2 ) ];
+            case 3:
+                return [ undulation6, undulation3, getUndulation( intX + 1, intY + 2 ) ];
+            case 4:
+                return [ undulation7, undulation4, undulation1 ];
+            case 5:
+                return [ undulation8, undulation5, undulation2 ];
+            case 6:
+                return [ undulation9, undulation6, undulation3 ];
+            case 7:
+                return [ getUndulation( intX - 1, intY - 2 ), undulation7, undulation4 ];
+            case 8:
+                return [ getUndulation( intX, intY - 2 ), undulation8, undulation5 ];
+            case 9:
+                return [ getUndulation( intX + 1, intY - 2 ), undulation9, undulation6 ];
+        }
+    }
+    /**
+     * 移動先の地形を調べて配置タイプを返す。
+     * @param {Number} undulation 調査する高低差
+     * @param {Number} d 向き(テンキー対応)
+     * @returns {Number} 配置の種類( LAYOUT_NORTH, LAYOUT_CENTER, LAYOUT_SOUTH, LAYOUT_SINGLE, LAYOUT_NONE )
+     */
+    const getTileLayout = ( undulation, d )=>{
+        const [ tileN, tileC, tileS ] = getTileNCS( d );
+        if( tileC !== undulation ) return LAYOUT_NONE;
+        if( tileN === undulation ){
+            return ( tileS === undulation ) ? LAYOUT_CENTER : LAYOUT_SOUTH;
+        }else{
+            return ( tileS === undulation ) ? LAYOUT_NORTH : LAYOUT_SINGLE;
+        }
+    };
 
+   const isLayoutNorth = ( layout )=>{
+        return layout === LAYOUT_NORTH || layout === LAYOUT_SINGLE;
+    }
+    const isLayoutSouth = ( layout )=>{
+        return layout === LAYOUT_SOUTH || layout === LAYOUT_SINGLE;
+    }
+
+
+    /**
+    * 移動先の地形を調べて配置タイプを返す。W27版。
+    * @param {Number} undulation 調査する高低差
+     * @param {Number} d 向き(テンキー対応)
+    * @returns {Number} 配置の種類( LAYOUT_NORTH, LAYOUT_CENTER, LAYOUT_SOUTH, LAYOUT_SINGLE, LAYOUT_NONE )
+    */
+    const getTileLayoutW27 = ( undulation, d )=>{
+        const [ tileN, tileC, tileS ] = getTileNCS( d );
+        if( tileC !== undulation ) return LAYOUT_NONE;
+        if( isW27( tileN ) ){
+            return isW27( tileS ) ? LAYOUT_CENTER : LAYOUT_SOUTH;
+        }else{
+            return isW27( tileS ) ? LAYOUT_NORTH : LAYOUT_SINGLE;
+        }
+    };
+    const isTileLayoutNorthW27 = ( undulation, d )=>{
+        return isLayoutNorth( getTileLayoutW27( undulation, d ) );
+    }
+    const isTileLayoutSouthW27 = ( undulation, d )=>{
+        return isLayoutSouth( getTileLayoutW27( undulation, d ) );
+    }
+ 
+    /**
+    * 移動先の地形を調べて配置タイプを返す。W27版。
+    * @param {Number} undulation 調査する高低差
+     * @param {Number} d 向き(テンキー対応)
+    * @returns {Number} 配置の種類( LAYOUT_NORTH, LAYOUT_CENTER, LAYOUT_SOUTH, LAYOUT_SINGLE, LAYOUT_NONE )
+    */
+    const getTileLayoutW27 = ( undulation, d )=>{
+        const [ tileN, tileC, tileS ] = getTileNCS( d );
+        if( tileC !== undulation ) return LAYOUT_NONE;
+        if( isW27( tileN ) ){
+            return isW27( tileS ) ? LAYOUT_CENTER : LAYOUT_SOUTH;
+        }else{
+            return isW27( tileS ) ? LAYOUT_NORTH : LAYOUT_SINGLE;
+        }
+    };
+    const isTileLayoutNorthW27 = ( undulation, d )=>{
+        return isLayoutNorth( getTileLayoutW27( undulation, d ) );
+    }
+    const isTileLayoutSouthW27 = ( undulation, d )=>{
+        return isLayoutSouth( getTileLayoutW27( undulation, d ) );
+    }
+
+    /**
+    * 移動先の地形を調べて配置タイプを返す。E27版。
+    * @param {Number} undulation 調査する高低差
+     * @param {Number} d 向き(テンキー対応)
+    * @returns {Number} 配置の種類( LAYOUT_NORTH, LAYOUT_CENTER, LAYOUT_SOUTH, LAYOUT_SINGLE, LAYOUT_NONE )
+    */
+    const getTileLayoutE27 = ( undulation, d )=>{
+        const [ tileN, tileC, tileS ] = getTileNCS( d );
+        if( tileC !== undulation ) return LAYOUT_NONE;
+        if( isE27( tileN ) ){
+            return isE27( tileS ) ? LAYOUT_CENTER : LAYOUT_SOUTH;
+        }else{
+            return isE27( tileS ) ? LAYOUT_NORTH : LAYOUT_SINGLE;
+        }
+    };
+    const isTileLayoutNorthE27 = ( undulation, d )=>{
+        return isLayoutNorth( getTileLayoutE27( undulation, d ) );
+    }
+    const isTileLayoutSouthE27 = ( undulation, d )=>{
+        return isLayoutSouth( getTileLayoutE27( undulation, d ) );
+    }
 
     // ＼ W27S
-    if( !isJustX && d === 8 && !isJustY 
-        && getUndulation( intX - 1, intY - 1 ) === W27S &&  !isW27( getUndulation( intX - 1, intY - 2 ) )
-    ) return false;
-
-    if( undulation === W27S ){
-        if( isJustX ){
-            if( !isJustY && d === 2 && !isSameW27SN( -1 ) ) return false;
-        }else if( isJustY ){
-            if( !isW27( undulationN ) ){
-                if( d === 8 ) return false;
-                if( d === 2 ) return ( undulationS !== W27N || isW27( getUndulation( intX, intY + 2 ) ) );
-            }
-        }else if( d === 2 ){
-            if( !isSameW27SN( 1 ) || !isSameW27SN( -1 ) ) return false;
-        }else if( d === 8 && !isSameW27SN( 1 ) ) return isSameW27SN( -1 );
-    }else if( undulationE === W27S ){
-        if( isJustX && !isJustY && d === 6 && getUndulation( intX + 1, intY + 1 ) !== W27S ) return true;
-    }
-    
-    if( undulationW === W27S && !isJustX && !isSameW27SNW( -1 ) ){
-        if( isJustY ){
-            if( d === 2 ) return false;
-            if( d === 8 && !isSameW27SNW( 1 ) ) return false;
-        }else if( d === 2 && !isSameW27SNW( 1 ) ) return false;
-    }
-
-    if( isJustY && d === 2 ){
-        if( isJustX ){
-            if( undulationS === W27S && !isSameW27SN( 1 ) && !isW27( getUndulation( intX, intY + 2 ) ) ) return false;
-        }else if( getUndulation( intX - 1, intY + 1 ) === W27S && !isSameW27SNW( 2 ) ) return true;
+    if( d === 2 ){
+        if( halfPos === 0 ){
+            if( isTileLayoutSouthW27( W27S, 5 ) || isTileLayoutNorthW27( W27S, 4 ) ) return false;
+        }else if( halfPos === 2 ){
+            if( isTileLayoutNorthW27( W27S, 2 ) ||  isTileLayoutSouthW27( W27S, 4 ) ) return false;
+            if( isTileLayoutSouthW27( W27S, 2 ) ) return true;
+        }else if( halfPos === 3 ){
+            if( isTileLayoutNorthW27( W27S, 2 ) ) return false;
+        }
+    }else if( d === 4 ){
+        if( halfPos === 3 ){
+            if( isTileLayoutNorthW27( W27S, 4 ) ) return false;
+        }
+    }else if( d === 6 ){
+        if( halfPos === 1 ){
+            if( isTileLayoutSouthW27( W27S, 6 ) ) return true;
+            if( isTileLayoutNorthW27( W27S, 6 ) ) return false;
+        }
+    }else if( d === 8 ){
+        if( halfPos === 0 ){
+            if( isTileLayoutNorthW27( W27S,  7 ) ) return false;
+            if( isTileLayoutSouthW27( W27S,  4 ) ) return true;
+        }else if( halfPos === 1 ){
+            if( isTileLayoutSouthW27( W27S,  8 ) ) return false;
+        }else if( halfPos === 2 ){
+            if( isTileLayoutNorthW27( W27S,  5 ) ) return false;
+        }
     }
 
     // ／ E27S
-    if( undulation === E27S ){
+    if( undulation5 === E27S ){
         if( isJustX ){
             if( !isJustY && d === 2 && !isSameE27SN( -1 ) ) return false;
         }else if( !isSameE27SN( -1 ) ){
@@ -224,17 +347,21 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
                 if( d === 8 && !isSameE27SN( 1 ) ) return false;
             }else if( d === 2 && !isSameE27SN( 1 ) ) return false;
         }
-    }
+    }else if(
+        undulation5 !== E27N && undulation6 === E27S &&
+        isJustX && d === 6 && !isE27( getUndulation( intX + 1, intY - 1 ) )
+    ) return false;
 
     if( isJustY && d === 2 ){
         if( isJustX ){
-            if( undulationS === E27S && !isSameE27SN( 1 ) && !isE27( getUndulation( intX, intY + 2 ) ) ) return false;
+            if( undulation2 === E27S && !isSameE27SN( 1 ) && !isE27( getUndulation( intX, intY + 2 ) ) ) return false;
         }else if( getUndulation( intX - 1, intY + 1 ) === E27S
             && !isSameE27SNW( 1 ) && !isE27( getUndulation( intX - 1, intY + 2 ) )
         ) return false;
     }
+    
 
-    if( undulationW === E27S ){
+    if( undulation4 === E27S ){
         if( isJustX ){
             if( !isJustY && d === 4 && !isSameE27SNW( 1 ) ) return true;
         }else if( isJustY ){
@@ -250,63 +377,62 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
         }
     }
 
-    if( d === 8 && !isJustX && !isJustY && undulationN === E27S && !isE27( getUndulation( intX, intY - 2 ) )) return false;
+    if( d === 8 && !isJustX && !isJustY && undulation8 === E27S && !isE27( getUndulation( intX, intY - 2 ) )) return false;
     if( d === 2 && !isJustX && isJustY && getUndulation( intX - 1, intY + 1 ) === E27S
         && !isSameE27SNW( 2 ) ) return true;
 
 
     // ＼ W27N
-    if( undulation === W27N && !isJustX && !isJustY && d === 8 && !isSameW27SN( -1 )) return false;
+    if( undulation5 === W27N && !isJustX && !isJustY && d === 8 && !isSameW27SN( -1 )) return false;
 
-    if( undulationE === W27N && isJustX && d === 6 && !isW27( getUndulation( intX + 1, intY - 1 ) ) ) return true;
+    if( undulation6 === W27N && isJustX && d === 6 && !isW27( getUndulation( intX + 1, intY - 1 ) ) ) return true;
 
-    if( undulationW === W27N ){
-        const undulationNW = getUndulation( intX - 1, intY - 1 );
-        const undulationSW = getUndulation( intX - 1, intY + 1 );
+    if( undulation4 === W27N ){
+        const undulation9 = getUndulation( intX - 1, intY - 1 );
+        const undulation1 = getUndulation( intX - 1, intY + 1 );
         if( isJustX ){
-            if( isJustY && d === 4 && !isW27( undulationSW ) ) return false;
+            if( isJustY && d === 4 && !isW27( undulation1 ) ) return false;
         }else if( isJustY ){
-            if( d === 8 && !isW27( undulationNW ) ) return false;
+            if( d === 8 && !isW27( undulation9 ) ) return false;
         }else if( d === 8 ){
-            if( !isW27( undulationSW ) ) return true;
+            if( !isW27( undulation1 ) ) return true;
         }else if( d === 2 ){
-            if( !isW27( undulationNW ) ) return false;
-            if( !isW27( undulationSW ) ) return false;
+            if( !isW27( undulation9 ) ) return false;
+            if( !isW27( undulation1 ) ) return false;
         }
     }
 
     if( isJustY ){
         if( d === 2 ){
-            if( undulationS === W27N ){
-                if( isW27( undulation ) ){
+            if( undulation2 === W27N ){
+                if( isW27( undulation5 ) ){
                     if( !isJustX && !isSameW27SN( 2 ) ) return false;
                 }else return false;
             }
             if( !isJustX && getUndulation( intX - 1, intY + 1 ) === W27N && !isW27( getUndulation( intX - 1, intY + 2 ) ) ) return true;
         }
-    }else if( !isJustX && d === 8 && !isW27( undulation ) && getUndulation( intX - 1, intY - 1 ) === W27N ) return false;
+    }else if( !isJustX && d === 8 && !isW27( undulation5 ) && getUndulation( intX - 1, intY - 1 ) === W27N ) return false;
 
 
     // ／ E27N
-    if( undulation === E27N && !isJustX ){
+    if( undulation5 === E27N && !isJustX ){
         if( isJustY ){
-            if( d === 8 && !isE27( undulationN ) ) return false;
+            if( d === 8 && !isE27( undulation8 ) ) return false;
         }else if( d === 8 ){
-            if( !isE27( undulationS ) ) return true;
+            if( !isE27( undulation2 ) ) return true;
         }else if( d === 2 ){
-            if( !isE27( undulationN ) ) return false;
-            if( !isE27( undulationS ) ) return false;
+            if( !isE27( undulation8 ) ) return false;
+            if( !isE27( undulation2 ) ) return false;
         }
     }
 
-    if( undulationS === E27N && !isJustX && isJustY && !isE27( getUndulation( intX, intY + 2 ) ) ) return true;
+    if( undulation2 === E27N && !isJustX && isJustY && !isE27( getUndulation( intX, intY + 2 ) ) ) return true;
 
     if( d === 2 ){
-        if( isJustY && !isE27( undulation ) ){
-            if( isJustX ){
-                if( undulationS === E27N ) return false;
-            } else if( getUndulation( intX - 1, intY + 1 ) === E27N ){
-                if( isE27( undulationW ) ){
+        if( isJustY && !isE27( undulation5 ) ){
+            if( undulation2 === E27N ) return false;
+            if( getUndulation( intX - 1, intY + 1 ) === E27N ){
+                if( isE27( undulation4 ) ){
                     return isE27( getUndulation( intX - 1, intY + 2 ) );
                 }else{
                     return false;
@@ -314,15 +440,15 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
             }
         }
     }else if( d === 6 ){
-        if( undulationE === E27N && isJustX && isJustY && !isE27( getUndulation( intX + 1, intY + 1 ) ) ) return false;
+        if( undulation6 === E27N && isJustX && isJustY && !isE27( getUndulation( intX + 1, intY + 1 ) ) ) return false;
     }else if( d === 8 && !isJustY ){
         if( !isJustX ){
-            if( undulationN === E27N && isE27( undulation ) && !isSameW27SN( -2 ) ) return true;
-            if( undulationW === E27N && !isE27( getUndulation( intX - 1, intY - 1 ) ) )  return false;
+            if( undulation8 === E27N && isE27( undulation5 ) && !isSameW27SN( -2 ) ) return true;
+            if( undulation4 === E27N && !isE27( getUndulation( intX - 1, intY - 1 ) ) )  return false;
         }
         // W27N・E27Nの下部タイル
-        if( ( undulationN === W27N && !isW27( undulation ) )
-          || ( undulationN === E27N && !isE27( undulation ) ) ) return false;
+        if( ( undulation8 === W27N && !isW27( undulation5 ) )
+          || ( undulation8 === E27N && !isE27( undulation5 ) ) ) return false;
     }
 
     // W27N・W27S・E27N・E27S 共通の中央部分タイル
@@ -333,7 +459,7 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
 
 
     // \  W63
-    if( undulation === W63 ){
+    if( undulation5 === W63 ){
         if( isJustX ){
             if( isJustY ){
                 if( d === 2 && isSouthTile ) return false;
@@ -343,15 +469,15 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
             if( d === 4 ) return true;
         }else if( !isJustY && d === 8 && isNorthTile ) return false;
     }else if( isJustX ){
-        if( undulationN === W63 && !isJustY && d === 8 && isNorthTile ) return false;
+        if( undulation8 === W63 && !isJustY && d === 8 && isNorthTile ) return false;
     }else if( isJustY ){
         if( d === 4 ){
-            if( undulationW === W63  && !isSameW( - 1 ) ) return false;
-        }else if( d === 2 && undulationS === W63 && isSouthTile ) return false;
+            if( undulation4 === W63  && !isSameW( - 1 ) ) return false;
+        }else if( d === 2 && undulation2 === W63 && isSouthTile ) return false;
     }
 
     //  / E63
-    if( undulation === E63 ){
+    if( undulation5 === E63 ){
         if( isJustX ){
             if( isJustY ){
                 if( d === 2 && isSouthTile ) return false;
@@ -360,20 +486,20 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
             }else if( d === 8 && !isNorthTile && !isSame( -2 ) ) return false;
             if( d === 6 ) return true;
         }else if( isJustY && d === 6 && isNorthTile ) return false;
-    }else if( isJustX && undulationN === E63 && !isJustY && d === 8 && isNorthTile ) return false;
+    }else if( isJustX && undulation8 === E63 && !isJustY && d === 8 && isNorthTile ) return false;
 
     if( !isJustX ){
         if( isJustY ){
-            if( d === 2 && undulationW !== E63 && getUndulation( intX - 1, intY + 1 ) === E63 ) return false;
+            if( d === 2 && undulation4 !== E63 && getUndulation( intX - 1, intY + 1 ) === E63 ) return false;
         }else if( d === 8 ){
-            if( undulationW === E63 ){
+            if( undulation4 === E63 ){
                 if( !isSameW( - 1 ) ) return false;
             }else if( getUndulation( intX - 1, intY - 1 ) === E63 ) return false;
         }
     }
 
     // ＼ W45
-    if( undulation === W45 ){
+    if( undulation5 === W45 ){
         if( isJustX ){
             if( isJustY ){
                 if( d === 2 && !isSame( 2 ) ) return true;
@@ -386,7 +512,7 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
         }else if( d === 8 && isNorthTile ) return false;
     }
 
-    if( undulationW === W45 && !isJustX ){
+    if( undulation4 === W45 && !isJustX ){
         if( isJustY ){
             if( d === 2 ){
                 if( !isSameW( - 1 ) ) return false;
@@ -398,11 +524,11 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
         }
     }
 
-    if( undulationS === W45 && !isJustX && isJustY && d === 2 ) return false;
+    if( undulation2 === W45 && !isJustX && isJustY && d === 2 ) return false;
 
 
     // ／ E45
-    if( undulation === E45 ){
+    if( undulation5 === E45 ){
         if( isJustX ){
             if( isJustY ){
                 if( d === 2 && !isSame( 2 ) ) return true;
@@ -415,13 +541,13 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
         }else if( d === 8 && !isNorthTile ) return isSame( - 2 );
     }
     
-    if( undulationW === E45 && !isJustX && d === 8 && !isSameW( - 1 ) ){
+    if( undulation4 === E45 && !isJustX && d === 8 && !isSameW( - 1 ) ){
         if( isSameW( 1 ) ){
             if( !isJustY ) return false;
         }else if( isJustY ) return false;
     }
 
-    if( !isJustX && isJustY &&  d === 2 && undulationW !== E45 && getUndulation( intX -1, intY + 1 ) === E45 ) return false;
+    if( !isJustX && isJustY &&  d === 2 && undulation4 !== E45 && getUndulation( intX -1, intY + 1 ) === E45 ) return false;
 
 
     return _Game_CharacterBase_isMapPassable.apply( this, arguments );
@@ -441,11 +567,11 @@ Game_CharacterBase.prototype.updateMove = function() {
     const tileX = ( preRealX + 0.5 ) % 1;
     const isW =  this.x < preRealX;
     if( this._realX != this.x ){ //移動中
-        const undulation = getUndulation( Math.floor( this._realX + 0.5 ), Math.floor( this._realY + 0.5 ) );
-        if( undulation !== -1 ){
+        const undulation5 = getUndulation( Math.floor( this._realX + 0.5 ), Math.floor( this._realY + 0.5 ) );
+        if( undulation5 !== -1 ){
 
-            const ratioXY = isW ? FLAG2RATIO_W[ undulation ] : FLAG2RATIO_E[ undulation ];
-            if( ratioXY && !( ( undulation === W63 && 0.5 < tileX ) || ( undulation === E63 && tileX < 0.5 ) ) ){
+            const ratioXY = isW ? FLAG2RATIO_W[ undulation5 ] : FLAG2RATIO_E[ undulation5 ];
+            if( ratioXY && !( ( undulation5 === W63 && 0.5 < tileX ) || ( undulation5 === E63 && tileX < 0.5 ) ) ){
                 this._realX += this.distancePerFrame() * ratioXY[ 0 ];
                 this._realY += this.distancePerFrame() * ratioXY[ 1 ];
             }
@@ -455,20 +581,20 @@ Game_CharacterBase.prototype.updateMove = function() {
     _Game_CharacterBase_updateMove.call( this );
     if( preRealX === this.x || this._realX === this.x ) return;
  
-    const undulation = getUndulation( Math.floor( this._realX + 0.5 ), Math.floor( this._realY + 0.5 ) );
-    if( undulation === -1 || ( preRealX * 2 ) !== Math.floor( preRealX * 2 ) ) return;
+    const undulation5 = getUndulation( Math.floor( this._realX + 0.5 ), Math.floor( this._realY + 0.5 ) );
+    if( undulation5 === -1 || ( preRealX * 2 ) !== Math.floor( preRealX * 2 ) ) return;
 
-    const targetPos = isW ? FLAG2POS_W[ undulation ] : FLAG2POS_E[ undulation ];
+    const targetPos = isW ? FLAG2POS_W[ undulation5 ] : FLAG2POS_E[ undulation5 ];
     if( targetPos === undefined ) return;
 
     // 角度63の坂は半分だけ動かす
-    if( undulation === W63 ){
+    if( undulation5 === W63 ){
         if( isW ){
             if( tileX === 0 ) return;
         } else {
             if( tileX === 0.5 ) return;
         }
-    }else if( undulation === E63 ){
+    }else if( undulation5 === E63 ){
         if( isW ){
             if( tileX === 0.5 ) return;
         } else {
@@ -558,15 +684,15 @@ Game_Map.prototype.isPassable = function( x, y, d ){
     // 高低差判定がある場合は全方向通行可
     if( FLAG2BUMP[ undulation ] ) return true;
 
-    const undulationS = getUndulation( x, y + 1 );
+    const undulation2 = getUndulation( x, y + 1 );
     // 下が同じタイルで繋がっている場合は通行可
     if( FLAG2RATIO_W[ undulation ] ){
-        if( undulation === undulationS
+        if( undulation === undulation2
             // W27N・W27S および E27S・E27Nは同じとみなす
-            || ( undulation === W27N && undulationS === W27S )
-            || ( undulation === W27S && undulationS === W27N )
-            || ( undulation === E27N && undulationS === E27S )
-            || ( undulation === E27S && undulationS === E27N )
+            || ( undulation === W27N && undulation2 === W27S )
+            || ( undulation === W27S && undulation2 === W27N )
+            || ( undulation === E27N && undulation2 === E27S )
+            || ( undulation === E27S && undulation2 === E27N )
         ) return true;
     }
 
