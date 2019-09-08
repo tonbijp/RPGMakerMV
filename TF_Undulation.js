@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :0.7.6.0
+// Version :0.7.7.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -155,24 +155,14 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
     const undulation8 = getUndulation( intX,        intY - 1 ); // 北↑
     const undulation9 = getUndulation( intX + 1, intY - 1 ); // 北東 ↗︎
 
-    const isNorthTile = undulation5 !== undulation8;
-    const isSouthTile = undulation5 !== undulation2;
-    
-    const isSame = ( dy )=>{
-        return undulation5 === getUndulation( intX, intY + dy );
-    };
-    const isSameW = ( dy )=>{
-        return undulation4 === getUndulation( intX - 1, intY + dy );
-    };
-
-    const isW27 = ( undulation5 )=>{
-        return undulation5 === W27N ||  undulation5 === W27S
+    const isW27 = ( undulation )=>{
+        return undulation === W27N ||  undulation === W27S;
     };
     const isSameW27SN = ( dy )=>{
         return isW27( undulation5 ) && isW27( getUndulation( intX, intY + dy ) );
     };
-    const isE27 = ( undulation5 )=>{
-        return undulation5 === E27N ||  undulation5 === E27S
+    const isE27 = ( undulation )=>{
+        return undulation === E27N ||  undulation === E27S;
     };
     const isSameE27SN = ( dy )=>{
         return isE27( undulation5 ) && isE27( getUndulation( intX, intY + dy ) );
@@ -402,6 +392,7 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
     }
 
     // W27N・W27S・E27N・E27S 共通の中央部分タイル
+    // TODO:この処理なくても成立しそうなので、調査して不要なら削除
     if( d === 2 || d === 8 ){
         if( isSameW27SN( 1 ) && isSameW27SN( -1 ) ) return true;
         if( isSameE27SN( 1 ) && isSameE27SN( -1 ) ) return true;
@@ -478,18 +469,15 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
         if( halfPos === 0 ){
         }else if( halfPos === 1 ){
             if( isTileLayoutSouth( W45, 5 ) ) return true;
-        }else if( halfPos === 2 ){
         }else if( halfPos === 3 ){
             if( isTileLayoutNorth( W45, 4 ) ) return false;
         }
     }else if( d === 8 ){
         if( halfPos === 0 ){
-            if( isTileLayoutNorth( W45, 7 ) ) return false;
-            if( isTileLayoutNorth( W45, 5 ) ) return false;
+            if( isTileLayoutNorth( W45, 5 ) || isTileLayoutNorth( W45, 7 ) ) return false;
             if( isTileLayoutSouth( W45, 4 ) ) return true;
         }else if( halfPos === 1 ){
             if( isTileLayoutSouth( W45, 5 ) ) return true;
-        }else if( halfPos === 2 ){
         }else if( halfPos === 3 ){
             if( isTileLayoutNorth( W45, 5 ) ) return false;
         }
@@ -499,27 +487,31 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
     // ／ E45
     if( d === 2 ){
         if( halfPos === 0 ){
+            if( isTileLayoutNorth( E45, 5 ) ) return false;
         }else if( halfPos === 1 ){
+            if( isTileLayoutSouth( E45, 5 ) ) return false;
         }else if( halfPos === 2 ){
+            if( isTileLayoutNorth( E45, 1 ) ) return false;
+            if( isTileLayoutSouth( E45, 2 ) ) return true;
         }else if( halfPos === 3 ){
-        }
-    }else if( d === 4 ){
-        if( halfPos === 0 ){
-        }else if( halfPos === 1 ){
-        }else if( halfPos === 2 ){
-        }else if( halfPos === 3 ){
+            if( isTileLayoutNorth( E45, 2 ) ) return false;
+            if( isTileLayoutSouth( E45, 2 ) ) return true;
         }
     }else if( d === 6 ){
         if( halfPos === 0 ){
         }else if( halfPos === 1 ){
-        }else if( halfPos === 2 ){
+            if( isTileLayoutSouth( E45, 5 ) ) return true;
         }else if( halfPos === 3 ){
+            if( isTileLayoutNorth( E45, 6 ) ) return false;
         }
     }else if( d === 8 ){
         if( halfPos === 0 ){
+            if( isTileLayoutNorth( E45, 4 ) || isTileLayoutNorth( E45, 8 ) ) return false;
+            if( isTileLayoutSouth( E45, 5 ) ) return true;
         }else if( halfPos === 1 ){
-        }else if( halfPos === 2 ){
+            if( isTileLayoutSouth( E45, 5 ) ) return true;
         }else if( halfPos === 3 ){
+            if( isTileLayoutNorth( E45, 5 ) ) return false;
         }
     }
 
