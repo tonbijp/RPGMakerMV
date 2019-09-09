@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :0.7.9.1
+// Version :0.7.10.1
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -193,11 +193,25 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
     const undulation8 = getUndulation( intX,        intY - 1 ); // 北↑
     const undulation9 = getUndulation( intX + 1, intY - 1 ); // 北東 ↗︎
 
-    const isW27 = ( undulation )=>{
-        return undulation === W27N ||  undulation === W27S;
-    };
-    const isE27 = ( undulation )=>{
-        return undulation === E27N ||  undulation === E27S;
+    /**
+     * 指定したふたつの高低差タイプが同じ角度であるか比較
+     * @param {Nubmer} undulationA 高低差タイプ
+     * @param {Nubmer} undulationB 高低差タイプ
+     * @returns {Boolean} 同じ角度か
+     */
+    const isSamePitch  = ( undulationA, undulationB )=>{
+        if( undulationA === W27S ){
+            undulationA = W27N;
+        }else if( undulationA === E27S ){
+            undulationA = E27N;
+        }
+        if( undulationB === W27S ){
+            undulationB = W27N;
+        }else if( undulationB === E27S ){
+            undulationB = E27N;
+        }
+
+        return undulationA === undulationB;
     };
 
     // 上下方向のレイアウト
@@ -242,183 +256,6 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
         }
     }
 
-    /*===== W27° の衝突判定 =====*/
-
-    /**
-    * 移動先の地形を調べて配置タイプを返す。W27版。
-    * @param {Number} undulation 調査する高低差
-     * @param {Number} d 向き(テンキー対応)
-    * @returns {Number} 配置の種類( LAYOUT_NORTH, LAYOUT_CENTER, LAYOUT_SOUTH, LAYOUT_SINGLE, LAYOUT_NONE )
-    */
-    const getTileLayoutW27 = ( undulation, d )=>{
-        const [ tileN, tileC, tileS ] = getTileNCS( d );
-        if( tileC !== undulation ) return LAYOUT_NONE;
-        if( isW27( tileN ) ){
-            return isW27( tileS ) ? LAYOUT_CENTER : LAYOUT_SOUTH;
-        }else{
-            return isW27( tileS ) ? LAYOUT_NORTH : LAYOUT_SINGLE;
-        }
-    };
-    const isTileLayoutNorthW27 = ( undulation, d )=>{
-        return isLayoutNorth( getTileLayoutW27( undulation, d ) );
-    }
-    const isTileLayoutSouthW27 = ( undulation, d )=>{
-        return isLayoutSouth( getTileLayoutW27( undulation, d ) );
-    }
-
-
-    // ＼ W27S
-    if( d === 2 ){
-        if( halfPos === 0 ){
-            if( isTileLayoutSouthW27( W27S, 5 ) || isTileLayoutNorthW27( W27S, 4 ) ) return false;
-        }else if( halfPos === 2 ){
-            if( getTileLayoutW27( W27S, 1 ) === LAYOUT_SINGLE ) return false;
-            if( isTileLayoutNorthW27( W27S, 2 ) ||  isTileLayoutSouthW27( W27S, 4 ) ) return false;
-            if( isTileLayoutSouthW27( W27S, 2 ) ) return true;
-        }else if( halfPos === 3 ){
-            if( isTileLayoutNorthW27( W27S, 2 ) ) return false;
-        }
-    }else if( d === 4 ){
-        if( halfPos === 1 ){
-            if( getTileLayoutW27( W27S, 4 ) === LAYOUT_SINGLE ) return false;
-        }else if( halfPos === 3 ){
-            if( getTileLayoutW27( W27S, 4 ) === LAYOUT_NORTH ) return false;
-        }
-    }else if( d === 6 ){
-        if( halfPos === 1 ){
-            if( isTileLayoutSouthW27( W27S, 6 ) ) return true;
-            if( getTileLayoutW27( W27S, 6 ) === LAYOUT_NORTH ) return false;
-        }
-    }else if( d === 8 ){
-        if( halfPos === 0 ){
-            if( getTileLayoutW27( W27S, 5 ) === LAYOUT_SINGLE ) return false;
-            if( isTileLayoutNorthW27( W27S, 7 ) ) return false;
-            if( isTileLayoutSouthW27( W27S, 4 ) ) return true;
-        }else if( halfPos === 1 ){
-            if( isTileLayoutSouthW27( W27S, 8 ) ) return false;
-        }else if( halfPos === 2 ){
-            if( isTileLayoutNorthW27( W27S, 5 ) ) return false;
-            if( getTileLayoutW27( W27S, 4 ) === LAYOUT_SINGLE ) return false;
-        }
-    }
-
-
-    // ＼ W27N
-    if( d === 2 ){
-        if( halfPos === 0 ){
-            if( isTileLayoutSouthW27( W27N, 4 ) ) return false;
-        }else if( halfPos === 2 ){
-            if( isTileLayoutNorthW27( W27N, 1 ) || isTileLayoutNorthW27( W27N, 2 ) || isTileLayoutSouthW27( W27N, 2 ) ) return false;
-            if( isTileLayoutSouthW27( W27N, 1 ) ) return true;
-        }else if( halfPos === 3 ){
-            if( isTileLayoutNorthW27( W27N, 2 ) ) return false;
-        }
-    }else if( d === 4 ){
-        if( halfPos === 1 ){
-            if( isTileLayoutNorthW27( W27N, 4 ) ) return false;
-        }else if( halfPos === 3 ){
-            if( isTileLayoutSouthW27( W27N, 4 ) ) return false;
-        }
-    }else if( d === 8 ){
-        if( halfPos === 0 ){
-            if( isTileLayoutNorthW27( W27N, 5 ) || isTileLayoutSouthW27( W27N, 7 ) ) return false;
-            if( isTileLayoutSouthW27( W27N, 4 ) ) return true;
-        }else if( halfPos === 1 ){
-            if( isTileLayoutSouthW27( W27N, 8 ) ) return false;
-        }else if( halfPos === 2 ){
-            if( isTileLayoutNorthW27( W27N, 4 ) ) return false;
-        }
-    }
-
-    /*===== E27° の衝突判定 =====*/
-    /**
-    * 移動先の地形を調べて配置タイプを返す。E27版。
-    * @param {Number} undulation 調査する高低差
-     * @param {Number} d 向き(テンキー対応)
-    * @returns {Number} 配置の種類( LAYOUT_NORTH, LAYOUT_CENTER, LAYOUT_SOUTH, LAYOUT_SINGLE, LAYOUT_NONE )
-    */
-    const getTileLayoutE27 = ( undulation, d )=>{
-        const [ tileN, tileC, tileS ] = getTileNCS( d );
-        if( tileC !== undulation ) return LAYOUT_NONE;
-        if( isE27( tileN ) ){
-            return isE27( tileS ) ? LAYOUT_CENTER : LAYOUT_SOUTH;
-        }else{
-            return isE27( tileS ) ? LAYOUT_NORTH : LAYOUT_SINGLE;
-        }
-    };
-    const isTileLayoutNorthE27 = ( undulation, d )=>{
-        return isLayoutNorth( getTileLayoutE27( undulation, d ) );
-    }
-    const isTileLayoutSouthE27 = ( undulation, d )=>{
-        return isLayoutSouth( getTileLayoutE27( undulation, d ) );
-    }
-
-
-    // ／ E27S
-    if( d === 2 ){
-        if( halfPos === 0 ){
-            if( isTileLayoutNorthE27( E27S, 5 ) ) return false;
-            if( isTileLayoutSouthE27( E27S, 4 ) ) return false;
-        }else if( halfPos === 2 ){
-            if( getTileLayoutE27( E27S, 2 ) === LAYOUT_SINGLE ) return false;
-            if( isTileLayoutNorthE27( E27S, 1 ) ) return false;
-            if( isTileLayoutSouthE27( E27S, 1 ) ) return true;
-        }else if( halfPos === 3 ){
-            if( isTileLayoutNorthE27( E27S, 2 ) ) return false;
-        }
-    }else if( d === 4 ){
-        if( halfPos === 1 ){
-            if( getTileLayoutE27( E27S, 4 ) === LAYOUT_NORTH ) return false;
-            if( isTileLayoutSouthE27( E27S, 4 ) ) return true;
-        }
-    }else if( d === 6 ){
-        if( halfPos === 1 ){
-            if( getTileLayoutE27( E27S, 6 ) === LAYOUT_SINGLE ) return false;
-        }else if( halfPos === 3 ){
-            if( getTileLayoutE27( E27S, 6 ) === LAYOUT_NORTH ) return false;
-        }
-    }else if( d === 8 ){
-        if( halfPos === 0 ){
-            if( isTileLayoutNorthE27( E27S, 8 ) ) return false;
-            if( getTileLayoutE27( E27S, 4 ) === LAYOUT_SINGLE ) return false;
-        }else if( halfPos === 2 ){
-            if( isTileLayoutNorthE27( E27S, 4 ) ) return false;
-            if( getTileLayoutE27( E27S, 5 ) === LAYOUT_SINGLE ) return false;
-        }
-    }
-
-
-    // ／ E27N
-    if( d === 2 ){
-        if( halfPos === 0 ){
-            if( isTileLayoutSouthE27( E27N, 5 ) ) return false;
-        }else if( halfPos === 2 ){
-            if( isTileLayoutNorthE27( E27N, 2 ) ) return false;
-            if( isTileLayoutNorthE27( E27N, 1 ) ) return false;
-        }else if( halfPos === 3 ){
-            if( isTileLayoutNorthE27( E27N, 2 ) ) return false;
-        }
-    }else if( d === 6 ){
-        if( halfPos === 1 ){
-            if( isTileLayoutNorthE27( E27N, 6 ) ) return false;
-        }else if( halfPos === 3 ){
-            if( isTileLayoutSouthE27( E27N, 6 ) ) return false;
-        }
-    }else if( d === 8 ){
-        if( halfPos === 0 ){
-            if( isTileLayoutNorthE27( E27N, 4 ) ) return false;
-            if( isTileLayoutSouthE27( E27N, 5 ) ) return true;
-            if( isTileLayoutSouthE27( E27N, 8 ) ) return false;
-        }else if( halfPos === 1 ){
-            if( isTileLayoutSouthE27( E27N, 8 ) ) return false;
-        }else if( halfPos === 2 ){
-            if( isTileLayoutNorthE27( E27N, 5 ) ) return false;
-        }
-    }
-
-
-    /*===== 45° 63° の衝突判定 =====*/
-
     /**
      * 移動先の地形を調べて配置タイプを返す。
      * @param {Number} undulation 調査する高低差
@@ -427,11 +264,11 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
      */
     const getTileLayout = ( undulation, d )=>{
         const [ tileN, tileC, tileS ] = getTileNCS( d );
-        if( tileC !== undulation ) return LAYOUT_NONE;
-        if( tileN === undulation ){
-            return ( tileS === undulation ) ? LAYOUT_CENTER : LAYOUT_SOUTH;
+        if( undulation !== tileC ) return LAYOUT_NONE;
+        if( isSamePitch( undulation, tileN ) ){
+            return isSamePitch( undulation, tileS ) ? LAYOUT_CENTER : LAYOUT_SOUTH;
         }else{
-            return ( tileS === undulation ) ? LAYOUT_NORTH : LAYOUT_SINGLE;
+            return isSamePitch( undulation, tileS ) ? LAYOUT_NORTH : LAYOUT_SINGLE;
         }
     };
     const isTileLayoutNorth = ( undulation, d )=>{
@@ -439,6 +276,123 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
     }
     const isTileLayoutSouth = ( undulation, d )=>{
         return isLayoutSouth( getTileLayout( undulation, d ) );
+    }
+
+    // ＼ W27S
+    if( d === 2 ){
+        if( halfPos === 0 ){
+            if( isTileLayoutNorth( W27S, 4 ) || isTileLayoutSouth( W27S, 5 ) ) return false;
+        }else if( halfPos === 2 ){
+            if( isTileLayoutNorth( W27S, 2 ) ||  isTileLayoutSouth( W27S, 4 ) || getTileLayout( W27S, 1 ) === LAYOUT_SINGLE ) return false;
+            if( isTileLayoutSouth( W27S, 2 ) ) return true;
+        }else if( halfPos === 3 ){
+            if( isTileLayoutNorth( W27S, 2 ) ) return false;
+        }
+    }else if( d === 4 ){
+        if( halfPos === 1 ){
+            if( getTileLayout( W27S, 4 ) === LAYOUT_SINGLE ) return false;
+        }else if( halfPos === 3 ){
+            if( getTileLayout( W27S, 4 ) === LAYOUT_NORTH ) return false;
+        }
+    }else if( d === 6 ){
+        if( halfPos === 1 ){
+            if( getTileLayout( W27S, 6 ) === LAYOUT_NORTH ) return false;
+            if( isTileLayoutSouth( W27S, 6 ) ) return true;
+        }
+    }else if( d === 8 ){
+        if( halfPos === 0 ){
+            if( isTileLayoutNorth( W27S, 7 ) || getTileLayout( W27S, 5 ) === LAYOUT_SINGLE ) return false;
+            if( isTileLayoutSouth( W27S, 4 ) ) return true;
+        }else if( halfPos === 1 ){
+            if( isTileLayoutSouth( W27S, 8 ) ) return false;
+        }else if( halfPos === 2 ){
+            if( isTileLayoutNorth( W27S, 5 ) || getTileLayout( W27S, 4 ) === LAYOUT_SINGLE ) return false;
+        }
+    }
+
+
+    // ＼ W27N
+    if( d === 2 ){
+        if( halfPos === 0 ){
+            if( isTileLayoutSouth( W27N, 4 ) ) return false;
+        }else if( halfPos === 2 ){
+            if( isTileLayoutNorth( W27N, 1 ) || isTileLayoutNorth( W27N, 2 ) || isTileLayoutSouth( W27N, 2 ) ) return false;
+            if( isTileLayoutSouth( W27N, 1 ) ) return true;
+        }else if( halfPos === 3 ){
+            if( isTileLayoutNorth( W27N, 2 ) ) return false;
+        }
+    }else if( d === 4 ){
+        if( halfPos === 1 ){
+            if( isTileLayoutNorth( W27N, 4 ) ) return false;
+        }else if( halfPos === 3 ){
+            if( isTileLayoutSouth( W27N, 4 ) ) return false;
+        }
+    }else if( d === 8 ){
+        if( halfPos === 0 ){
+            if( isTileLayoutNorth( W27N, 5 ) || isTileLayoutSouth( W27N, 7 ) ) return false;
+            if( isTileLayoutSouth( W27N, 4 ) ) return true;
+        }else if( halfPos === 1 ){
+            if( isTileLayoutSouth( W27N, 8 ) ) return false;
+        }else if( halfPos === 2 ){
+            if( isTileLayoutNorth( W27N, 4 ) ) return false;
+        }
+    }
+
+
+    // ／ E27S
+    if( d === 2 ){
+        if( halfPos === 0 ){
+            if( isTileLayoutSouth( E27S, 4 ) || isTileLayoutNorth( E27S, 5 ) ) return false;
+        }else if( halfPos === 2 ){
+            if( isTileLayoutNorth( E27S, 1 ) || getTileLayout( E27S, 2 ) === LAYOUT_SINGLE ) return false;
+            if( isTileLayoutSouth( E27S, 1 ) ) return true;
+        }else if( halfPos === 3 ){
+            if( isTileLayoutNorth( E27S, 2 ) ) return false;
+        }
+    }else if( d === 4 ){
+        if( halfPos === 1 ){
+            if( getTileLayout( E27S, 4 ) === LAYOUT_NORTH ) return false;
+            if( isTileLayoutSouth( E27S, 4 ) ) return true;
+        }
+    }else if( d === 6 ){
+        if( halfPos === 1 ){
+            if( getTileLayout( E27S, 6 ) === LAYOUT_SINGLE ) return false;
+        }else if( halfPos === 3 ){
+            if( getTileLayout( E27S, 6 ) === LAYOUT_NORTH ) return false;
+        }
+    }else if( d === 8 ){
+        if( halfPos === 0 ){
+            if( isTileLayoutNorth( E27S, 8 ) || getTileLayout( E27S, 4 ) === LAYOUT_SINGLE ) return false;
+        }else if( halfPos === 2 ){
+            if( isTileLayoutNorth( E27S, 4 ) || getTileLayout( E27S, 5 ) === LAYOUT_SINGLE ) return false;
+        }
+    }
+
+
+    // ／ E27N
+    if( d === 2 ){
+        if( halfPos === 0 ){
+            if( isTileLayoutSouth( E27N, 5 ) ) return false;
+        }else if( halfPos === 2 ){
+            if( isTileLayoutNorth( E27N, 1 ) || isTileLayoutNorth( E27N, 2 ) ) return false;
+        }else if( halfPos === 3 ){
+            if( isTileLayoutNorth( E27N, 2 ) ) return false;
+        }
+    }else if( d === 6 ){
+        if( halfPos === 1 ){
+            if( isTileLayoutNorth( E27N, 6 ) ) return false;
+        }else if( halfPos === 3 ){
+            if( isTileLayoutSouth( E27N, 6 ) ) return false;
+        }
+    }else if( d === 8 ){
+        if( halfPos === 0 ){
+            if( isTileLayoutNorth( E27N, 4 ) || isTileLayoutSouth( E27N, 8 ) ) return false;
+            if( isTileLayoutSouth( E27N, 5 ) ) return true;
+        }else if( halfPos === 1 ){
+            if( isTileLayoutSouth( E27N, 8 ) ) return false;
+        }else if( halfPos === 2 ){
+            if( isTileLayoutNorth( E27N, 5 ) ) return false;
+        }
     }
 
 
@@ -526,8 +480,7 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
         }
     }else if( d === 8 ){
         if( halfPos === 0 ){
-            if( isTileLayoutNorth( W63, 5 ) ) return false;
-            if( isTileLayoutSouth( W63, 8 ) ) return false;
+            if( isTileLayoutNorth( W63, 5 ) || isTileLayoutSouth( W63, 8 ) ) return false;
         }else if( halfPos === 1 ){
             if( isTileLayoutNorth( W63, 8 ) || isTileLayoutSouth( W63, 8 ) ) return false;
         }
@@ -717,7 +670,6 @@ Game_Follower.prototype.chaseCharacter = function( character ){
         _Game_Follower_chaseCharacter.apply( this, arguments );
     }else{
         this.moveStraight( tmpD );
-        this.setMoveSpeed( $gamePlayer.realMoveSpeed() );
     }
 };
 
