@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :0.7.7.0
+// Version :0.7.8.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -280,28 +280,33 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
         if( halfPos === 0 ){
             if( isTileLayoutSouthW27( W27S, 5 ) || isTileLayoutNorthW27( W27S, 4 ) ) return false;
         }else if( halfPos === 2 ){
+            if( getTileLayoutW27( W27S, 1 ) === LAYOUT_SINGLE ) return false;
             if( isTileLayoutNorthW27( W27S, 2 ) ||  isTileLayoutSouthW27( W27S, 4 ) ) return false;
             if( isTileLayoutSouthW27( W27S, 2 ) ) return true;
         }else if( halfPos === 3 ){
             if( isTileLayoutNorthW27( W27S, 2 ) ) return false;
         }
     }else if( d === 4 ){
-        if( halfPos === 3 ){
-            if( isTileLayoutNorthW27( W27S, 4 ) ) return false;
+        if( halfPos === 1 ){
+            if( getTileLayoutW27( W27S, 4 ) === LAYOUT_SINGLE ) return false;
+        }else if( halfPos === 3 ){
+            if( getTileLayoutW27( W27S, 4 ) === LAYOUT_NORTH ) return false;
         }
     }else if( d === 6 ){
         if( halfPos === 1 ){
             if( isTileLayoutSouthW27( W27S, 6 ) ) return true;
-            if( isTileLayoutNorthW27( W27S, 6 ) ) return false;
+            if( getTileLayoutW27( W27S, 6 ) === LAYOUT_NORTH ) return false;
         }
     }else if( d === 8 ){
         if( halfPos === 0 ){
+            if( getTileLayoutW27( W27S, 5 ) === LAYOUT_SINGLE ) return false;
             if( isTileLayoutNorthW27( W27S, 7 ) ) return false;
             if( isTileLayoutSouthW27( W27S, 4 ) ) return true;
         }else if( halfPos === 1 ){
             if( isTileLayoutSouthW27( W27S, 8 ) ) return false;
         }else if( halfPos === 2 ){
             if( isTileLayoutNorthW27( W27S, 5 ) ) return false;
+            if( getTileLayoutW27( W27S, 4 ) === LAYOUT_SINGLE ) return false;
         }
     }
 
@@ -311,6 +316,7 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
             if( isTileLayoutNorthE27( E27S, 5 ) ) return false;
             if( isTileLayoutSouthE27( E27S, 4 ) ) return false;
         }else if( halfPos === 2 ){
+            if( getTileLayoutE27( E27S, 2 ) === LAYOUT_SINGLE ) return false;
             if( isTileLayoutNorthE27( E27S, 1 ) ) return false;
             if( isTileLayoutSouthE27( E27S, 1 ) ) return true;
         }else if( halfPos === 3 ){
@@ -318,18 +324,22 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
         }
     }else if( d === 4 ){
         if( halfPos === 1 ){
-            if( isTileLayoutNorthE27( E27S, 4 ) ) return false;
+            if( getTileLayoutE27( E27S, 4 ) === LAYOUT_NORTH ) return false;
             if( isTileLayoutSouthE27( E27S, 4 ) ) return true;
         }
     }else if( d === 6 ){
-        if( halfPos === 3 ){
-            if( isTileLayoutNorthE27( E27S, 6 ) ) return false;
+        if( halfPos === 1 ){
+            if( getTileLayoutE27( E27S, 6 ) === LAYOUT_SINGLE ) return false;
+        }else if( halfPos === 3 ){
+            if( getTileLayoutE27( E27S, 6 ) === LAYOUT_NORTH ) return false;
         }
     }else if( d === 8 ){
         if( halfPos === 0 ){
             if( isTileLayoutNorthE27( E27S, 8 ) ) return false;
+            if( getTileLayoutE27( E27S, 4 ) === LAYOUT_SINGLE ) return false;
         }else if( halfPos === 2 ){
             if( isTileLayoutNorthE27( E27S, 4 ) ) return false;
+            if( getTileLayoutE27( E27S, 5 ) === LAYOUT_SINGLE ) return false;
         }
     }
 
@@ -354,6 +364,8 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
         if( halfPos === 0 ){
             if( isTileLayoutNorthW27( W27N, 5 ) || isTileLayoutSouthW27( W27N, 7 ) ) return false;
             if( isTileLayoutSouthW27( W27N, 4 ) ) return true;
+        }else if( halfPos === 1 ){
+            if( isTileLayoutSouthW27( W27N, 8 ) ) return false;
         }else if( halfPos === 2 ){
             if( isTileLayoutNorthW27( W27N, 4 ) ) return false;
         }
@@ -378,24 +390,14 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
         }
     }else if( d === 8 ){
         if( halfPos === 0 ){
-            if( isTileLayoutSouthE27( E27N, 5 ) ) return true;
             if( isTileLayoutNorthE27( E27N, 4 ) ) return false;
+            if( isTileLayoutSouthE27( E27N, 5 ) ) return true;
+            if( isTileLayoutSouthE27( E27N, 8 ) ) return false;
+        }else if( halfPos === 1 ){
+            if( isTileLayoutSouthE27( E27N, 8 ) ) return false;
         }else if( halfPos === 2 ){
             if( isTileLayoutNorthE27( E27N, 5 ) ) return false;
         }
-    }
-
-    // W27N・E27Nの下部タイル
-    if( d === 8 && !isJustY ){
-        if( ( undulation8 === W27N && !isW27( undulation5 ) )
-          || ( undulation8 === E27N && !isE27( undulation5 ) ) ) return false;
-    }
-
-    // W27N・W27S・E27N・E27S 共通の中央部分タイル
-    // TODO:この処理なくても成立しそうなので、調査して不要なら削除
-    if( d === 2 || d === 8 ){
-        if( isSameW27SN( 1 ) && isSameW27SN( -1 ) ) return true;
-        if( isSameE27SN( 1 ) && isSameE27SN( -1 ) ) return true;
     }
 
 
