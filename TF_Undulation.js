@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :0.7.10.1
+// Version :0.7.10.2
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -235,24 +235,15 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
      */
     const getTileNCS = ( d )=>{
         switch( d ){
-            case 1:
-                return [ undulation4, undulation1, getUndulation( intX - 1, intY + 2 ) ];
-            case 2:
-                return [ undulation5, undulation2, getUndulation( intX, intY + 2 ) ];
-            case 3:
-                return [ undulation6, undulation3, getUndulation( intX + 1, intY + 2 ) ];
-            case 4:
-                return [ undulation7, undulation4, undulation1 ];
-            case 5:
-                return [ undulation8, undulation5, undulation2 ];
-            case 6:
-                return [ undulation9, undulation6, undulation3 ];
-            case 7:
-                return [ getUndulation( intX - 1, intY - 2 ), undulation7, undulation4 ];
-            case 8:
-                return [ getUndulation( intX, intY - 2 ), undulation8, undulation5 ];
-            case 9:
-                return [ getUndulation( intX + 1, intY - 2 ), undulation9, undulation6 ];
+            case 1: return [ undulation4, undulation1, getUndulation( intX - 1, intY + 2 ) ];
+            case 2: return [ undulation5, undulation2, getUndulation( intX, intY + 2 ) ];
+            case 3: return [ undulation6, undulation3, getUndulation( intX + 1, intY + 2 ) ];
+            case 4: return [ undulation7, undulation4, undulation1 ];
+            case 5: return [ undulation8, undulation5, undulation2 ];
+            case 6: return [ undulation9, undulation6, undulation3 ];
+            case 7: return [ getUndulation( intX - 1, intY - 2 ), undulation7, undulation4 ];
+            case 8: return [ getUndulation( intX, intY - 2 ), undulation8, undulation5 ];
+            case 9: return [ getUndulation( intX + 1, intY - 2 ), undulation9, undulation6 ];
         }
     }
 
