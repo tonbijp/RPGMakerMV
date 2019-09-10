@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :0.7.10.3
+// Version :0.7.10.4
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -125,48 +125,39 @@ const E27S = 0x5;
 
 
 // フラグから移動速度の調整比率を得る
-const FLAG2RATIO_W = { // 西(左)向き←
-    [ W45 ] : [ 0.2, 0.2 ], // ↖︎
-    [ E45 ] : [ 0.2, -0.2 ], // ↙︎
-    [ W63 ] : [ 0.6, 0.2 ], // ↖︎
-    [ E63 ] : [ 0.6, -0.2 ], //  ↙︎
-    [ W27N ] : [ 0.2, 0.6 ], // ↖︎
-    [ E27N ] : [ 0.2, -0.6 ], // ↙︎
-    [ W27S ] : [ 0.2, 0.6 ], // ↖︎
-    [ E27S ] : [ 0.2, -0.6 ], // ↙︎
+const FLAG2RATIO_W = { // 西(左)向き ↖ , ↙
+    [ W45 ] : [ 0.2, 0.2 ], [ E45 ] : [ 0.2, -0.2 ],
+    [ W63 ] : [ 0.6, 0.2 ], [ E63 ] : [ 0.6, -0.2 ],
+    [ W27N ] : [ 0.2, 0.6 ], [ E27N ] : [ 0.2, -0.6 ],
+    [ W27S ] : [ 0.2, 0.6 ], [ E27S ] : [ 0.2, -0.6 ],
 };
-const FLAG2RATIO_E = { // 東(右)向き→
-    [ W45 ] : [ -0.2, -0.2 ], // ↘︎
-    [ E45 ] : [ -0.2, 0.2 ], // ↗︎
-    [ W63 ] : [ -0.6, -0.2 ], // ↘︎
-    [ E63 ] : [ -0.6, 0.2 ], // ↗︎
-    [ W27N ] : [ -0.2, -0.6 ], // ↘︎
-    [ E27N ] : [ -0.2, 0.6 ], // ↗︎
-    [ W27S ] : [ -0.2, -0.6 ], // ↘︎
-    [ E27S ] : [ -0.2, 0.6 ], // ↗︎
+const FLAG2RATIO_E = { // 東(右)向き ↘ , ↗
+    [ W45 ] : [ -0.2, -0.2 ], [ E45 ] : [ -0.2, 0.2 ],
+    [ W63 ] : [ -0.6, -0.2 ], [ E63 ] : [ -0.6, 0.2 ],
+    [ W27N ] : [ -0.2, -0.6 ], [ E27N ] : [ -0.2, 0.6 ],
+    [ W27S ] : [ -0.2, -0.6 ], [ E27S ] : [ -0.2, 0.6 ],
 };
 
 // フラグから階段(坂)の到達点の位置を得る
-const FLAG2POS_W= { // 西(左)向き←
-    [ W45 ] : [ 0, -0.5],
-    [ E45 ] : [ 0, 0.5],
-    [ W63 ] : [ 0, -1],
-    [ E63 ] : [ 0, 1],
-    [ W27N ] : [ -0.5, -0.5],
-    [ E27N ] : [ -0.5, 0.5],
-    [ W27S ] : [ -0.5, -0.5],
-    [ E27S ] : [ -0.5, 0.5],
+const FLAG2POS_W= { // 西(左)向き ↖ , ↙
+    [ W45 ] : [ 0, -0.5], [ E45 ] : [ 0, 0.5],
+    [ W63 ] : [ 0, -1], [ E63 ] : [ 0, 1],
+    [ W27N ] : [ -0.5, -0.5], [ E27N ] : [ -0.5, 0.5],
+    [ W27S ] : [ -0.5, -0.5], [ E27S ] : [ -0.5, 0.5],
 };
-const FLAG2POS_E= { // 東(右)向き→
-    [ W45 ] : [ 0, 0.5],
-    [ E45 ] : [ 0, -0.5],
-    [ W63 ] : [ 0, 1],
-    [ E63 ] : [ 0, -1],
-    [ W27N ] : [ 0.5, 0.5],
-    [ E27N ] : [ 0.5, -0.5],
-    [ W27S ] : [ 0.5, 0.5],
-    [ E27S ] : [ 0.5, -0.5],
+const FLAG2POS_E= { // 東(右)向き ↘ , ↗
+    [ W45 ] : [ 0, 0.5], [ E45 ] : [ 0, -0.5],
+    [ W63 ] : [ 0, 1],  [ E63 ] : [ 0, -1],
+    [ W27N ] : [ 0.5, 0.5], [ E27N ] : [ 0.5, -0.5],
+    [ W27S ] : [ 0.5, 0.5], [ E27S ] : [ 0.5, -0.5],
 };
+
+// 上下方向のレイアウト
+const LAYOUT_NONE = 0;
+const LAYOUT_SINGLE = 1;
+const LAYOUT_NORTH = 8;
+const LAYOUT_CENTER = 5;
+const LAYOUT_SOUTH = 2;
 
 
 /*---- Game_CharacterBase ----*/
@@ -186,16 +177,31 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
     // タイル内の位置( 0:左上, 1:上, 2:左下, 3:下 )
     const halfPos = ( ( ( this._realX % 1 ) === 0 ) ? 1 : 0 ) + ( ( ( this._realY % 1 ) === 0 ) ? 2 : 0 );
 
-    // 周辺の高低差タイプ(テンキー対応)
-    const undulation1 = getUndulation( intX - 1, intY + 1 );  // 南西↙
-    const undulation2 = getUndulation( intX,        intY + 1 ); // 南↓
-    const undulation3 = getUndulation( intX + 1, intY + 1 ); // 南東↘
-    const undulation4 = getUndulation( intX - 1, intY        ); // 西←
-    const undulation5 = getUndulation( intX,        intY        ); // 現在地
-    const undulation6 = getUndulation( intX + 1, intY        ); // 東→
-    const undulation7 = getUndulation( intX - 1, intY - 1 );  // 北西↖
-    const undulation8 = getUndulation( intX,        intY - 1 ); // 北↑
-    const undulation9 = getUndulation( intX + 1, intY - 1 ); // 北東 ↗︎
+    /**
+     * 移動先の地形を調べて配置タイプを返す。
+     * @param {Number} undulation 調査する高低差
+     * @param {Number} d 向き(テンキー対応)
+     * @returns {Number} 配置の種類( LAYOUT_NORTH, LAYOUT_CENTER, LAYOUT_SOUTH, LAYOUT_SINGLE, LAYOUT_NONE )
+     */
+    const getTileLayout = ( undulation, d )=>{
+        const dx = (d - 1) % 3 -1;
+        const dy = 1 - Math.floor( ( d - 1 ) / 3 );
+        if( undulation !== getUndulation( intX + dx, intY + dy ) ) return LAYOUT_NONE;
+        if( isSamePitch( undulation, getUndulation( intX + dx, intY + dy - 1 ) ) ){
+            return isSamePitch( undulation, getUndulation( intX + dx, intY + dy + 1 ) ) ? LAYOUT_CENTER : LAYOUT_SOUTH;
+        }else{
+            return isSamePitch( undulation, getUndulation( intX + dx, intY + dy + 1 ) ) ? LAYOUT_NORTH : LAYOUT_SINGLE;
+        }
+    };
+
+    const isTileLayoutNorth = ( undulation, d )=>{
+        const layout = getTileLayout( undulation, d );
+        return layout === LAYOUT_NORTH || layout === LAYOUT_SINGLE;
+    }
+    const isTileLayoutSouth = ( undulation, d )=>{
+        const layout = getTileLayout( undulation, d );
+        return layout === LAYOUT_SOUTH || layout === LAYOUT_SINGLE;
+    }
 
     /**
      * 指定したふたつの高低差タイプが同じ角度であるか比較
@@ -204,74 +210,9 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
      * @returns {Boolean} 同じ角度か
      */
     const isSamePitch  = ( undulationA, undulationB )=>{
-        if( undulationA === W27S ){
-            undulationA = W27N;
-        }else if( undulationA === E27S ){
-            undulationA = E27N;
-        }
-        if( undulationB === W27S ){
-            undulationB = W27N;
-        }else if( undulationB === E27S ){
-            undulationB = E27N;
-        }
-
-        return undulationA === undulationB;
+        return normalizByPitch( undulationA ) === normalizByPitch( undulationB );
     };
 
-    // 上下方向のレイアウト
-    const LAYOUT_NONE = 0;
-    const LAYOUT_SINGLE = 1;
-    const LAYOUT_NORTH = 8;
-    const LAYOUT_CENTER = 5;
-    const LAYOUT_SOUTH = 2;
-
-    const isLayoutNorth = ( layout )=>{
-         return layout === LAYOUT_NORTH || layout === LAYOUT_SINGLE;
-     }
-     const isLayoutSouth = ( layout )=>{
-         return layout === LAYOUT_SOUTH || layout === LAYOUT_SINGLE;
-     }
-    
-     /**
-     * 指定方向+南北の地形を返す。
-     * @param {Number} d 向き(テンキー対応)
-     * @returns {Array} 配置の種類([ 北, 中央, 南 ]の順)
-     */
-    const getTileNCS = ( d )=>{
-        switch( d ){
-            case 1: return [ undulation4, undulation1, getUndulation( intX - 1, intY + 2 ) ];
-            case 2: return [ undulation5, undulation2, getUndulation( intX, intY + 2 ) ];
-            case 3: return [ undulation6, undulation3, getUndulation( intX + 1, intY + 2 ) ];
-            case 4: return [ undulation7, undulation4, undulation1 ];
-            case 5: return [ undulation8, undulation5, undulation2 ];
-            case 6: return [ undulation9, undulation6, undulation3 ];
-            case 7: return [ getUndulation( intX - 1, intY - 2 ), undulation7, undulation4 ];
-            case 8: return [ getUndulation( intX, intY - 2 ), undulation8, undulation5 ];
-            case 9: return [ getUndulation( intX + 1, intY - 2 ), undulation9, undulation6 ];
-        }
-    }
-
-    /**
-     * 移動先の地形を調べて配置タイプを返す。
-     * @param {Number} undulation 調査する高低差
-     * @param {Number} d 向き(テンキー対応)
-     * @returns {Number} 配置の種類( LAYOUT_NORTH, LAYOUT_CENTER, LAYOUT_SOUTH, LAYOUT_SINGLE, LAYOUT_NONE )
-     */
-    const getTileLayout = ( undulation, d )=>{
-        const [ tileN, tileC, tileS ] = getTileNCS( d );
-        if( undulation !== tileC ) return LAYOUT_NONE;
-        if( isSamePitch( undulation, tileN ) ){
-            return isSamePitch( undulation, tileS ) ? LAYOUT_CENTER : LAYOUT_SOUTH;
-        }else{
-            return isSamePitch( undulation, tileS ) ? LAYOUT_NORTH : LAYOUT_SINGLE;
-        }
-    };
-    const isTileLayoutNorth = ( undulation, d )=>{
-        return isLayoutNorth( getTileLayout( undulation, d ) );
-    }
-    const isTileLayoutSouth = ( undulation, d )=>{
-        return isLayoutSouth( getTileLayout( undulation, d ) );
-    }
 
     // ＼ W27S
     if( d === 2 ){
@@ -304,7 +245,6 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
             if( isTileLayoutNorth( W27S, 5 ) || getTileLayout( W27S, 4 ) === LAYOUT_SINGLE ) return false;
         }
     }
-
 
     // ＼ W27N
     if( d === 2 ){
@@ -363,7 +303,6 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
         }
     }
 
-
     // ／ E27N
     if( d === 2 ){
         if( halfPos === 0 ){
@@ -421,7 +360,6 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
             if( isTileLayoutNorth( W45, 5 ) ) return false;
         }
     }
-
 
     // ／ E45
     if( d === 2 ){
@@ -506,7 +444,6 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
             if( isTileLayoutNorth( E63, 8 ) || isTileLayoutSouth( E63, 8 ) ) return false;
         }
     }
-
 
     return _Game_CharacterBase_isMapPassable.apply( this, arguments );
 }
@@ -594,8 +531,7 @@ Game_CharacterBase.prototype.shiftY = function(){
     const getBump = ( undulation )=>{
         if( undulation === -1 ) return 0;
         const bump = FLAG2BUMP[ undulation ];
-        if( bump ) return bump;
-        return 0;
+        return bump ? bump : 0;
     }
 
     const dYR = getBump( undulationR );
@@ -635,17 +571,8 @@ Game_Map.prototype.isPassable = function( x, y, d ){
     // 高低差判定がある場合は全方向通行可
     if( FLAG2BUMP[ undulation ] ) return true;
 
-    const undulationS = getUndulation( x, y + 1 );
     // 下が同じタイルで繋がっている場合は通行可
-    if( FLAG2RATIO_W[ undulation ] ){
-        if( undulation === undulationS
-            // W27N・W27S および E27S・E27Nは同じとみなす
-            || ( undulation === W27N && undulationS === W27S )
-            || ( undulation === W27S && undulationS === W27N )
-            || ( undulation === E27N && undulationS === E27S )
-            || ( undulation === E27S && undulationS === E27N )
-        ) return true;
-    }
+    if( FLAG2RATIO_W[ undulation ] && normalizByPitch( undulation ) === normalizByPitch( getUndulation( x, y + 1 ) ) ) return true;
 
     return _Game_Map_isPassable.apply( this, arguments );
 };
@@ -658,8 +585,6 @@ Game_Map.prototype.isPassable = function( x, y, d ){
 const _Game_Follower_chaseCharacter = Game_Follower.prototype.chaseCharacter;
 Game_Follower.prototype.chaseCharacter = function( character ){
     const d = Math.sign( this.deltaYFrom( character.y ) ) * 3 - Math.sign( this.deltaXFrom( character.x ) ) + 5;
-
-
     const tmpD = checkAloundUndulationFlag( this.x, this.y, d );
     if( tmpD === -1 ){
         _Game_Follower_chaseCharacter.apply( this, arguments );
@@ -696,7 +621,7 @@ function getUndulation( x, y ){
  * @param {Number} d 向き(テンキー対応)
  * @returns {Number} 高低差flagのあるタイル周辺だと向き、そうでないと-1を返す
  */
-function checkAloundUndulationFlag( x, y, d ) {
+function checkAloundUndulationFlag( x, y, d ){
     const tmpD = [ 0, 4, 2, 6, 4, 5, 6, 4, 8, 6 ][ d ];
     const targetX =  ( tmpD === 6 ) ? $gameMap.roundX( x + 0.5 ) : x ;
 
@@ -708,6 +633,16 @@ function checkAloundUndulationFlag( x, y, d ) {
     }else{
         return -1;
     }
+}
+
+/**
+ * 27°の高低差タイプを角度基準で正規化して返す
+ * @param {Nubmer} undulation 高低差タイプ
+ */
+function normalizByPitch( undulation ){
+    if( undulation === W27S ) return W27N;
+    if( undulation === E27S ) return E27N;
+    return undulation;
 }
 
 })();
