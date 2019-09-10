@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :0.9.0.0
+// Version :1.0.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -130,13 +130,11 @@ const BASE_BUMP = 'BaseBump';
 const pluginParams = PluginManager.parameters( PLUGIN_NAME );
 
 let _TerrainTag = 1;    // 地形タグ規定値
-
 if( pluginParams[ TERRAIN_TAG ] ){
     _TerrainTag = parseInt( pluginParams[ TERRAIN_TAG ], 10 );
 } 
 
 let _BaseBump = 6;    // 地形タグ規定値
-
 if( pluginParams[ BASE_BUMP ] ){
     _BaseBump = parseInt( pluginParams[ BASE_BUMP ], 10 );
 } 
@@ -639,9 +637,10 @@ Game_Follower.prototype.chaseCharacter = function( character ){
     const tmpD = checkAloundUndulationFlag( this.x, this.y, d );
     if( tmpD === -1 ){
         _Game_Follower_chaseCharacter.apply( this, arguments );
-    }else{
-        this.moveStraight( tmpD );
+        return;
     }
+    if( tmpD !== 5 ) this.moveStraight( tmpD );
+    this.setMoveSpeed( $gamePlayer.realMoveSpeed() );
 };
 
 
@@ -692,7 +691,7 @@ function checkAloundUndulationFlag( x, y, d ){
 }
 
 /**
- * 27°の高低差タイプを角度基準で正規化して返す
+ * 27°の高低差タイプを角度基準で正規化して返す。
  * @param {Nubmer} undulation 高低差タイプ
  */
 function normalizByPitch( undulation ){
@@ -702,7 +701,7 @@ function normalizByPitch( undulation ){
 }
 
 /**
- * 指定したふたつの高低差タイプが同じ角度であるか比較
+ * 指定したふたつの高低差タイプが同じ角度か。
  * @param {Nubmer} undulationA 高低差タイプ
  * @param {Nubmer} undulationB 高低差タイプ
  * @returns {Boolean} 同じ角度か
