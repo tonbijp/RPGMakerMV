@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :0.7.10.5
+// Version :0.8.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -20,6 +20,13 @@
  * @max 7
  * @default 1
  * 
+ * @param BaseBump
+ * @desc Base unit of bump.
+ * @type number
+ * @min 1
+ * @max 10
+ * @default 6
+ * 
  * @help
  * CAUTION : This plugin needs HalfMove.js made by Triacontane.
  * Set HalfMove.js before TF_Undulation.js.
@@ -31,14 +38,14 @@
  * 1. Set Terrain Tag (Default : 1) to A5BCDE tile.
  * 
  * 2. Set 4 direction for details.
- *      0x0 ↑→←↓ : Undulation Level 1(Default:6px)
- *      0x1 ↑→←・ : Undulation Level 2(Default:12px)
+ *      0x0 ↑→←↓ : Bump Level 1(Default:6px)
+ *      0x1 ↑→←・ : Bump Level 2(Default:12px)
  *      0x2 ↑→・↓ : \  63°
  *      0x3 ↑→・・ : ＼ 27° South Side
  *      0x4 ↑・←↓ :  / 63°
  *      0x5 ↑・←・ : ／ 27° South Side
- *      0x6 ↑・・↓ : Undulation Level 3(Default:18px)
- *      0x7 ↑・・・ : Undulation Level 4(Default:24px)
+ *      0x6 ↑・・↓ : Bump Level 3(Default:18px)
+ *      0x7 ↑・・・ : Bump Level 4(Default:24px)
  *      0x8 ・→←↓ : N/A
  *      0x9 ・→←・ : N/A
  *      0xA ・→・↓ : ＼ 27° North Side
@@ -60,6 +67,13 @@
  * @min 1
  * @max 7
  * @default 1
+ * 
+ * @param BaseBump
+ * @desc 段差の基本単位。
+ * @type number
+ * @min 1
+ * @max 10
+ * @default 6
  * 
  * @help
  * 注意 : トリアコンタンさんの HalfMove.js の利用を前提としています。
@@ -94,6 +108,7 @@
 (function(){'use strict';
 const PLUGIN_NAME = 'TF_Undulation';
 const TERRAIN_TAG = 'TerrainTag';
+const BASE_BUMP = 'BaseBump';
 
 /**
  * パラメータを受け取る
@@ -104,6 +119,12 @@ let _TerrainTag = 1;    // 地形タグ規定値
 
 if( pluginParams[ TERRAIN_TAG ] ){
     _TerrainTag = parseInt( pluginParams[ TERRAIN_TAG ], 10 );
+} 
+
+let _BaseBump = 6;    // 地形タグ規定値
+
+if( pluginParams[ BASE_BUMP ] ){
+    _BaseBump = parseInt( pluginParams[ BASE_BUMP ], 10 );
 } 
 
 // Wは西(左)上がり…＼ 　Eは東(右)上がり…／
@@ -494,12 +515,18 @@ Game_CharacterBase.prototype.updateMove = function() {
 }
 
 
- // フラグから段差の量を得る
- const FLAG2BUMP= {};
- FLAG2BUMP[ BUMP1 ] = 6;
- FLAG2BUMP[ BUMP2 ] = 12;
- FLAG2BUMP[ BUMP3 ] = 18;
- FLAG2BUMP[ BUMP4 ] = 24;
+ // フラグから段差の量を得るテーブル
+ const FLAG2BUMP= { [ BUMP1 ] : 1, [ BUMP2 ] : 2, [ BUMP3 ] : 3,[ BUMP4 ] : 4 };
+ /**
+  * 段差指定フラグに応じた段差を返す
+  * @param {Number} undulation 段差指定フラグ
+  * @returns {Number} 段差(ピクセル)
+  */
+ function getBump( undulation ){
+     if( undulation === -1 ) return 0;
+     const bump = FLAG2BUMP[ undulation ];
+     return bump ? ( bump * _BaseBump ) : 0;
+ }
 
 /**
  * 縦にずらすピクセル数を返す
@@ -513,17 +540,6 @@ Game_CharacterBase.prototype.shiftY = function(){
     const undulationL = ( tileX === 0 )? getUndulation( intX - 1, intY ) : -1;
     const undulationR = getUndulation( intX, intY );
     if( -1 === undulationL && -1 === undulationR ) return shiftY;
-
-    /**
-     * 段差指定フラグに応じた段差を返す
-     * @param {Number} undulation 段差指定フラグ
-     * @returns {Number} 段差(ピクセル)
-     */
-    const getBump = ( undulation )=>{
-        if( undulation === -1 ) return 0;
-        const bump = FLAG2BUMP[ undulation ];
-        return bump ? bump : 0;
-    }
 
     const dYR = getBump( undulationR );
     const dYL = getBump( undulationL );
@@ -637,13 +653,14 @@ function normalizByPitch( undulation ){
     return undulation;
 }
 
-    /**
-     * 指定したふたつの高低差タイプが同じ角度であるか比較
-     * @param {Nubmer} undulationA 高低差タイプ
-     * @param {Nubmer} undulationB 高低差タイプ
-     * @returns {Boolean} 同じ角度か
-     */
-    function isSamePitch( undulationA, undulationB ){
-        return normalizByPitch( undulationA ) === normalizByPitch( undulationB );
-    };
+/**
+ * 指定したふたつの高低差タイプが同じ角度であるか比較
+ * @param {Nubmer} undulationA 高低差タイプ
+ * @param {Nubmer} undulationB 高低差タイプ
+ * @returns {Boolean} 同じ角度か
+ */
+function isSamePitch( undulationA, undulationB ){
+    return normalizByPitch( undulationA ) === normalizByPitch( undulationB );
+};
+
 })();
