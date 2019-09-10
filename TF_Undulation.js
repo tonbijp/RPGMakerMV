@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :0.7.10.4
+// Version :0.7.10.5
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -203,15 +203,6 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
         return layout === LAYOUT_SOUTH || layout === LAYOUT_SINGLE;
     }
 
-    /**
-     * 指定したふたつの高低差タイプが同じ角度であるか比較
-     * @param {Nubmer} undulationA 高低差タイプ
-     * @param {Nubmer} undulationB 高低差タイプ
-     * @returns {Boolean} 同じ角度か
-     */
-    const isSamePitch  = ( undulationA, undulationB )=>{
-        return normalizByPitch( undulationA ) === normalizByPitch( undulationB );
-    };
 
 
     // ＼ W27S
@@ -572,7 +563,7 @@ Game_Map.prototype.isPassable = function( x, y, d ){
     if( FLAG2BUMP[ undulation ] ) return true;
 
     // 下が同じタイルで繋がっている場合は通行可
-    if( FLAG2RATIO_W[ undulation ] && normalizByPitch( undulation ) === normalizByPitch( getUndulation( x, y + 1 ) ) ) return true;
+    if( FLAG2RATIO_W[ undulation ] && isSamePitch( undulation, getUndulation( x, y + 1 ) ) ) return true;
 
     return _Game_Map_isPassable.apply( this, arguments );
 };
@@ -614,6 +605,7 @@ function getUndulation( x, y ){
     }    
     return -1;
 }
+
 /**
  * 高低差flagのあるタイル周辺か。
  * @param {Number} x タイル数
@@ -645,4 +637,13 @@ function normalizByPitch( undulation ){
     return undulation;
 }
 
+    /**
+     * 指定したふたつの高低差タイプが同じ角度であるか比較
+     * @param {Nubmer} undulationA 高低差タイプ
+     * @param {Nubmer} undulationB 高低差タイプ
+     * @returns {Boolean} 同じ角度か
+     */
+    function isSamePitch( undulationA, undulationB ){
+        return normalizByPitch( undulationA ) === normalizByPitch( undulationB );
+    };
 })();
