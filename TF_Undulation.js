@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :0.8.0.0
+// Version :0.9.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -24,7 +24,7 @@
  * @desc Base unit of bump.
  * @type number
  * @min 1
- * @max 10
+ * @max 14
  * @default 6
  * 
  * @help
@@ -38,14 +38,14 @@
  * 1. Set Terrain Tag (Default : 1) to A5BCDE tile.
  * 
  * 2. Set 4 direction for details.
- *      0x0 ↑→←↓ : Bump Level 1(Default:6px)
- *      0x1 ↑→←・ : Bump Level 2(Default:12px)
+ *      0x0 ↑→←↓ : N/A
+ *      0x1 ↑→←・ : N/A
  *      0x2 ↑→・↓ : \  63°
  *      0x3 ↑→・・ : ＼ 27° South Side
  *      0x4 ↑・←↓ :  / 63°
  *      0x5 ↑・←・ : ／ 27° South Side
- *      0x6 ↑・・↓ : Bump Level 3(Default:18px)
- *      0x7 ↑・・・ : Bump Level 4(Default:24px)
+ *      0x6 ↑・・↓ : N/A
+ *      0x7 ↑・・・ : N/A
  *      0x8 ・→←↓ : N/A
  *      0x9 ・→←・ : N/A
  *      0xA ・→・↓ : ＼ 27° North Side
@@ -54,6 +54,13 @@
  *      0xD ・・←・ : ／ 45°
  *      0xE ・・・↓ : N/A
  *      0xF ・・・・ : N/A
+ * 
+ * 3. Set Ladder and Damage floor to bump level.
+ *      Ladder   Damage
+ *          OFF        OFF         No Bump (Apply 4 directioin settring.Written in 2.)
+ *          ON          OFF         Bump Level 1(Default:6px)
+ *          OFF        ON           Bump Level 2(Default:12px)
+ *          ON          ON           Bump Level 3(Default:18px)
  * 
  * Released under the MIT License.
  */
@@ -72,7 +79,7 @@
  * @desc 段差の基本単位。
  * @type number
  * @min 1
- * @max 10
+ * @max 14
  * @default 6
  * 
  * @help
@@ -86,14 +93,14 @@
  * 1. A5BCDEタイルに地形タグ(規定値 : 1)を指定
  * 
  * 2. 通行設定(4方向)によって、詳細設定
- *      0x0 ↑→←↓ : 段差レベル1(規定値:6px)
- *      0x1 ↑→←・ : 段差レベル2(規定値:12px)
+ *      0x0 ↑→←↓ : 未設定
+ *      0x1 ↑→←・ : 未設定
  *      0x2 ↑→・↓ : \  63°
  *      0x3 ↑→・・ : ＼ 27° 南より
  *      0x4 ↑・←↓ :  / 63°
  *      0x5 ↑・←・ : ／ 27° 南より
- *      0x6 ↑・・↓ : 段差レベル3(規定値:18px)
- *      0x7 ↑・・・ : 段差レベル4(規定値:24px)
+ *      0x6 ↑・・↓ : 未設定
+ *      0x7 ↑・・・ : 未設定
  *      0x8 ・→←↓ : 未設定
  *      0x9 ・→←・ : 未設定
  *      0xA ・→・↓ : ＼ 27° 北より
@@ -102,6 +109,13 @@
  *      0xD ・・←・ : ／ 45°
  *      0xE ・・・↓ : 未設定
  *      0xF ・・・・ : 未設定
+ * 
+ * 3. [梯子]と[ダメージ床] の設定で段差レベルを設定
+ *      [梯子]   [ダメージ床]
+ *          OFF        OFF         段差なし (2. で説明した 4方向設定が適用されます)
+ *          ON          OFF         段差レベル1(規定値:6px)
+ *          OFF        ON           段差レベル2(規定値:12px)
+ *          ON          ON           段差レベル3(規定値:18px)
  * 
  * 利用規約 : MITライセンス
  */
@@ -127,13 +141,15 @@ if( pluginParams[ BASE_BUMP ] ){
     _BaseBump = parseInt( pluginParams[ BASE_BUMP ], 10 );
 } 
 
-// Wは西(左)上がり…＼ 　Eは東(右)上がり…／
-const MASK_UNDULATION = 0x001F; // 地形タグ、高層[☆]、通行設定を取り出すマスク
+// flag用定数
+const MASK_BUMP = 0x120; // 段差用マスク(梯子とダメージ床)
 // 段差設定フラグ
-const BUMP1 = 0x0;
-const BUMP2 = 0x1;
-const BUMP3 = 0x6;
-const BUMP4 = 0x7;
+const BUMP1 = 0x20;
+const BUMP2 = 0x100;
+const BUMP3 = 0x120;
+
+// Wは西(左)上がり…＼ 　Eは東(右)上がり…／
+const MASK_UNDULATION = 0x001F; // 通行設定を取り出すマスク
 // 傾き設定フラグ
 const W45 = 0xB;
 const E45 = 0xD;
@@ -474,8 +490,7 @@ Game_CharacterBase.prototype.updateMove = function() {
     const isW =  this.x < preRealX;
     if( this._realX != this.x ){ //移動中
         const undulation = getUndulation( Math.floor( this._realX + 0.5 ), Math.floor( this._realY + 0.5 ) );
-        if( undulation !== -1 ){
-
+        if( undulation === 0 || undulation & MASK_UNDULATION ){
             const ratioXY = isW ? FLAG2RATIO_W[ undulation ] : FLAG2RATIO_E[ undulation ];
             if( ratioXY && !( ( undulation === W63 && 0.5 < tileX ) || ( undulation === E63 && tileX < 0.5 ) ) ){
                 this._realX += this.distancePerFrame() * ratioXY[ 0 ];
@@ -488,7 +503,7 @@ Game_CharacterBase.prototype.updateMove = function() {
     if( preRealX === this.x || this._realX === this.x ) return;
  
     const undulation = getUndulation( Math.floor( this._realX + 0.5 ), Math.floor( this._realY + 0.5 ) );
-    if( undulation === -1 || ( preRealX * 2 ) !== Math.floor( preRealX * 2 ) ) return;
+    if( undulation === -1  || undulation & MASK_BUMP || ( preRealX * 2 ) !== Math.floor( preRealX * 2 ) ) return;
 
     const targetPos = isW ? FLAG2POS_W[ undulation ] : FLAG2POS_E[ undulation ];
     if( targetPos === undefined ) return;
@@ -516,16 +531,15 @@ Game_CharacterBase.prototype.updateMove = function() {
 
 
  // フラグから段差の量を得るテーブル
- const FLAG2BUMP= { [ BUMP1 ] : 1, [ BUMP2 ] : 2, [ BUMP3 ] : 3,[ BUMP4 ] : 4 };
+ const FLAG2BUMP= { [ BUMP1 ] : 1, [ BUMP2 ] : 2, [ BUMP3 ] : 3 };
  /**
   * 段差指定フラグに応じた段差を返す
   * @param {Number} undulation 段差指定フラグ
   * @returns {Number} 段差(ピクセル)
   */
  function getBump( undulation ){
-     if( undulation === -1 ) return 0;
-     const bump = FLAG2BUMP[ undulation ];
-     return bump ? ( bump * _BaseBump ) : 0;
+    const bump = FLAG2BUMP[ undulation ];
+    return bump ? ( bump * _BaseBump ) : 0;
  }
 
 /**
@@ -539,11 +553,12 @@ Game_CharacterBase.prototype.shiftY = function(){
     const intY = Math.floor( this._realY + 0.5 );
     const undulationL = ( tileX === 0 )? getUndulation( intX - 1, intY ) : -1;
     const undulationR = getUndulation( intX, intY );
-    if( -1 === undulationL && -1 === undulationR ) return shiftY;
-
-    const dYR = getBump( undulationR );
-    const dYL = getBump( undulationL );
-    return shiftY + Math.max( dYL, dYR );
+    if( undulationL & MASK_BUMP ||  undulationR & MASK_BUMP ){
+        const dYL = getBump( undulationL );
+        const dYR = getBump( undulationR );
+        return shiftY + Math.max( dYL, dYR );
+    }
+    return shiftY;
 }
 
 
@@ -584,6 +599,35 @@ Game_Map.prototype.isPassable = function( x, y, d ){
     return _Game_Map_isPassable.apply( this, arguments );
 };
 
+// 地形タグ0設定されていれば処理を無視
+const _Game_Map_isLadder = Game_Map.prototype.isLadder;
+Game_Map.prototype.isLadder = function(x, y) {
+    if( isBump( x, y ) ) return false;
+    return _Game_Map_isLadder.apply( this, arguments );
+};
+
+const _Game_Map_isDamageFloor = Game_Map.prototype.isDamageFloor;
+Game_Map.prototype.isDamageFloor = function(x, y) {
+    if( isBump( x, y ) ) return false;
+    return _Game_Map_isDamageFloor.apply( this, arguments );
+};
+/**
+ * 段差タイルの範囲内か。
+ * @param {Number} x x座標(小数点以下を含むタイル数)
+ * @param {Number} y y座標(小数点以下を含むタイル数)
+ * @returns {Boolean} 
+ */
+function isBump( x, y ){
+    if( getUndulation( x, y ) !== -1 ) return true;
+    const isHalfX = ( x % 1 ) !== 0;
+    if( isHalfX && getUndulation( x + 1, y ) !== -1 ) return true;
+    const isHalfY = ( y % 1 ) !== 0;
+    if( isHalfY && getUndulation( x, y + 1 ) !== -1 ) return true;
+    if( isHalfX && isHalfY && getUndulation( x + 1, y + 1 ) !== -1 ) return true;
+    return false;
+}
+
+
 /*---- Game_Follower ----*/
 /**
  * ひとつ前のキャラを追いかける
@@ -617,8 +661,12 @@ function getUndulation( x, y ){
     
     for ( let i = 0; i < tiles.length; i++ ){
         const flag = flags[ tiles[ i ] ];
-        if ( ( flag  >> 12 ) === _TerrainTag ) return flag & MASK_UNDULATION;
-    }    
+        if( ( flag  >> 12 ) === _TerrainTag ){
+            const bump = ( flag  & MASK_BUMP );
+            if( bump ) return bump;
+            return flag & MASK_UNDULATION;
+        }
+    }
     return -1;
 }
 
