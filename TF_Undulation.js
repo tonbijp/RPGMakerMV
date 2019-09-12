@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :1.0.0.0
+// Version :1.0.1.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -243,16 +243,16 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
     // ＼ W27S
     if( d === 2 ){
         if( halfPos === 0 ){
-            if( isTileLayoutNorth( W27S, 4 ) || isTileLayoutSouth( W27S, 5 ) ) return false;
+            if( isTileLayoutSouth( W27S, 5 ) ) return false;
         }else if( halfPos === 2 ){
-            if( isTileLayoutNorth( W27S, 2 ) ||  isTileLayoutSouth( W27S, 4 ) || getTileLayout( W27S, 1 ) === LAYOUT_SINGLE ) return false;
+            if( isTileLayoutNorth( W27S, 1 ) || isTileLayoutNorth( W27S, 2 ) ||  isTileLayoutSouth( W27S, 4 ) ) return false;
             if( isTileLayoutSouth( W27S, 2 ) ) return true;
         }else if( halfPos === 3 ){
             if( isTileLayoutNorth( W27S, 2 ) ) return false;
         }
     }else if( d === 4 ){
         if( halfPos === 1 ){
-            if( getTileLayout( W27S, 4 ) === LAYOUT_SINGLE ) return false;
+            if( isTileLayoutNorth( W27S, 4 ) ) return false;
         }else if( halfPos === 3 ){
             if( getTileLayout( W27S, 4 ) === LAYOUT_NORTH ) return false;
         }
@@ -303,9 +303,9 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
     // ／ E27S
     if( d === 2 ){
         if( halfPos === 0 ){
-            if( isTileLayoutSouth( E27S, 4 ) || isTileLayoutNorth( E27S, 5 ) ) return false;
+            if( isTileLayoutSouth( E27S, 4 ) ) return false;
         }else if( halfPos === 2 ){
-            if( isTileLayoutNorth( E27S, 1 ) || getTileLayout( E27S, 2 ) === LAYOUT_SINGLE ) return false;
+            if( isTileLayoutNorth( E27S, 1 ) || isTileLayoutNorth( E27S, 2 ) || getTileLayout( E27S, 2 ) === LAYOUT_SINGLE ) return false;
             if( isTileLayoutSouth( E27S, 1 ) ) return true;
         }else if( halfPos === 3 ){
             if( isTileLayoutNorth( E27S, 2 ) ) return false;
@@ -317,7 +317,7 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
         }
     }else if( d === 6 ){
         if( halfPos === 1 ){
-            if( getTileLayout( E27S, 6 ) === LAYOUT_SINGLE ) return false;
+            if( isTileLayoutNorth( E27S, 6 ) ) return false;
         }else if( halfPos === 3 ){
             if( getTileLayout( E27S, 6 ) === LAYOUT_NORTH ) return false;
         }
@@ -358,20 +358,18 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
 
     // ＼ W45
     if( d === 2 ){
-        if( halfPos === 0 ){
-            if( isTileLayoutNorth( W45, 4 ) ) return false;
-        }else if( halfPos === 1 ){
+        if( halfPos === 1 ){
             if( isTileLayoutSouth( W45, 5 ) ) return false;
         }else if( halfPos === 2 ){
-            if( isTileLayoutNorth( W45, 2 ) ) return false;
+            if( isTileLayoutNorth( W45, 1 ) || isTileLayoutNorth( W45, 2 ) ) return false;
             if( isTileLayoutSouth( W45, 1 ) ) return true;
         }else if( halfPos === 3 ){
             if( isTileLayoutNorth( W45, 2 ) ) return false;
             if( isTileLayoutSouth( W45, 2 ) ) return true;
         }
     }else if( d === 4 ){
-        if( halfPos === 0 ){
-        }else if( halfPos === 1 ){
+        if( halfPos === 1 ){
+            if( isTileLayoutNorth( W45, 4 ) ) return false;
             if( isTileLayoutSouth( W45, 5 ) ) return true;
         }else if( halfPos === 3 ){
             if( isTileLayoutNorth( W45, 4 ) ) return false;
@@ -389,20 +387,18 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
 
     // ／ E45
     if( d === 2 ){
-        if( halfPos === 0 ){
-            if( isTileLayoutNorth( E45, 5 ) ) return false;
-        }else if( halfPos === 1 ){
+        if( halfPos === 1 ){
             if( isTileLayoutSouth( E45, 5 ) ) return false;
         }else if( halfPos === 2 ){
-            if( isTileLayoutNorth( E45, 1 ) ) return false;
+            if( isTileLayoutNorth( E45, 1 ) || isTileLayoutNorth( E45, 2 ) ) return false;
             if( isTileLayoutSouth( E45, 2 ) ) return true;
         }else if( halfPos === 3 ){
             if( isTileLayoutNorth( E45, 2 ) ) return false;
             if( isTileLayoutSouth( E45, 2 ) ) return true;
         }
     }else if( d === 6 ){
-        if( halfPos === 0 ){
-        }else if( halfPos === 1 ){
+        if( halfPos === 1 ){
+            if( isTileLayoutNorth( E45, 6 ) ) return false;
             if( isTileLayoutSouth( E45, 5 ) ) return true;
         }else if( halfPos === 3 ){
             if( isTileLayoutNorth( E45, 6 ) ) return false;
@@ -426,10 +422,13 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
         }else if( halfPos === 2 ){
             if( isTileLayoutNorth( W63, 2 ) ) return false;
         }else if( halfPos === 3 ){
+            if( isTileLayoutNorth( W63, 2 ) ) return false;
             if( isTileLayoutSouth( W63, 5 ) ) return false;
         }
     }else if( d === 4 ){
-        if( halfPos === 1 ){
+        if( halfPos === 0 ){
+            if( isTileLayoutNorth( W63, 4 ) ) return false;
+        }else if( halfPos === 1 ){
             if( isTileLayoutNorth( W63, 5 ) ) return false;
             if( isTileLayoutSouth( W63, 5 ) ) return true;
         }else if( halfPos === 2 ){
@@ -452,10 +451,13 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
         }else if( halfPos === 2 ){
             if( isTileLayoutNorth( E63, 1 ) ) return false;
         }else if( halfPos === 3 ){
+            if( isTileLayoutNorth( E63, 2 ) ) return false;
             if( isTileLayoutSouth( E63, 5 ) ) return false;
         }
     }else if( d === 6 ){
-        if( halfPos === 1 ){
+        if( halfPos === 0 ){
+            if( isTileLayoutNorth( E63, 5 ) ) return false;
+        }else if( halfPos === 1 ){
             if( isTileLayoutNorth( E63, 5 ) ) return false;
             if( isTileLayoutSouth( E63, 5 ) ) return true;
         }else if( halfPos === 2 ){
@@ -480,7 +482,7 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
 const _Game_CharacterBase_updateMove = Game_CharacterBase.prototype.updateMove;
 Game_CharacterBase.prototype.updateMove = function() {
     if( this instanceof  Game_Follower ) {
-         // followerをスムースに動かすための処理を入れる。
+         // TODO: followerをスムースに動かすための処理を入れる。
     }
 
     const preRealX = this._realX;
