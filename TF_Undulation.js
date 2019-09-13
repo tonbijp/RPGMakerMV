@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :1.0.1.0
+// Version :1.1.1.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -124,9 +124,12 @@ const PLUGIN_NAME = 'TF_Undulation';
 const TERRAIN_TAG = 'TerrainTag';
 const BASE_BUMP = 'BaseBump';
 
-/**
- * パラメータを受け取る
- */
+// HalfMove.js の確認
+if( !PluginManager._scripts.contains( 'HalfMove' ) ){
+    throw new Error( 'HalfMove.js is required to use TF_Undulation.js.' );
+}
+
+// パラメータを受け取る
 const pluginParams = PluginManager.parameters( PLUGIN_NAME );
 
 let _TerrainTag = 1;    // 地形タグ規定値
