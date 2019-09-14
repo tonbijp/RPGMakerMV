@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :1.1.2.1
+// Version :1.1.2.2
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -49,7 +49,7 @@
  * 
  * 3. Set Ladder and Damage floor to bump level.
  *      Ladder   Damage
- *          OFF        OFF         No Bump (Apply 4 directioin settring.Written in 2.)
+ *          OFF        OFF         No Bump (Apply 4 direction setting.Written in 2.)
  *          ON          OFF         Bump Level 1(Default:6px)
  *          OFF        ON           Bump Level 2(Default:12px)
  *          ON          ON           Bump Level 3(Default:18px)
