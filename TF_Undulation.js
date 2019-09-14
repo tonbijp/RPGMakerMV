@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :1.1.1.0
+// Version :1.1.2.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -593,8 +593,6 @@ Game_Map.prototype.isPassable = function( x, y, d ){
     if( this.terrainTag( x, y ) !== _TerrainTag ) return  _Game_Map_isPassable.apply( this, arguments );
 
     const undulation = getUndulation( x, y );
-    // 高低差判定がある場合は全方向通行可
-    if( FLAG2BUMP[ undulation ] ) return true;
 
     // 下が同じタイルで繋がっている場合は通行可
     if( FLAG2RATIO_W[ undulation ] && isSamePitch( undulation, getUndulation( x, y + 1 ) ) ) return true;
