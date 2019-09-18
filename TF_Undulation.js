@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :1.1.2.2
+// Version :1.2.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -27,6 +27,13 @@
  * @max 14
  * @default 6
  * 
+ * @param ClimbResist
+ * @desc Resistance to climb up and down.
+ * @type number
+ * @min 0
+ * @max 6
+ * @default 2
+ * 
  * @help
  * CAUTION : This plugin needs HalfMove.js made by Triacontane.
  * Set HalfMove.js before TF_Undulation.js.
@@ -35,9 +42,9 @@
  * Input only L or R (←・→) to move slope automatically.
  * If you place the same tile on the map, it will run as a unified part.
  * 
- * 1. Set Terrain Tag (Default : 1) to A5BCDE tile.
+ * 1. Set a Terrain Tag (Default : 1) to A5BCDE tile.
  * 
- * 2. Set 4 direction for details.
+ * 2. Set a 4 direction for details.
  *      0x2 ↑→・↓ : \  63°
  *      0x3 ↑→・・ : ＼ 27° South Side
  *      0x4 ↑・←↓ :  / 63°
@@ -74,6 +81,13 @@
  * @max 14
  * @default 6
  * 
+ * @param ClimbResist
+ * @desc 登り降りの抵抗。
+ * @type number
+ * @min 0
+ * @max 6
+ * @default 2
+ * 
  * @help
  * 注意 : トリアコンタンさんの HalfMove.js の利用を前提としています。
  * TF_Undulation.js の前に HalfMove.js を配置するようにしてください。
@@ -107,6 +121,7 @@
 const PLUGIN_NAME = 'TF_Undulation';
 const TERRAIN_TAG = 'TerrainTag';
 const BASE_BUMP = 'BaseBump';
+const CLIMB_RESIST = 'ClimbResist';
 
 // HalfMove.js の確認
 if( !PluginManager._scripts.contains( 'HalfMove' ) ){
@@ -121,9 +136,14 @@ if( pluginParams[ TERRAIN_TAG ] ){
     _TerrainTag = parseInt( pluginParams[ TERRAIN_TAG ], 10 );
 } 
 
-let _BaseBump = 6;    // 地形タグ規定値
+let _BaseBump = 6;    // 段差の規定値
 if( pluginParams[ BASE_BUMP ] ){
     _BaseBump = parseInt( pluginParams[ BASE_BUMP ], 10 );
+} 
+
+let _ClimbResist = 2;    // 昇降抵抗の規定値
+if( pluginParams[ CLIMB_RESIST ] ){
+    _ClimbResist = parseInt( pluginParams[ CLIMB_RESIST ], 10 );
 } 
 
 // flag用定数
@@ -145,19 +165,20 @@ const W27S = 0x3;
 const E27N = 0xC;
 const E27S = 0x5;
 
-
 // フラグから移動速度の調整比率を得る
+const resistA = [ 0.1, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6 ][ _ClimbResist ];
+const resistB = [ 0.5, 0.55,0.6, 0.65, 0.7, 0.75, 0.8 ][ _ClimbResist ];
 const FLAG2RATIO_W = { // 西(左)向き ↖ , ↙
-    [ W45 ] : [ 0.2, 0.2 ], [ E45 ] : [ 0.2, -0.2 ],
-    [ W63 ] : [ 0.6, 0.2 ], [ E63 ] : [ 0.6, -0.2 ],
-    [ W27N ] : [ 0.2, 0.6 ], [ E27N ] : [ 0.2, -0.6 ],
-    [ W27S ] : [ 0.2, 0.6 ], [ E27S ] : [ 0.2, -0.6 ],
+    [ W45 ] : [ resistA, resistA ], [ E45 ] : [ resistA, -resistA ],
+    [ W63 ] : [ resistB, resistA ], [ E63 ] : [ resistB, -resistA ],
+    [ W27N ] : [ resistA, resistB ], [ E27N ] : [ resistA, -resistB ],
+    [ W27S ] : [ resistA, resistB ], [ E27S ] : [ resistA, -resistB ],
 };
 const FLAG2RATIO_E = { // 東(右)向き ↘ , ↗
-    [ W45 ] : [ -0.2, -0.2 ], [ E45 ] : [ -0.2, 0.2 ],
-    [ W63 ] : [ -0.6, -0.2 ], [ E63 ] : [ -0.6, 0.2 ],
-    [ W27N ] : [ -0.2, -0.6 ], [ E27N ] : [ -0.2, 0.6 ],
-    [ W27S ] : [ -0.2, -0.6 ], [ E27S ] : [ -0.2, 0.6 ],
+    [ W45 ] : [ -resistA, -resistA ], [ E45 ] : [ -resistA, resistA ],
+    [ W63 ] : [ -resistB, -resistA ], [ E63 ] : [ -resistB, resistA ],
+    [ W27N ] : [ -resistA, -resistB ], [ E27N ] : [ -resistA, resistB ],
+    [ W27S ] : [ -resistA, -resistB ], [ E27S ] : [ -resistA, resistB ],
 };
 
 // フラグから階段(坂)の到達点の位置を得る
@@ -184,7 +205,7 @@ const LAYOUT_SOUTH = 2;
 
 /*---- Game_CharacterBase ----*/
 /**
- * 指定方向への移動が可能か
+ * 指定方向への移動が可能か。
  * キャラクタ半分の位置が関係するものは、ここで判定。
  * @param {Number} x タイル数
  * @param {Number} y タイル数
@@ -478,6 +499,7 @@ Game_CharacterBase.prototype.updateMove = function() {
     if( this._realX != this.x ){ //移動中
         const undulation = getUndulation( Math.floor( this._realX + 0.5 ), Math.floor( this._realY + 0.5 ) );
         if( undulation === 0 || undulation & MASK_UNDULATION ){
+            _isStairMove = true;
             const ratioXY = isW ? FLAG2RATIO_W[ undulation ] : FLAG2RATIO_E[ undulation ];
             if( ratioXY && !( ( undulation === W63 && 0.5 < tileX ) || ( undulation === E63 && tileX < 0.5 ) ) ){
                 this._realX += this.distancePerFrame() * ratioXY[ 0 ];
@@ -487,6 +509,8 @@ Game_CharacterBase.prototype.updateMove = function() {
     }
 
     _Game_CharacterBase_updateMove.call( this );
+    _isStairMove = false;
+
     if( preRealX === this.x || this._realX === this.x ) return;
  
     const undulation = getUndulation( Math.floor( this._realX + 0.5 ), Math.floor( this._realY + 0.5 ) );
@@ -520,7 +544,7 @@ Game_CharacterBase.prototype.updateMove = function() {
  // フラグから段差の量を得るテーブル
  const FLAG2BUMP= { [ BUMP1 ] : 1, [ BUMP2 ] : 2, [ BUMP3 ] : 3 };
  /**
-  * 段差指定フラグに応じた段差を返す
+  * 段差指定フラグに応じた段差を返す。
   * @param {Number} undulation 段差指定フラグ
   * @returns {Number} 段差(ピクセル)
   */
@@ -530,7 +554,8 @@ Game_CharacterBase.prototype.updateMove = function() {
  }
 
 /**
- * 縦にずらすピクセル数を返す
+ * 縦にずらすピクセル数を返す。
+ * @returns {Number} 
  */
 const _Game_CharacterBase_shiftY = Game_CharacterBase.prototype.shiftY;
 Game_CharacterBase.prototype.shiftY = function(){
@@ -548,10 +573,19 @@ Game_CharacterBase.prototype.shiftY = function(){
     return shiftY;
 }
 
+/**
+ * 斜め移動中か(階段の上の場合は斜め移動とみなさない)
+ * @returns {Boolean} 
+ */
+let _isStairMove = false;
+const _Game_CharacterBase_isMovingDiagonal = Game_CharacterBase.prototype.isMovingDiagonal;
+Game_CharacterBase.prototype.isMovingDiagonal = function() {
+    return _isStairMove ? false : _Game_CharacterBase_isMovingDiagonal.apply( this, arguments );
+};
 
 /*---- Game_Player ----*/
 /**
- * 階段の上の場合、4方向移動に固定
+ * 階段の上の場合、4方向移動に固定。
  * @param {Number} d 向き(テンキー対応)
  */
 var _Game_Player_executeMove = Game_Player.prototype.executeMove;
@@ -615,7 +649,7 @@ function isBump( x, y ){
 
 /*---- Game_Follower ----*/
 /**
- * ひとつ前のキャラを追いかける
+ * ひとつ前のキャラを追いかける。
  * @param {Game_Character} character 追いかけるキャラ
  */
 const _Game_Follower_chaseCharacter = Game_Follower.prototype.chaseCharacter;
@@ -633,7 +667,7 @@ Game_Follower.prototype.chaseCharacter = function( character ){
 
 /*---- ユーティリティ関数 ----*/
 /**
- * 指定位置に高低差flagがあれば返す
+ * 指定位置に高低差flagがあれば返す。
  * @param {Number} x タイル数
  * @param {Number} y タイル数
  * @param {Number} undulation 調べるタイルのflag
