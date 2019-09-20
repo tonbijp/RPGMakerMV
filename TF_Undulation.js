@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :1.2.0.0
+// Version :1.2.1.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -165,20 +165,24 @@ const W27S = 0x3;
 const E27N = 0xC;
 const E27S = 0x5;
 
+
 // フラグから移動速度の調整比率を得る
-const resistA = [ 0.1, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6 ][ _ClimbResist ];
-const resistB = [ 0.5, 0.55,0.6, 0.65, 0.7, 0.75, 0.8 ][ _ClimbResist ];
+// Math.sqrt( Math.pow( ( 1 - resistA ), 2 ) + Math.pow( ( 1 - resistB ), 2) )
+const resistA = [ 0.1,    0.14, 0.2, 0.3,   0.4, 0.5,    0.6 ][ _ClimbResist ];
+const resistB = [ 0.55, 0.57, 0.6, 0.65, 0.7, 0.75, 0.8 ][ _ClimbResist ];
+const resistC = [ 0.1,    0.12, 0.14, 0.16, 0.18, 0.2, 0.22 ][ _ClimbResist ];
+const resistD = [ 0.55, 0.56, 0.57, 0.58, 0.59, 0.6, 0.62 ][ _ClimbResist ];
 const FLAG2RATIO_W = { // 西(左)向き ↖ , ↙
     [ W45 ] : [ resistA, resistA ], [ E45 ] : [ resistA, -resistA ],
     [ W63 ] : [ resistB, resistA ], [ E63 ] : [ resistB, -resistA ],
-    [ W27N ] : [ resistA, resistB ], [ E27N ] : [ resistA, -resistB ],
-    [ W27S ] : [ resistA, resistB ], [ E27S ] : [ resistA, -resistB ],
+    [ W27N ] : [ resistC, resistD ], [ E27N ] : [ resistC, -resistD ],
+    [ W27S ] : [ resistC, resistD ], [ E27S ] : [ resistC, -resistD ],
 };
 const FLAG2RATIO_E = { // 東(右)向き ↘ , ↗
     [ W45 ] : [ -resistA, -resistA ], [ E45 ] : [ -resistA, resistA ],
     [ W63 ] : [ -resistB, -resistA ], [ E63 ] : [ -resistB, resistA ],
-    [ W27N ] : [ -resistA, -resistB ], [ E27N ] : [ -resistA, resistB ],
-    [ W27S ] : [ -resistA, -resistB ], [ E27S ] : [ -resistA, resistB ],
+    [ W27N ] : [ -resistC, -resistD ], [ E27N ] : [ -resistC, resistD ],
+    [ W27S ] : [ -resistC, -resistD ], [ E27S ] : [ -resistC, resistD ],
 };
 
 // フラグから階段(坂)の到達点の位置を得る
