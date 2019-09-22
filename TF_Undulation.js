@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :1.2.1.0
+// Version :1.3.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -16,9 +16,16 @@
  * @param TerrainTag
  * @desc Set condition with this number of terrain tag and 4 direction setting.
  * @type number
- * @min 1
+ * @min 0
  * @max 7
  * @default 1
+ * 
+ * @param TerrainTagSN
+ * @desc This tag is subject to north-south climb resistance.
+ * @type number
+ * @min 0
+ * @max 7
+ * @default 2
  * 
  * @param BaseBump
  * @desc Base unit of bump.
@@ -70,9 +77,16 @@
  * @param TerrainTag
  * @desc この地形タグ+通行設定(4方向)で詳細な段差設定を行う。
  * @type number
- * @min 1
+ * @min 0
  * @max 7
  * @default 1
+ * 
+ * @param TerrainTagSN
+ * @desc この地形タグは南北方向の階段に減速効果をつける。
+ * @type number
+ * @min 0
+ * @max 7
+ * @default 2
  * 
  * @param BaseBump
  * @desc 段差の基本単位。
@@ -120,6 +134,7 @@
 (function(){'use strict';
 const PLUGIN_NAME = 'TF_Undulation';
 const TERRAIN_TAG = 'TerrainTag';
+const TERRAIN_TAG_S = 'TerrainTagSN';
 const BASE_BUMP = 'BaseBump';
 const CLIMB_RESIST = 'ClimbResist';
 
@@ -131,20 +146,25 @@ if( !PluginManager._scripts.contains( 'HalfMove' ) ){
 // パラメータを受け取る
 const pluginParams = PluginManager.parameters( PLUGIN_NAME );
 
-let _TerrainTag = 1;    // 地形タグ規定値
+let _TerrainTag = 1;    // 東西用の地形タグ規定値
 if( pluginParams[ TERRAIN_TAG ] ){
     _TerrainTag = parseInt( pluginParams[ TERRAIN_TAG ], 10 );
-} 
+}
+
+let _TerrainTagSN = 2;    // 南用の地形タグ規定値
+if( pluginParams[ TERRAIN_TAG_S ] ){
+    _TerrainTagSN = parseInt( pluginParams[ TERRAIN_TAG_S ], 10 );
+}
 
 let _BaseBump = 6;    // 段差の規定値
 if( pluginParams[ BASE_BUMP ] ){
     _BaseBump = parseInt( pluginParams[ BASE_BUMP ], 10 );
-} 
+}
 
 let _ClimbResist = 2;    // 昇降抵抗の規定値
 if( pluginParams[ CLIMB_RESIST ] ){
     _ClimbResist = parseInt( pluginParams[ CLIMB_RESIST ], 10 );
-} 
+}
 
 // flag用定数
 const MASK_BUMP = 0x120; // 段差用マスク(梯子とダメージ床)
@@ -500,15 +520,17 @@ Game_CharacterBase.prototype.updateMove = function() {
     const preRealX = this._realX;
     const tileX = ( preRealX + 0.5 ) % 1;
     const isW =  this.x < preRealX;
-    if( this._realX != this.x ){ //移動中
-        const undulation = getUndulation( Math.floor( this._realX + 0.5 ), Math.floor( this._realY + 0.5 ) );
-        if( undulation === 0 || undulation & MASK_UNDULATION ){
-            _isStairMove = true;
-            const ratioXY = isW ? FLAG2RATIO_W[ undulation ] : FLAG2RATIO_E[ undulation ];
-            if( ratioXY && !( ( undulation === W63 && 0.5 < tileX ) || ( undulation === E63 && tileX < 0.5 ) ) ){
-                this._realX += this.distancePerFrame() * ratioXY[ 0 ];
-                this._realY += this.distancePerFrame() * ratioXY[ 1 ];
-            }
+    let undulation = getUndulation( Math.floor( this._realX + 0.5 ), Math.floor( this._realY + 0.5 ) );
+    if( undulation === -2 ){
+        // 縦方向の階段
+        if( this._realY != this.y ) this._realY += this.distancePerFrame() * ( ( this.y < this._realY ) ? resistA : -resistA );
+    }else if(( undulation === 0 || undulation & MASK_UNDULATION ) && this._realX != this.x ){
+        // 横方向の階段
+        _isStairMove = true;
+        const ratioXY = isW ? FLAG2RATIO_W[ undulation ] : FLAG2RATIO_E[ undulation ];
+        if( ratioXY && !( ( undulation === W63 && 0.5 < tileX ) || ( undulation === E63 && tileX < 0.5 ) ) ){
+            this._realX += this.distancePerFrame() * ratioXY[ 0 ];
+            this._realY += this.distancePerFrame() * ratioXY[ 1 ];
         }
     }
 
@@ -517,8 +539,8 @@ Game_CharacterBase.prototype.updateMove = function() {
 
     if( preRealX === this.x || this._realX === this.x ) return;
  
-    const undulation = getUndulation( Math.floor( this._realX + 0.5 ), Math.floor( this._realY + 0.5 ) );
-    if( undulation === -1  || undulation & MASK_BUMP || ( preRealX * 2 ) !== Math.floor( preRealX * 2 ) ) return;
+    undulation = getUndulation( Math.floor( this._realX + 0.5 ), Math.floor( this._realY + 0.5 ) );
+    if( undulation < 0  || undulation & MASK_BUMP || ( preRealX * 2 ) !== Math.floor( preRealX * 2 ) ) return;
 
     const targetPos = isW ? FLAG2POS_W[ undulation ] : FLAG2POS_E[ undulation ];
     if( targetPos === undefined ) return;
@@ -634,6 +656,7 @@ Game_Map.prototype.isDamageFloor = function(x, y) {
     if( isBump( x, y ) ) return false;
     return _Game_Map_isDamageFloor.apply( this, arguments );
 };
+
 /**
  * 段差タイルの範囲内か。
  * @param {Number} x x座標(小数点以下を含むタイル数)
@@ -649,6 +672,7 @@ function isBump( x, y ){
     if( isHalfX && isHalfY && getUndulation( x + 1, y + 1 ) !== -1 ) return true;
     return false;
 }
+
 
 
 /*---- Game_Follower ----*/
@@ -675,7 +699,7 @@ Game_Follower.prototype.chaseCharacter = function( character ){
  * @param {Number} x タイル数
  * @param {Number} y タイル数
  * @param {Number} undulation 調べるタイルのflag
- * @returns {Boolean} 見つかったflag、見つからない場合は-1
+ * @returns {Boolean} 見つかったflag、見つからない場合は-1、遅延タイルは-2
  */
 function getUndulation( x, y ){
     x = Math.floor( $gameMap.roundX( x ) );
@@ -685,14 +709,19 @@ function getUndulation( x, y ){
     
     for ( let i = 0; i < tiles.length; i++ ){
         const flag = flags[ tiles[ i ] ];
-        if( ( flag  >> 12 ) === _TerrainTag ){
+        const terrainTag  = flag  >> 12;
+        if( terrainTag === 0 ) continue;
+        if( terrainTag === _TerrainTag ){
             const bump = ( flag  & MASK_BUMP );
             if( bump ) return bump;
             return flag & MASK_UNDULATION;
+        }else if( terrainTag === _TerrainTagSN ){
+            return -2;
         }
     }
     return -1;
 }
+
 
 /**
  * 高低差flagのあるタイル周辺か。
