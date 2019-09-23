@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :1.3.0.0
+// Version :1.4.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -56,6 +56,7 @@
  *      0x3 ↑→・・ : ＼ 27° South Side
  *      0x4 ↑・←↓ :  / 63°
  *      0x5 ↑・←・ : ／ 27° South Side
+ *      0x9 ・→←・ :   |  Center wall
  *      0xA ・→・↓ : ＼ 27° North Side
  *      0xB ・→・・ : ＼ 45°
  *      0xC ・・←↓ : ／ 27° NorthSide
@@ -117,6 +118,7 @@
  *      0x3 ↑→・・ : ＼ 27° 南より
  *      0x4 ↑・←↓ :  / 63°
  *      0x5 ↑・←・ : ／ 27° 南より
+ *      0x9 ・→←・ :   |  中央に壁
  *      0xA ・→・↓ : ＼ 27° 北より
  *      0xB ・→・・ : ＼ 45°
  *      0xC ・・←↓ : ／ 27° 北より
@@ -185,6 +187,8 @@ const W27S = 0x3;
 const E27N = 0xC;
 const E27S = 0x5;
 
+// 中央に壁
+const CENTER_LINE = 0x9;
 
 // フラグから移動速度の調整比率を得る
 // Math.sqrt( Math.pow( ( 1 - resistA ), 2 ) + Math.pow( ( 1 - resistB ), 2) )
@@ -270,6 +274,23 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
         return layout === LAYOUT_SOUTH || layout === LAYOUT_SINGLE;
     }
 
+
+    // CENTER_LINE
+    if( halfPos === 0 || halfPos === 2 ){
+        if( d === 4 ){
+            if( getUndulation( intX - 1, intY ) === CENTER_LINE ) return false;
+        }else if( d === 6 ){
+            if( getUndulation( intX, intY ) === CENTER_LINE ) return false;
+        }
+    }
+    if( halfPos === 0 && d === 8 ){
+        if( getUndulation( intX - 1, intY ) === CENTER_LINE || getUndulation( intX, intY ) === CENTER_LINE ||
+        getUndulation( intX - 1, intY - 1 ) === CENTER_LINE || getUndulation( intX, intY - 1 ) === CENTER_LINE ) return true;
+    }
+    if( halfPos === 2 && d === 2 ){
+        if( getUndulation( intX - 1, intY ) === CENTER_LINE || getUndulation( intX, intY ) === CENTER_LINE ||
+        getUndulation( intX - 1, intY + 1 ) === CENTER_LINE || getUndulation( intX, intY + 1 ) === CENTER_LINE ) return true;
+    }
 
 
     // ＼ W27S
