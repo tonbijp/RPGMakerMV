@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :1.4.0.0
+// Version :1.4.0.1
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -134,39 +134,28 @@
  * 利用規約 : MITライセンス
  */
 (function(){'use strict';
-const PLUGIN_NAME = 'TF_Undulation';
-const TERRAIN_TAG = 'TerrainTag';
-const TERRAIN_TAG_S = 'TerrainTagSN';
-const BASE_BUMP = 'BaseBump';
-const CLIMB_RESIST = 'ClimbResist';
-
 // HalfMove.js の確認
 if( !PluginManager._scripts.contains( 'HalfMove' ) ){
     throw new Error( 'HalfMove.js is required to use TF_Undulation.js.' );
 }
 
 // パラメータを受け取る
-const pluginParams = PluginManager.parameters( PLUGIN_NAME );
+const pluginParams = PluginManager.parameters( 'TF_Undulation' );
+/**
+ * 指定したパラメータの数値を返す。
+ * @param {String} paramName パラメータ名
+ * @param {Number} defaultParam 規定値
+ * @returns {Number}
+ */
+const getNumberParam = ( paramName, defaultParam )=>{
+    return pluginParams[ paramName ] ? parseInt( pluginParams[ paramName ], 10 ) : defaultParam;
+};
 
-let _TerrainTag = 1;    // 東西用の地形タグ規定値
-if( pluginParams[ TERRAIN_TAG ] ){
-    _TerrainTag = parseInt( pluginParams[ TERRAIN_TAG ], 10 );
-}
+const _TerrainTag = getNumberParam( 'TerrainTag', 1 );    // 東西用の地形タグ規定値
+const _TerrainTagSN = getNumberParam( 'TerrainTagSN', 2);   // 南用の地形タグ規定値
+const _BaseBump  = getNumberParam( 'BaseBump', 6);    // 段差の規定値
+const _ClimbResist = getNumberParam( 'ClimbResist', 2);    // 昇降抵抗の規定値
 
-let _TerrainTagSN = 2;    // 南用の地形タグ規定値
-if( pluginParams[ TERRAIN_TAG_S ] ){
-    _TerrainTagSN = parseInt( pluginParams[ TERRAIN_TAG_S ], 10 );
-}
-
-let _BaseBump = 6;    // 段差の規定値
-if( pluginParams[ BASE_BUMP ] ){
-    _BaseBump = parseInt( pluginParams[ BASE_BUMP ], 10 );
-}
-
-let _ClimbResist = 2;    // 昇降抵抗の規定値
-if( pluginParams[ CLIMB_RESIST ] ){
-    _ClimbResist = parseInt( pluginParams[ CLIMB_RESIST ], 10 );
-}
 
 // flag用定数
 const MASK_BUMP = 0x120; // 段差用マスク(梯子とダメージ床)
@@ -189,6 +178,7 @@ const E27S = 0x5;
 
 // 中央に壁
 const CENTER_LINE = 0x9;
+// TODO : ベッド、螺旋階段
 
 // フラグから移動速度の調整比率を得る
 // Math.sqrt( Math.pow( ( 1 - resistA ), 2 ) + Math.pow( ( 1 - resistB ), 2) )
@@ -545,7 +535,7 @@ Game_CharacterBase.prototype.updateMove = function() {
     if( undulation === -2 ){
         // 縦方向の階段
         if( this._realY != this.y ) this._realY += this.distancePerFrame() * ( ( this.y < this._realY ) ? resistA : -resistA );
-    }else if(( undulation === 0 || undulation & MASK_UNDULATION ) && this._realX != this.x ){
+    }else if( ( undulation === 0 || undulation & MASK_UNDULATION ) && this._realX != this.x ){
         // 横方向の階段
         _isStairMove = true;
         const ratioXY = isW ? FLAG2RATIO_W[ undulation ] : FLAG2RATIO_E[ undulation ];
@@ -693,7 +683,6 @@ function isBump( x, y ){
     if( isHalfX && isHalfY && getUndulation( x + 1, y + 1 ) !== -1 ) return true;
     return false;
 }
-
 
 
 /*---- Game_Follower ----*/
