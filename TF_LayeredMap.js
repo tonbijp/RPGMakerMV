@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.7.4.0
+// Version :0.7.4.1
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -200,17 +200,26 @@ const AUTOTILE_BLOCK = 48; // オートタイル1ブロック分のパターン�
 /**
  * パラメータを受け取る
  */
-const PLUGIN_NAME = 'TF_LayeredMap';
-const PLUGIN_PARAM_TRUE = 'true';
-const FILL_WITH_NEIGHBOR_TILE = 'FillWithNeighborTile';
-const DEFAULT_LOWER_TILE = 'DefaultLowerTile';
-const USE_LAYERED_COUNTER = 'UseLayeredCounter';
-const BILLBOARD_PRIORITY = 'BillboardPriority';
-const BILLBOARD_PRIORITY_FRONT = 'front';
-const IS_A2_FULL_COLLISION = 'IsA2FullCollision'; // TODO: false でA2の通行不可タイルの内部を通行可にする
-const IS_A3_UPPER_OPEN = 'IsA3UpperOpen';
-const IS_A4_UPPER_OPEN = 'IsA4UpperOpen';
-const pluginParams = PluginManager.parameters( PLUGIN_NAME );
+const PLUGIN_NAME = ;
+const pluginParams = PluginManager.parameters( 'TF_LayeredMap' );
+/**
+ * 指定したパラメータの真偽値を返す。
+ * @param {String} paramName パラメータ名
+ * @param {Number} defaultParam 規定値
+ * @returns {Boolean}
+ */
+const getBooleanParam = ( paramName, defaultParam )=>{
+    return pluginParams[ paramName ] ? ( pluginParams[ paramName ].toLowerCase() == 'true' ) : defaultParam;
+};
+/**
+ * 指定したパラメータの数値を返す。
+ * @param {String} paramName パラメータ名
+ * @param {Number} defaultParam 規定値
+ * @returns {Number}
+ */
+const getNumberParam = ( paramName, defaultParam )=>{
+    return pluginParams[ paramName ] ? parseInt( pluginParams[ paramName ], 10 ) : defaultParam;
+};
 /**
  * 指定したパラメータが、指定した値と同じか。
  * @param {String} paramName パラメータ名
@@ -226,14 +235,13 @@ const conpairPluginParam = ( paramName, param, defaultParam )=>{
     }
 };
 
-const _FillWithNeighborTile = conpairPluginParam( FILL_WITH_NEIGHBOR_TILE, PLUGIN_PARAM_TRUE );
-const _defaultLowerTileId = Tilemap.TILE_ID_A5 +
-    pluginParams[ DEFAULT_LOWER_TILE ] ? parseInt( pluginParams[ DEFAULT_LOWER_TILE ], 10 ) : 16;
-const _useLayeredCounter = conpairPluginParam( USE_LAYERED_COUNTER, PLUGIN_PARAM_TRUE, true );
-const _BillboardPriority = conpairPluginParam( BILLBOARD_PRIORITY, BILLBOARD_PRIORITY_FRONT, false ) ? Infinity : -Infinity;
-const _IsA2FullCollision = conpairPluginParam( IS_A2_FULL_COLLISION, PLUGIN_PARAM_TRUE, true );
-const _IsA3UpperOpen = conpairPluginParam( IS_A3_UPPER_OPEN, PLUGIN_PARAM_TRUE, true );
-const _IsA4UpperOpen = conpairPluginParam( IS_A4_UPPER_OPEN, PLUGIN_PARAM_TRUE, true );
+const _FillWithNeighborTile = getBooleanParam( 'FillWithNeighborTile', true );
+const _defaultLowerTileId = Tilemap.TILE_ID_A5 + getNumberParam( 'DefaultLowerTile', 16 );
+const _useLayeredCounter = getBooleanParam( 'UseLayeredCounter', true );
+const _BillboardPriority = conpairPluginParam( 'BillboardPriority', 'front', false ) ? Infinity : -Infinity;
+const _IsA2FullCollision = getBooleanParam( 'IsA2FullCollision', true );
+const _IsA3UpperOpen = getBooleanParam( 'IsA3UpperOpen', true );
+const _IsA4UpperOpen = getBooleanParam( 'IsA4UpperOpen', true );
 
 
 /*---- Game_Interpreter ----*/
