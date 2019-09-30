@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.7.4.1
+// Version :0.7.5.1
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -200,7 +200,6 @@ const AUTOTILE_BLOCK = 48; // オートタイル1ブロック分のパターン�
 /**
  * パラメータを受け取る
  */
-const PLUGIN_NAME = ;
 const pluginParams = PluginManager.parameters( 'TF_LayeredMap' );
 /**
  * 指定したパラメータの真偽値を返す。
