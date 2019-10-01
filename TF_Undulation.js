@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :1.4.0.1
+// Version :1.5.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -114,15 +114,22 @@
  * 1. A5BCDEタイルに地形タグ(規定値 : 1)を指定
  * 
  * 2. 通行設定(4方向)によって、詳細設定
+ *      0x0 ↑→←↓ : ⤾ 右螺旋、半回転
+ *      0x1 ↑→←・ : ⤾ 右螺旋、下
  *      0x2 ↑→・↓ : \  63°
  *      0x3 ↑→・・ : ＼ 27° 南より
  *      0x4 ↑・←↓ :  / 63°
  *      0x5 ↑・←・ : ／ 27° 南より
+ *      0x6 ↑・・↓ : ⤿ 左螺旋、半回転
+ *      0x7 ↑・・・ : ⤿ 左螺旋、下
+ *      0x8 ・→←↓ : ⤾ 右螺旋、上
  *      0x9 ・→←・ :   |  中央に壁
  *      0xA ・→・↓ : ＼ 27° 北より
  *      0xB ・→・・ : ＼ 45°
  *      0xC ・・←↓ : ／ 27° 北より
  *      0xD ・・←・ : ／ 45°
+ *      0xE ・・・↓ : ⤿ 左螺旋、上
+ *      0xF ・・・・ : ベッド(実装予定)
  * 
  * 3. [梯子]と[ダメージ床] の設定で段差レベルを設定
  *      [梯子]   [ダメージ床]
@@ -178,7 +185,17 @@ const E27S = 0x5;
 
 // 中央に壁
 const CENTER_LINE = 0x9;
-// TODO : ベッド、螺旋階段
+
+// 螺旋階段(spiral staircase)
+const WSN = 0x8;
+const WSS = 0x1;
+const WSU = 0x0;
+const ESN = 0xE;
+const ESS = 0x7;
+const ESU = 0x6;
+
+// TODO : ベッド
+const BED = 0x6;
 
 // フラグから移動速度の調整比率を得る
 // Math.sqrt( Math.pow( ( 1 - resistA ), 2 ) + Math.pow( ( 1 - resistB ), 2) )
@@ -191,12 +208,16 @@ const FLAG2RATIO_W = { // 西(左)向き ↖ , ↙
     [ W63 ] : [ resistB, resistA ], [ E63 ] : [ resistB, -resistA ],
     [ W27N ] : [ resistC, resistD ], [ E27N ] : [ resistC, -resistD ],
     [ W27S ] : [ resistC, resistD ], [ E27S ] : [ resistC, -resistD ],
+    [ WSS ] : [ resistA, resistA ], [ WSN ] : [ resistA, -resistA ],
+    [ ESS ] : [ resistA, -resistA ], [ ESN ] : [ resistA, resistA ],
 };
 const FLAG2RATIO_E = { // 東(右)向き ↘ , ↗
     [ W45 ] : [ -resistA, -resistA ], [ E45 ] : [ -resistA, resistA ],
     [ W63 ] : [ -resistB, -resistA ], [ E63 ] : [ -resistB, resistA ],
     [ W27N ] : [ -resistC, -resistD ], [ E27N ] : [ -resistC, resistD ],
     [ W27S ] : [ -resistC, -resistD ], [ E27S ] : [ -resistC, resistD ],
+    [ WSS ] : [ -resistA, -resistA ], [ WSN ] : [ -resistA, resistA ],
+    [ ESS ] : [ -resistA, resistA ], [ ESN ] : [ -resistA, -resistA ],
 };
 
 // フラグから階段(坂)の到達点の位置を得る
@@ -205,12 +226,16 @@ const FLAG2POS_W= { // 西(左)向き ↖ , ↙
     [ W63 ] : [ 0, -1], [ E63 ] : [ 0, 1],
     [ W27N ] : [ -0.5, -0.5], [ E27N ] : [ -0.5, 0.5],
     [ W27S ] : [ -0.5, -0.5], [ E27S ] : [ -0.5, 0.5],
+    [ WSS ] : [ 0, -0.5], [ WSN ] : [ 0, 0.5],
+    [ ESS ] : [ 0, 0.5], [ ESN ] : [ 0, -0.5],
 };
 const FLAG2POS_E= { // 東(右)向き ↘ , ↗
     [ W45 ] : [ 0, 0.5], [ E45 ] : [ 0, -0.5],
     [ W63 ] : [ 0, 1],  [ E63 ] : [ 0, -1],
     [ W27N ] : [ 0.5, 0.5], [ E27N ] : [ 0.5, -0.5],
     [ W27S ] : [ 0.5, 0.5], [ E27S ] : [ 0.5, -0.5],
+    [ WSS ] : [ 0, 0.5], [ WSN ] : [ 0, -0.5],
+    [ ESS ] : [ 0, -0.5], [ ESN ] : [ 0, 0.5],
 };
 
 // 上下方向のレイアウト
@@ -234,9 +259,7 @@ const _Game_CharacterBase_isMapPassable = Game_CharacterBase.prototype.isMapPass
 Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
     const intX = Math.floor( x + 0.5 );
     const intY = Math.floor( y + 0.5 );
-
-    // タイル内の位置( 0:左上, 1:上, 2:左下, 3:下 )
-    const halfPos = ( ( ( this._realX % 1 ) === 0 ) ? 1 : 0 ) + ( ( ( this._realY % 1 ) === 0 ) ? 2 : 0 );
+    const halfPos = getHalfPos( this._realX, this._realY );
 
     /**
      * 移動先の地形を調べて配置タイプを返す。
@@ -264,6 +287,24 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
         return layout === LAYOUT_SOUTH || layout === LAYOUT_SINGLE;
     }
 
+    // WSS
+    if( halfPos === 1 ){
+        if( d === 4 ){
+            if( getUndulation( intX, intY ) === WSS ) return false;
+            if( getUndulation( intX - 1, intY ) === WSS ) return false;
+        }else if( d === 6 ){
+            if( getUndulation( intX + 1, intY ) === WSS ) return false;
+        } 
+    }else if( halfPos === 2 ){
+        if( d === 2 ){
+            if( getUndulation( intX - 1, intY + 1 ) === WSS ) return false;
+            if( getUndulation( intX, intY + 1 ) === WSS ) return false;
+        }
+    }else if( halfPos === 3 ){
+        if( d === 6 ){
+            if( getUndulation( intX + 1, intY ) === WSS ) return false;
+        }
+    }
 
     // CENTER_LINE
     if( halfPos === 0 || halfPos === 2 ){
@@ -630,9 +671,9 @@ Game_Player.prototype.executeMove = function( d ) {
     const tmpD = checkAloundUndulationFlag( this.x, this.y, d );
     if( tmpD === -1 ){
         _Game_Player_executeMove.apply( this, arguments );
-    }else{
-        this.moveStraight( tmpD );
+        return;
     }
+    this.moveStraight( tmpD );
 }
 
 /*---- Game_Map ----*/
@@ -741,17 +782,29 @@ function getUndulation( x, y ){
  * @returns {Number} 高低差flagのあるタイル周辺だと向き、そうでないと-1を返す
  */
 function checkAloundUndulationFlag( x, y, d ){
-    const tmpD = [ 0, 4, 2, 6, 4, 5, 6, 4, 8, 6 ][ d ];
+    let tmpD = [ 0, 4, 2, 6, 4, 5, 6, 4, 8, 6 ][ d ];
     const targetX =  ( tmpD === 6 ) ? $gameMap.roundX( x + 0.5 ) : x ;
+    const undulation = getUndulation( targetX , $gameMap.roundY( y ) );
+    const undulationS = getUndulation( targetX , $gameMap.roundY( y + 1 ) );
 
-    if(   FLAG2RATIO_W[ getUndulation( targetX , $gameMap.roundY( y - 1 ) ) ]
-        || FLAG2RATIO_W[ getUndulation( targetX , $gameMap.roundY( y ) ) ]
-        || FLAG2RATIO_W[ getUndulation( targetX , $gameMap.roundY( y + 1 ) ) ]
-    ){
-        return tmpD
-    }else{
-        return -1;
+    if( !( FLAG2RATIO_W[ getUndulation( targetX , $gameMap.roundY( y - 1 ) ) ]
+        ||  FLAG2RATIO_W[ undulation ]
+        ||  FLAG2RATIO_W[ undulationS ]
+    )) return -1;
+    
+    // 螺旋階段
+    const halfPos = getHalfPos( x, y );
+    if( undulation === WSS ){
+        if( halfPos === 2 ){
+            if( tmpD === 8 ) return 4;
+        }
     }
+    if( undulationS === WSS ){
+        if( halfPos === 1 ){
+            if( tmpD === 2 ) return 6;
+        }
+    }
+    return tmpD;
 }
 
 /**
@@ -773,5 +826,14 @@ function normalizByPitch( undulation ){
 function isSamePitch( undulationA, undulationB ){
     return normalizByPitch( undulationA ) === normalizByPitch( undulationB );
 };
+
+/**
+ * タイル内の位置を返す( 0:左上, 1:上, 2:左下, 3:下 )
+ * @param {Number} x x座標(タイル数)
+ * @param {Number} y y座標(タイル数)
+ */
+function getHalfPos( x, y ){
+    return ( ( ( x % 1 ) === 0 ) ? 1 : 0 ) + ( ( ( y % 1 ) === 0 ) ? 2 : 0 );
+}
 
 })();
