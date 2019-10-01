@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :1.5.0.0
+// Version :1.5.1.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -163,7 +163,6 @@ const _TerrainTagSN = getNumberParam( 'TerrainTagSN', 2);   // 南用の地形�
 const _BaseBump  = getNumberParam( 'BaseBump', 6);    // 段差の規定値
 const _ClimbResist = getNumberParam( 'ClimbResist', 2);    // 昇降抵抗の規定値
 
-
 // flag用定数
 const MASK_BUMP = 0x120; // 段差用マスク(梯子とダメージ床)
 // 段差設定フラグ
@@ -197,7 +196,12 @@ const ESU = 0x6;
 // TODO : ベッド
 const BED = 0x6;
 
-// フラグから移動速度の調整比率を得る
+// 横向きの階段
+const TYPE_SIDE_STAIRS = [ W45, E45, W63 ,E63, W27N, E27N, W27S, E27S ];
+const TYPE_SPIRAL_STAIRS = [ WSS, WSN, ESS, ESN];
+
+
+// フラグから移動速度の調整比率を得るテーブル
 // Math.sqrt( Math.pow( ( 1 - resistA ), 2 ) + Math.pow( ( 1 - resistB ), 2) )
 const resistA = [ 0.1,    0.14, 0.2, 0.3,   0.4, 0.5,    0.6 ][ _ClimbResist ];
 const resistB = [ 0.55, 0.57, 0.6, 0.65, 0.7, 0.75, 0.8 ][ _ClimbResist ];
@@ -237,6 +241,9 @@ const FLAG2POS_E= { // 東(右)向き ↘ , ↗
     [ WSS ] : [ 0, 0.5], [ WSN ] : [ 0, -0.5],
     [ ESS ] : [ 0, -0.5], [ ESN ] : [ 0, 0.5],
 };
+
+ // フラグから段差の量を得るテーブル
+ const FLAG2BUMP= { [ BUMP1 ] : 1, [ BUMP2 ] : 2, [ BUMP3 ] : 3 };
 
 // 上下方向のレイアウト
 const LAYOUT_NONE = 0;
@@ -288,13 +295,14 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
     }
 
     // WSS
-    if( halfPos === 1 ){
+    if( halfPos === 1 ){ 
         if( d === 4 ){
             if( getUndulation( intX, intY ) === WSS ) return false;
             if( getUndulation( intX - 1, intY ) === WSS ) return false;
         }else if( d === 6 ){
+            if( getUndulation( intX, intY ) === WSS ) return true;
             if( getUndulation( intX + 1, intY ) === WSS ) return false;
-        } 
+        }
     }else if( halfPos === 2 ){
         if( d === 2 ){
             if( getUndulation( intX - 1, intY + 1 ) === WSS ) return false;
@@ -303,6 +311,25 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
     }else if( halfPos === 3 ){
         if( d === 6 ){
             if( getUndulation( intX + 1, intY ) === WSS ) return false;
+        }
+    }
+
+    // WSN
+    if( halfPos === 0 ){
+        if( d === 8 ){
+            if( getUndulation( intX, intY - 1 ) === WSN ) return false;
+            if( getUndulation( intX - 1, intY - 1 ) === WSN ) return false;
+        }
+    }else if( halfPos === 1 ){
+        if( d === 6 ){
+            if( getUndulation( intX + 1, intY ) === WSN ) return false;
+        }
+    }else if( halfPos === 3 ){
+        if( d === 4 ){
+            if( getUndulation( intX, intY ) === WSN ) return false;
+            if( getUndulation( intX - 1, intY ) === WSN ) return false;
+        }else if( d === 6 ){
+            if( getUndulation( intX + 1, intY ) === WSN ) return false;
         }
     }
 
@@ -619,18 +646,6 @@ Game_CharacterBase.prototype.updateMove = function() {
 }
 
 
- // フラグから段差の量を得るテーブル
- const FLAG2BUMP= { [ BUMP1 ] : 1, [ BUMP2 ] : 2, [ BUMP3 ] : 3 };
- /**
-  * 段差指定フラグに応じた段差を返す。
-  * @param {Number} undulation 段差指定フラグ
-  * @returns {Number} 段差(ピクセル)
-  */
- function getBump( undulation ){
-    const bump = FLAG2BUMP[ undulation ];
-    return bump ? ( bump * _BaseBump ) : 0;
- }
-
 /**
  * 縦にずらすピクセル数を返す。
  * @returns {Number} 
@@ -661,19 +676,20 @@ Game_CharacterBase.prototype.isMovingDiagonal = function() {
     return _isStairMove ? false : _Game_CharacterBase_isMovingDiagonal.apply( this, arguments );
 };
 
+
 /*---- Game_Player ----*/
 /**
  * 階段の上の場合、4方向移動に固定。
  * @param {Number} d 向き(テンキー対応)
  */
-var _Game_Player_executeMove = Game_Player.prototype.executeMove;
+const _Game_Player_executeMove = Game_Player.prototype.executeMove;
 Game_Player.prototype.executeMove = function( d ) {
     const tmpD = checkAloundUndulationFlag( this.x, this.y, d );
     if( tmpD === -1 ){
         _Game_Player_executeMove.apply( this, arguments );
-        return;
+    }else{
+        this.moveStraight( tmpD );
     }
-    this.moveStraight( tmpD );
 }
 
 /*---- Game_Map ----*/
@@ -690,11 +706,12 @@ Game_Map.prototype.isPassable = function( x, y, d ){
 
     const undulation = getUndulation( x, y );
 
-    // 下が同じタイルで繋がっている場合は通行可
-    if( FLAG2RATIO_W[ undulation ] && isSamePitch( undulation, getUndulation( x, y + 1 ) ) ) return true;
+    // 横向き階段の南が同じタイルで繋がっている場合は通行可
+    if( TYPE_SIDE_STAIRS.includes( undulation ) && isSamePitch( undulation, getUndulation( x, y + 1 ) ) ) return true;
 
     return _Game_Map_isPassable.apply( this, arguments );
 };
+
 
 // 地形タグ0設定されていれば処理を無視
 const _Game_Map_isLadder = Game_Map.prototype.isLadder;
@@ -709,21 +726,6 @@ Game_Map.prototype.isDamageFloor = function(x, y) {
     return _Game_Map_isDamageFloor.apply( this, arguments );
 };
 
-/**
- * 段差タイルの範囲内か。
- * @param {Number} x x座標(小数点以下を含むタイル数)
- * @param {Number} y y座標(小数点以下を含むタイル数)
- * @returns {Boolean} 
- */
-function isBump( x, y ){
-    if( getUndulation( x, y ) !== -1 ) return true;
-    const isHalfX = ( x % 1 ) !== 0;
-    if( isHalfX && getUndulation( x + 1, y ) !== -1 ) return true;
-    const isHalfY = ( y % 1 ) !== 0;
-    if( isHalfY && getUndulation( x, y + 1 ) !== -1 ) return true;
-    if( isHalfX && isHalfY && getUndulation( x + 1, y + 1 ) !== -1 ) return true;
-    return false;
-}
 
 
 /*---- Game_Follower ----*/
@@ -733,6 +735,7 @@ function isBump( x, y ){
  */
 const _Game_Follower_chaseCharacter = Game_Follower.prototype.chaseCharacter;
 Game_Follower.prototype.chaseCharacter = function( character ){
+    return;
     const d = Math.sign( this.deltaYFrom( character.y ) ) * 3 - Math.sign( this.deltaXFrom( character.x ) ) + 5;
     const tmpD = checkAloundUndulationFlag( this.x, this.y, d );
     if( tmpD === -1 ){
@@ -782,28 +785,34 @@ function getUndulation( x, y ){
  * @returns {Number} 高低差flagのあるタイル周辺だと向き、そうでないと-1を返す
  */
 function checkAloundUndulationFlag( x, y, d ){
-    let tmpD = [ 0, 4, 2, 6, 4, 5, 6, 4, 8, 6 ][ d ];
-    const targetX =  ( tmpD === 6 ) ? $gameMap.roundX( x + 0.5 ) : x ;
-    const undulation = getUndulation( targetX , $gameMap.roundY( y ) );
-    const undulationS = getUndulation( targetX , $gameMap.roundY( y + 1 ) );
-
-    if( !( FLAG2RATIO_W[ getUndulation( targetX , $gameMap.roundY( y - 1 ) ) ]
-        ||  FLAG2RATIO_W[ undulation ]
-        ||  FLAG2RATIO_W[ undulationS ]
-    )) return -1;
-    
-    // 螺旋階段
+    const tmpD = [ 0, 4, 2, 6, 4, 5, 6, 4, 8, 6 ][ d ];
+    x = ( tmpD === 4 ) ? ( x + 0.5 ) : x;
     const halfPos = getHalfPos( x, y );
-    if( undulation === WSS ){
-        if( halfPos === 2 ){
-            if( tmpD === 8 ) return 4;
-        }
+    y += 0.5;
+    let undulation = getUndulation( x , y );
+
+    if( !FLAG2RATIO_W[ undulation ] ){
+        if( tmpD === 4 ){
+            if( !FLAG2RATIO_W[ getUndulation( x - 1, y ) ] ) return -1;
+        }else if( tmpD === 6 ){
+            if( !FLAG2RATIO_W[ getUndulation( x + 1, y ) ] ) return -1;
+        }else if( tmpD === 2 && ( halfPos === 2 || halfPos === 3 ) ){
+            undulation = getUndulation( x, y + 1 );
+            if( !FLAG2RATIO_W[ undulation ] ) return -1;
+        }else if( tmpD === 8 && ( halfPos === 0 || halfPos === 1 ) ){
+            if( !FLAG2RATIO_W[ getUndulation( x, y - 1 ) ] ) return -1;
+        }else return -1;
     }
-    if( undulationS === WSS ){
-        if( halfPos === 1 ){
-            if( tmpD === 2 ) return 6;
-        }
-    }
+    
+    // console.log(`${x} : ${y} = ${halfPos}  ${undulation}`);
+   // 螺旋階段
+   if( undulation === WSN ){
+        if( halfPos === 0 && tmpD === 2 ) return 4;
+        if( halfPos === 3 && tmpD === 8 ) return 6;
+    }else if( undulation === WSS ){
+        if( halfPos === 1 && tmpD === 2 ) return 6;
+        if( halfPos === 2 && tmpD === 8 ) return 4;
+    } 
     return tmpD;
 }
 
@@ -834,6 +843,33 @@ function isSamePitch( undulationA, undulationB ){
  */
 function getHalfPos( x, y ){
     return ( ( ( x % 1 ) === 0 ) ? 1 : 0 ) + ( ( ( y % 1 ) === 0 ) ? 2 : 0 );
+}
+
+
+ /**
+  * 段差指定フラグに応じた段差を返す。
+  * @param {Number} undulation 段差指定フラグ
+  * @returns {Number} 段差(ピクセル)
+  */
+ function getBump( undulation ){
+    const bump = FLAG2BUMP[ undulation ];
+    return bump ? ( bump * _BaseBump ) : 0;
+ }
+ 
+/**
+ * 段差タイルの範囲内か。
+ * @param {Number} x x座標(小数点以下を含むタイル数)
+ * @param {Number} y y座標(小数点以下を含むタイル数)
+ * @returns {Boolean} 
+ */
+function isBump( x, y ){
+    if( getUndulation( x, y ) !== -1 ) return true;
+    const isHalfX = ( x % 1 ) !== 0;
+    if( isHalfX && getUndulation( x + 1, y ) !== -1 ) return true;
+    const isHalfY = ( y % 1 ) !== 0;
+    if( isHalfY && getUndulation( x, y + 1 ) !== -1 ) return true;
+    if( isHalfX && isHalfY && getUndulation( x + 1, y + 1 ) !== -1 ) return true;
+    return false;
 }
 
 })();
