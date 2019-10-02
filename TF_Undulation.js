@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :1.5.1.0
+// Version :1.6.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -106,6 +106,7 @@
  * @help
  * 注意 : トリアコンタンさんの HalfMove.js の利用を前提としています。
  * TF_Undulation.js の前に HalfMove.js を配置するようにしてください。
+ * TF_LayeredMap.js と一緒の場合は、TF_LayeredMap.js が前です。
  * 
  * 地形タグと通行設定(4方向)の組み合わせで坂・階段を指定します。
  * 左右(←・→)に入力しておくだけで、自動で上下方向にも移動します。
@@ -182,9 +183,6 @@ const W27S = 0x3;
 const E27N = 0xC;
 const E27S = 0x5;
 
-// 中央に壁
-const CENTER_LINE = 0x9;
-
 // 螺旋階段(spiral staircase)
 const WSN = 0x8;
 const WSS = 0x1;
@@ -193,13 +191,15 @@ const ESN = 0xE;
 const ESS = 0x7;
 const ESU = 0x6;
 
+// 中央に壁
+const CENTER_LINE = 0x9;
+
 // TODO : ベッド
-const BED = 0x6;
+const BED = 0xF;
 
 // 横向きの階段
 const TYPE_SIDE_STAIRS = [ W45, E45, W63 ,E63, W27N, E27N, W27S, E27S ];
-const TYPE_SPIRAL_STAIRS = [ WSS, WSN, ESS, ESN];
-
+const TYPE_SPIRAL_STAIRS = [ WSS, WSN, WSU, ESS, ESN, ESU];
 
 // フラグから移動速度の調整比率を得るテーブル
 // Math.sqrt( Math.pow( ( 1 - resistA ), 2 ) + Math.pow( ( 1 - resistB ), 2) )
@@ -294,7 +294,28 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
         return layout === LAYOUT_SOUTH || layout === LAYOUT_SINGLE;
     }
 
-    // WSS
+
+    // ⤾ WSN
+    if( halfPos === 0 ){
+        if( d === 8 ){
+            if( getUndulation( intX, intY - 1 ) === WSN ) return false;
+            if( getUndulation( intX - 1, intY - 1 ) === WSN ) return false;
+        }
+    }else if( halfPos === 1 ){
+        if( d === 6 ){
+            if( getUndulation( intX + 1, intY ) === WSN ) return false;
+        }
+    }else if( halfPos === 3 ){
+        if( d === 4 ){
+            if( getUndulation( intX, intY ) === WSN ) return false;
+            if( getUndulation( intX - 1, intY ) === WSN ) return false;
+        }else if( d === 6 ){
+            if( getUndulation( intX, intY ) === WSN ) return true;
+            if( getUndulation( intX + 1, intY ) === WSN ) return false;
+        }
+    }
+
+    // ⤾ WSS
     if( halfPos === 1 ){ 
         if( d === 4 ){
             if( getUndulation( intX, intY ) === WSS ) return false;
@@ -314,23 +335,18 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
         }
     }
 
-    // WSN
-    if( halfPos === 0 ){
-        if( d === 8 ){
-            if( getUndulation( intX, intY - 1 ) === WSN ) return false;
-            if( getUndulation( intX - 1, intY - 1 ) === WSN ) return false;
-        }
-    }else if( halfPos === 1 ){
-        if( d === 6 ){
-            if( getUndulation( intX + 1, intY ) === WSN ) return false;
-        }
+    // ⤿ ESN
+    if( halfPos === 1 ){
+        if( d === 6 && getUndulation( intX + 1, intY ) === ESN ) return true;
     }else if( halfPos === 3 ){
-        if( d === 4 ){
-            if( getUndulation( intX, intY ) === WSN ) return false;
-            if( getUndulation( intX - 1, intY ) === WSN ) return false;
-        }else if( d === 6 ){
-            if( getUndulation( intX + 1, intY ) === WSN ) return false;
-        }
+        if( d === 4 && getUndulation( intX, intY ) === ESN ) return true;
+    }
+
+    // ⤿ ESS
+    if( halfPos === 1 ){
+        if( d === 4 && getUndulation( intX, intY ) === ESS ) return true;
+    }else if( halfPos === 3 ){
+        if( d === 6 && getUndulation( intX + 1, intY ) === ESS ) return true;
     }
 
     // CENTER_LINE
@@ -735,7 +751,7 @@ Game_Map.prototype.isDamageFloor = function(x, y) {
  */
 const _Game_Follower_chaseCharacter = Game_Follower.prototype.chaseCharacter;
 Game_Follower.prototype.chaseCharacter = function( character ){
-    return;
+    return; // TODO : あとで消す
     const d = Math.sign( this.deltaYFrom( character.y ) ) * 3 - Math.sign( this.deltaXFrom( character.x ) ) + 5;
     const tmpD = checkAloundUndulationFlag( this.x, this.y, d );
     if( tmpD === -1 ){
@@ -786,33 +802,54 @@ function getUndulation( x, y ){
  */
 function checkAloundUndulationFlag( x, y, d ){
     const tmpD = [ 0, 4, 2, 6, 4, 5, 6, 4, 8, 6 ][ d ];
-    x = ( tmpD === 4 ) ? ( x + 0.5 ) : x;
-    const halfPos = getHalfPos( x, y );
+    let halfPos = getHalfPos( x, y );
+    x += 0.5;
     y += 0.5;
-    let undulation = getUndulation( x , y );
 
-    if( !FLAG2RATIO_W[ undulation ] ){
-        if( tmpD === 4 ){
-            if( !FLAG2RATIO_W[ getUndulation( x - 1, y ) ] ) return -1;
-        }else if( tmpD === 6 ){
-            if( !FLAG2RATIO_W[ getUndulation( x + 1, y ) ] ) return -1;
-        }else if( tmpD === 2 && ( halfPos === 2 || halfPos === 3 ) ){
-            undulation = getUndulation( x, y + 1 );
-            if( !FLAG2RATIO_W[ undulation ] ) return -1;
-        }else if( tmpD === 8 && ( halfPos === 0 || halfPos === 1 ) ){
-            if( !FLAG2RATIO_W[ getUndulation( x, y - 1 ) ] ) return -1;
-        }else return -1;
+    // 足元が高低差タイル
+    const undulation = ( ()=>{
+        const undulation = getUndulation( x, y );
+        if( FLAG2RATIO_W[ undulation ] ) return undulation;
+
+        if( halfPos === 0 || halfPos === 2 ){
+            const undulation = getUndulation( x - 1 , y );
+            if( FLAG2RATIO_W[ undulation ] ){
+                halfPos += 4;
+                return undulation;
+            }
+        }
+        return -1;
+    } )();
+
+    // 周辺が高低差タイル
+    if( undulation === -1 ){
+        if( halfPos === 1 || halfPos === 3 ){
+            if( FLAG2RATIO_W[ getUndulation( x - 1 , y ) ] ) return tmpD;
+            if( FLAG2RATIO_W[ getUndulation( x + 1 , y ) ] ) return tmpD;
+        }
+        if( halfPos === 0 || halfPos === 1 ){
+            if( FLAG2RATIO_W[ getUndulation( x , y - 1 ) ] ) return tmpD;
+        }
+        if( halfPos === 2 || halfPos === 3 ){
+            if( FLAG2RATIO_W[ getUndulation( x , y + 1 ) ] ) return tmpD;
+        }
+        return -1;
     }
-    
-    // console.log(`${x} : ${y} = ${halfPos}  ${undulation}`);
+
    // 螺旋階段
-   if( undulation === WSN ){
-        if( halfPos === 0 && tmpD === 2 ) return 4;
+    if( undulation === WSN ){
+        if( halfPos === 4 && tmpD === 2 ) return 4;
         if( halfPos === 3 && tmpD === 8 ) return 6;
     }else if( undulation === WSS ){
         if( halfPos === 1 && tmpD === 2 ) return 6;
-        if( halfPos === 2 && tmpD === 8 ) return 4;
-    } 
+        if( halfPos === 6 && tmpD === 8 ) return 4;
+    }else if( undulation === ESN ){
+        if( halfPos === 0 && tmpD === 2 ) return 6;
+        if( halfPos === 3 && tmpD === 8 ) return 4;
+    }else if( undulation === ESS ){
+        if( halfPos === 1 && tmpD === 2 ) return 4;
+        if( halfPos === 2 && tmpD === 8 ) return 6;
+    }
     return tmpD;
 }
 
