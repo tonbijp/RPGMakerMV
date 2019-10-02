@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :1.6.1.0
+// Version :1.7.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -294,6 +294,23 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
         return layout === LAYOUT_SOUTH || layout === LAYOUT_SINGLE;
     }
 
+
+    // ⤾ WSU
+    if( halfPos === 1 || halfPos === 3 ){
+        if( d === 4 ){
+            if( getUndulation( intX - 1, intY ) === WSU ) return false;
+        }else if( d === 6 ){
+            if( getUndulation( intX, intY ) === WSU ) return false;
+        }
+    }else if( halfPos === 0 ){
+        if( d === 2 ){
+            if( getUndulation( intX, intY ) === WSU ) return false;
+        }
+    }else if( halfPos === 2 ){
+        if( d === 8 ){
+            if( getUndulation( intX, intY ) === WSU ) return false;
+        }
+    }
 
     // ⤾ WSN
     if( halfPos === 0 ){
@@ -613,8 +630,8 @@ Game_CharacterBase.prototype.updateMove = function() {
     const tileX = ( preRealX + 0.5 ) % 1;
     const isW =  this.x < preRealX;
     let undulation = getUndulation( Math.floor( this._realX + 0.5 ), Math.floor( this._realY + 0.5 ) );
-    if( undulation === -2 ){
-        // 縦方向の階段
+    if( undulation === -2 || undulation === WSU || undulation === WSU ){
+        // 縦方向の階段(U字型螺旋)
         if( this._realY != this.y ) this._realY += this.distancePerFrame() * ( ( this.y < this._realY ) ? resistA : -resistA );
     }else if( ( undulation === 0 || undulation & MASK_UNDULATION ) && this._realX != this.x ){
         // 横方向の階段
