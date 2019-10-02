@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :1.6.0.0
+// Version :1.6.1.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -115,22 +115,22 @@
  * 1. A5BCDEタイルに地形タグ(規定値 : 1)を指定
  * 
  * 2. 通行設定(4方向)によって、詳細設定
- *      0x0 ↑→←↓ : ⤾ 右螺旋、半回転
+ *      0x0 ↑→←↓ :  |  中央に壁
  *      0x1 ↑→←・ : ⤾ 右螺旋、下
  *      0x2 ↑→・↓ : \  63°
  *      0x3 ↑→・・ : ＼ 27° 南より
  *      0x4 ↑・←↓ :  / 63°
  *      0x5 ↑・←・ : ／ 27° 南より
- *      0x6 ↑・・↓ : ⤿ 左螺旋、半回転
+ *      0x6 ↑・・↓ : ベッド(実装予定)
  *      0x7 ↑・・・ : ⤿ 左螺旋、下
  *      0x8 ・→←↓ : ⤾ 右螺旋、上
- *      0x9 ・→←・ :   |  中央に壁
+ *      0x9 ・→←・ : ⤾ 右螺旋、半回転
  *      0xA ・→・↓ : ＼ 27° 北より
  *      0xB ・→・・ : ＼ 45°
  *      0xC ・・←↓ : ／ 27° 北より
  *      0xD ・・←・ : ／ 45°
  *      0xE ・・・↓ : ⤿ 左螺旋、上
- *      0xF ・・・・ : ベッド(実装予定)
+ *      0xF ・・・・ : ⤿ 左螺旋、半回転
  * 
  * 3. [梯子]と[ダメージ床] の設定で段差レベルを設定
  *      [梯子]   [ダメージ床]
@@ -181,21 +181,21 @@ const E63 = 0x4;
 const W27N = 0xA;
 const W27S = 0x3;
 const E27N = 0xC;
-const E27S = 0x5;
+const E27S = 0xF;
 
 // 螺旋階段(spiral staircase)
 const WSN = 0x8;
 const WSS = 0x1;
-const WSU = 0x0;
+const WSU = 0x9;
 const ESN = 0xE;
 const ESS = 0x7;
 const ESU = 0x6;
 
 // 中央に壁
-const CENTER_LINE = 0x9;
+const CENTER_LINE = 0x00;
 
 // TODO : ベッド
-const BED = 0xF;
+const BED = 0x6;
 
 // 横向きの階段
 const TYPE_SIDE_STAIRS = [ W45, E45, W63 ,E63, W27N, E27N, W27S, E27S ];
@@ -349,6 +349,7 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
         if( d === 6 && getUndulation( intX + 1, intY ) === ESS ) return true;
     }
 
+
     // CENTER_LINE
     if( halfPos === 0 || halfPos === 2 ){
         if( d === 4 ){
@@ -356,14 +357,10 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
         }else if( d === 6 ){
             if( getUndulation( intX, intY ) === CENTER_LINE ) return false;
         }
-    }
-    if( halfPos === 0 && d === 8 ){
-        if( getUndulation( intX - 1, intY ) === CENTER_LINE || getUndulation( intX, intY ) === CENTER_LINE ||
-        getUndulation( intX - 1, intY - 1 ) === CENTER_LINE || getUndulation( intX, intY - 1 ) === CENTER_LINE ) return true;
-    }
-    if( halfPos === 2 && d === 2 ){
-        if( getUndulation( intX - 1, intY ) === CENTER_LINE || getUndulation( intX, intY ) === CENTER_LINE ||
-        getUndulation( intX - 1, intY + 1 ) === CENTER_LINE || getUndulation( intX, intY + 1 ) === CENTER_LINE ) return true;
+    }else if( halfPos === 1 ){
+        if( d === 8 && getUndulation( intX, intY - 1 ) === CENTER_LINE ) return false;
+    }else if( halfPos === 3  ){
+        if( d === 2 && getUndulation( intX, intY + 1 ) === CENTER_LINE  ) return false;
     }
 
 
