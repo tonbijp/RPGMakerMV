@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :1.8.2.1
+// Version :1.8.3.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -443,8 +443,8 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
         if( halfPos === 0 ){
             if( isTileLayoutSouth( W27N, 4 ) ) return false;
         }else if( halfPos === 2 ){
-            if( isTileLayoutNorth( W27N, 1 ) || isTileLayoutNorth( W27N, 2 ) || isTileLayoutSouth( W27N, 2 ) ) return false;
-            if( isTileLayoutSouth( W27N, 1 ) ) return true;
+            if( getTileLayout( W27N, 1 ) === LAYOUT_SOUTH ) return true;
+            if( isTileLayoutNorth( W27N, 1 ) || isTileLayoutNorth( W27N, 2 ) || isTileLayoutSouth( W27N, 2 ) || getTileLayout( W27N, 5 ) === LAYOUT_SINGLE ) return false;
         }else if( halfPos === 3 ){
             if( isTileLayoutNorth( W27N, 2 ) ) return false;
         }
@@ -452,8 +452,11 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
         if( halfPos === 1 ){
             if( isTileLayoutNorth( W27N, 4 ) ) return false;
         }else if( halfPos === 3 ){
-            //if( getTileLayout( W27N, 4 ) === LAYOUT_SOUTH ) return false;
             if( isTileLayoutSouth( W27N, 4 ) ) return false;
+        }
+    }else if( d === 6 ){
+        if( halfPos === 1 || halfPos === 3 ){
+            if( getTileLayout( W27N, 6 ) === LAYOUT_SINGLE  ) return true;
         }
     }else if( d === 8 ){
         if( halfPos === 0 ){
@@ -501,9 +504,13 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
         if( halfPos === 0 ){
             if( isTileLayoutSouth( E27N, 5 ) ) return false;
         }else if( halfPos === 2 ){
-            if( isTileLayoutNorth( E27N, 1 ) || isTileLayoutNorth( E27N, 2 ) ) return false;
+            if( isTileLayoutNorth( E27N, 1 ) || isTileLayoutNorth( E27N, 2 ) || getTileLayout( E27N, 4 ) === LAYOUT_SINGLE ) return false;
         }else if( halfPos === 3 ){
             if( isTileLayoutNorth( E27N, 2 ) ) return false;
+        }
+    }else if( d === 4 ){
+        if( halfPos === 1 || halfPos === 3 ){
+            if( getTileLayout( E27N, 4 ) === LAYOUT_SINGLE  ) return true;
         }
     }else if( d === 6 ){
         if( halfPos === 1 ){
