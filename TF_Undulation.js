@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :1.7.0.0
+// Version :1.8.1.1
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -44,6 +44,7 @@
  * @help
  * CAUTION : This plugin needs HalfMove.js made by Triacontane.
  * Set HalfMove.js before TF_Undulation.js.
+ * If you use TF_LayeredMap.js. You must set TF_LayeredMap.js before.
  * 
  * Set movement like slope or stairs use by Terrain Tag and 4 direction setting.
  * Input only L or R (←・→) to move slope automatically.
@@ -52,15 +53,22 @@
  * 1. Set a Terrain Tag (Default : 1) to A5BCDE tile.
  * 
  * 2. Set a 4 direction for details.
- *      0x2 ↑→・↓ : \  63°
+ *      0x0 ↑→←↓ :  |   Center Wall
+ *      0x1 ↑→←・ : ⤾ R Spiral Bottom
+ *      0x2 ↑→・↓ : \   63°
  *      0x3 ↑→・・ : ＼ 27° South Side
- *      0x4 ↑・←↓ :  / 63°
+ *      0x4 ↑・←↓ :   / 63°
  *      0x5 ↑・←・ : ／ 27° South Side
- *      0x9 ・→←・ :   |  Center wall
+ *      0x6 ↑・・↓ : N/A
+ *      0x7 ↑・・・ : ⤿ L Spiral Bottom
+ *      0x8 ・→←↓ : ⤾ R Spiral Top
+ *      0x9 ・→←・ : ⤾ R Spiral Half
  *      0xA ・→・↓ : ＼ 27° North Side
  *      0xB ・→・・ : ＼ 45°
- *      0xC ・・←↓ : ／ 27° NorthSide
+ *      0xC ・・←↓ : ／ 27° North Side
  *      0xD ・・←・ : ／ 45°
+ *      0xE ・・・↓ : ⤿ L Spiral Top
+ *      0xF ・・・・ : ⤿ L Spiral Half
  * 
  * 3. Set Ladder and Damage floor to bump level.
  *      Ladder   Damage
@@ -181,7 +189,7 @@ const E63 = 0x4;
 const W27N = 0xA;
 const W27S = 0x3;
 const E27N = 0xC;
-const E27S = 0xF;
+const E27S = 0x5;
 
 // 螺旋階段(spiral staircase)
 const WSN = 0x8;
@@ -189,7 +197,7 @@ const WSS = 0x1;
 const WSU = 0x9;
 const ESN = 0xE;
 const ESS = 0x7;
-const ESU = 0x6;
+const ESU = 0xF;
 
 // 中央に壁
 const CENTER_LINE = 0x00;
@@ -226,20 +234,20 @@ const FLAG2RATIO_E = { // 東(右)向き ↘ , ↗
 
 // フラグから階段(坂)の到達点の位置を得る
 const FLAG2POS_W= { // 西(左)向き ↖ , ↙
-    [ W45 ] : [ 0, -0.5], [ E45 ] : [ 0, 0.5],
-    [ W63 ] : [ 0, -1], [ E63 ] : [ 0, 1],
-    [ W27N ] : [ -0.5, -0.5], [ E27N ] : [ -0.5, 0.5],
-    [ W27S ] : [ -0.5, -0.5], [ E27S ] : [ -0.5, 0.5],
-    [ WSS ] : [ 0, -0.5], [ WSN ] : [ 0, 0.5],
-    [ ESS ] : [ 0, 0.5], [ ESN ] : [ 0, -0.5],
+    [ W45 ] : [ 0, -0.5 ], [ E45 ] : [ 0, 0.5 ],
+    [ W63 ] : [ 0, -1 ], [ E63 ] : [ 0, 1],
+    [ W27N ] : [ -0.5, -0.5 ], [ E27N ] : [ -0.5, 0.5 ],
+    [ W27S ] : [ -0.5, -0.5 ], [ E27S ] : [ -0.5, 0.5 ],
+    [ WSS ] : [ 0, -0.5 ], [ WSN ] : [ 0, 0.5 ],
+    [ ESS ] : [ 0, 0.5 ], [ ESN ] : [ 0, -0.5 ],
 };
 const FLAG2POS_E= { // 東(右)向き ↘ , ↗
-    [ W45 ] : [ 0, 0.5], [ E45 ] : [ 0, -0.5],
-    [ W63 ] : [ 0, 1],  [ E63 ] : [ 0, -1],
-    [ W27N ] : [ 0.5, 0.5], [ E27N ] : [ 0.5, -0.5],
-    [ W27S ] : [ 0.5, 0.5], [ E27S ] : [ 0.5, -0.5],
-    [ WSS ] : [ 0, 0.5], [ WSN ] : [ 0, -0.5],
-    [ ESS ] : [ 0, -0.5], [ ESN ] : [ 0, 0.5],
+    [ W45 ] : [ 0, 0.5 ], [ E45 ] : [ 0, -0.5 ],
+    [ W63 ] : [ 0, 1 ],  [ E63 ] : [ 0, -1 ],
+    [ W27N ] : [ 0.5, 0.5 ], [ E27N ] : [ 0.5, -0.5 ],
+    [ W27S ] : [ 0.5, 0.5 ], [ E27S ] : [ 0.5, -0.5 ],
+    [ WSS ] : [ 0, 0.5 ], [ WSN ] : [ 0, -0.5 ],
+    [ ESS ] : [ 0, -0.5 ], [ ESN ] : [ 0, 0.5 ],
 };
 
  // フラグから段差の量を得るテーブル
@@ -349,6 +357,23 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
     }else if( halfPos === 3 ){
         if( d === 6 ){
             if( getUndulation( intX + 1, intY ) === WSS ) return false;
+        }
+    }
+
+    // ⤿ ESU
+    if( halfPos === 0 ){
+        if( d === 2 ){
+            if( getUndulation( intX - 1, intY ) === ESU ) return false;
+        }
+    }else if( halfPos === 1 | halfPos === 3 ){
+        if( d === 4 ){
+            if( getUndulation( intX - 1, intY ) === ESU ) return true;
+        }else if( d === 6 ){
+            if( getUndulation( intX, intY ) === ESU ) return true;
+        }
+    }else if( halfPos === 2 ){
+        if( d === 8 ){
+            if( getUndulation( intX - 1, intY ) === ESU ) return false;
         }
     }
 
@@ -630,7 +655,7 @@ Game_CharacterBase.prototype.updateMove = function() {
     const tileX = ( preRealX + 0.5 ) % 1;
     const isW =  this.x < preRealX;
     let undulation = getUndulation( Math.floor( this._realX + 0.5 ), Math.floor( this._realY + 0.5 ) );
-    if( undulation === -2 || undulation === WSU || undulation === WSU ){
+    if( undulation === -2 || undulation === WSU || undulation === ESU ){
         // 縦方向の階段(U字型螺旋)
         if( this._realY != this.y ) this._realY += this.distancePerFrame() * ( ( this.y < this._realY ) ? resistA : -resistA );
     }else if( ( undulation === 0 || undulation & MASK_UNDULATION ) && this._realX != this.x ){
@@ -765,7 +790,6 @@ Game_Map.prototype.isDamageFloor = function(x, y) {
  */
 const _Game_Follower_chaseCharacter = Game_Follower.prototype.chaseCharacter;
 Game_Follower.prototype.chaseCharacter = function( character ){
-    return; // TODO : あとで消す
     const d = Math.sign( this.deltaYFrom( character.y ) ) * 3 - Math.sign( this.deltaXFrom( character.x ) ) + 5;
     const tmpD = checkAloundUndulationFlag( this.x, this.y, d );
     if( tmpD === -1 ){
