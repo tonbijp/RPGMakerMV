@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :1.8.1.1
+// Version :1.8.2.1
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -452,6 +452,7 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
         if( halfPos === 1 ){
             if( isTileLayoutNorth( W27N, 4 ) ) return false;
         }else if( halfPos === 3 ){
+            //if( getTileLayout( W27N, 4 ) === LAYOUT_SOUTH ) return false;
             if( isTileLayoutSouth( W27N, 4 ) ) return false;
         }
     }else if( d === 8 ){
@@ -861,15 +862,20 @@ function checkAloundUndulationFlag( x, y, d ){
 
     // 周辺が高低差タイル
     if( undulation === -1 ){
-        if( halfPos === 1 || halfPos === 3 ){
+        if( halfPos === 0 ){
+            if( FLAG2RATIO_W[ getUndulation( x , y - 1 ) ] ) return tmpD;
+            if( FLAG2RATIO_W[ getUndulation( x - 1 , y -1 ) ] ) return tmpD;
+        }else if( halfPos === 1 ){
             if( FLAG2RATIO_W[ getUndulation( x - 1 , y ) ] ) return tmpD;
             if( FLAG2RATIO_W[ getUndulation( x + 1 , y ) ] ) return tmpD;
-        }
-        if( halfPos === 0 || halfPos === 1 ){
             if( FLAG2RATIO_W[ getUndulation( x , y - 1 ) ] ) return tmpD;
-        }
-        if( halfPos === 2 || halfPos === 3 ){
+        }else if( halfPos === 2 ){
             if( FLAG2RATIO_W[ getUndulation( x , y + 1 ) ] ) return tmpD;
+        }else if( halfPos === 3 ){
+            if( FLAG2RATIO_W[ getUndulation( x - 1 , y ) ] ) return tmpD;
+            if( FLAG2RATIO_W[ getUndulation( x + 1 , y ) ] ) return tmpD;
+            if( FLAG2RATIO_W[ getUndulation( x , y + 1 ) ] ) return tmpD;
+            if( FLAG2RATIO_W[ getUndulation( x - 1 , y + 1 ) ] ) return tmpD;
         }
         return -1;
     }
