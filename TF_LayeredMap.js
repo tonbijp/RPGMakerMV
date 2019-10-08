@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.7.5.1
+// Version :0.7.6.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -570,6 +570,7 @@ DataManager.onLoad = function( object ){
             }
 
             // 屋根タイル(A3)を走査
+            // TODO : カウンター(高層)設定してないタイルも下を塞ぐ
             for( let tileId = Tilemap.TILE_ID_A3; tileId < Tilemap.TILE_ID_A4; tileId += AUTOTILE_BLOCK ){
                 if( isCounterTile( flags[ tileId ] ) ){
 
@@ -676,14 +677,14 @@ Scene_Map.prototype.onMapLoaded = function( ){
             for( let x = 0; x < $dataMap.width; x++ ){
                 const tileId = getMapData( x, y, 0 );
 
-                if( !isBaseTile( tileId ) ) continue;
+                if( !isA3A4Tile( tileId ) ) continue;
                 // タイルを補完
                 setMapData( x, y, 1, tileId );
 
                 if( _FillWithNeighborTile ){
                     // 北タイルで補完ただし、一番南は南で補完
                     const southTileId = getMapData( x, $gameMap.roundY( y + 1 ) , 0 );
-                    if( tileId === southTileId || isBaseTile( southTileId ) ){
+                    if( tileId === southTileId || isA3A4Tile( southTileId ) ){
                         setMapData( x, y, 0, getMapData( x, y - 1, 0 ) )
                     }else{
                         setMapData( x, y, 0, southTileId );
@@ -702,6 +703,15 @@ Scene_Map.prototype.onMapLoaded = function( ){
          */
         function isBaseTile( tileId ){
             return ( Tilemap.isTileA3( tileId ) || Tilemap.isTileA4( tileId ) ) && isCounterTile( flags[ tileId ] );
+        }
+
+        /**
+         * A3・A4タイルか。
+         * @param {Number} tileId タイルID
+         * @returns {Boolean} 
+         */
+        function isA3A4Tile( tileId ){
+            return ( Tilemap.isTileA3( tileId ) || Tilemap.isTileA4( tileId ) );
         }
         /**
          * 指定位置のタイルIDを返す。
