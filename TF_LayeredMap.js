@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.7.6.0
+// Version :0.7.7.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -51,7 +51,7 @@
  * @type boolean
  * @desc Open : ON(true) | Close : OFF(false)
  * Remove the south collision of the roof(A3)?
- * @default true
+ * @default false
  * 
  * @param IsA4UpperOpen
  * @type boolean
@@ -126,9 +126,9 @@
  * 
  * @param IsA2FullCollision
  * @type boolean
- * @text タイル全体を衝突判定にするか
- * @desc 衝突 : ON(true) | 閉じて内側は通行可 : OFF(false)
- * 地面(A2)のタイル全体を衝突判定にするか
+ * @text タイル全体を通行不可にするか
+ * @desc 通行止め : ON(true) | 閉じて内側は通行可 : OFF(false)
+ * 地面(A2)のタイル全体を通行不可にするか
  * @default true
  * 
  * @param IsA3UpperOpen
@@ -136,7 +136,7 @@
  * @text 屋根南を開くか
  * @desc 開く : ON(true) | 閉じて内側は通行可 : OFF(false)
  * 屋根(A3)の南の衝突判定をなくすか
- * @default true
+ * @default false
  * 
  * @param IsA4UpperOpen
  * @type boolean
@@ -239,7 +239,7 @@ const _defaultLowerTileId = Tilemap.TILE_ID_A5 + getNumberParam( 'DefaultLowerTi
 const _useLayeredCounter = getBooleanParam( 'UseLayeredCounter', true );
 const _BillboardPriority = conpairPluginParam( 'BillboardPriority', 'front', false ) ? Infinity : -Infinity;
 const _IsA2FullCollision = getBooleanParam( 'IsA2FullCollision', true );
-const _IsA3UpperOpen = getBooleanParam( 'IsA3UpperOpen', true );
+const _IsA3UpperOpen = getBooleanParam( 'IsA3UpperOpen', false );
 const _IsA4UpperOpen = getBooleanParam( 'IsA4UpperOpen', true );
 
 
@@ -478,7 +478,7 @@ const COUNTER_PASS = [
     15, 28, 28, 28, 28, 28, 15, 15, 
     15, 15, 28, 28, 15, 28, 28, 28, 
 ];
-const A2_EMPTY_PASS = [
+const AUTO_TILE_EMPTY_PASS = [
     0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0,
     2, 2, 2, 2, 8, 8, 8, 8,
@@ -498,6 +498,19 @@ const A3_UPPER_PASS =_IsA3UpperOpen ? [
     4, 6, 17, 17, 
     1, 3, 17, 17, 
     5, 7, 17, 17, 
+];
+
+// 屋根 A3 奇数列(地面)
+const A3_BOTTOM_PASS =_IsA3UpperOpen ? [
+    0, 2, 8, 10, 
+    4, 6, 12, 14, 
+    0, 2, 8, 10, 
+    4, 6, 12, 14, 
+]: [
+    0, 2, 8, 10, 
+    4, 6, 12, 14, 
+    1, 3, 9, 11, 
+    5, 7, 13, 15, 
 ];
 
 // 壁(上面) A4 奇数列
@@ -570,27 +583,28 @@ DataManager.onLoad = function( object ){
             }
 
             // 屋根タイル(A3)を走査
-            // TODO : カウンター(高層)設定してないタイルも下を塞ぐ
             for( let tileId = Tilemap.TILE_ID_A3; tileId < Tilemap.TILE_ID_A4; tileId += AUTOTILE_BLOCK ){
                 if( isCounterTile( flags[ tileId ] ) ){
-
-                }else{
                     if( Tilemap.isRoofTile( tileId ) ){
                         roof2UpperLayer( flags, tileId );
                     }else{
                         wallSide2UpperLayer( flags, tileId );
                     }
+                }else if( Tilemap.isRoofTile( tileId ) ){
+                    roof2Bottom( flags, tileId );
                 }
             }
 
             // 壁タイル(A4)を走査
             for( let tileId = Tilemap.TILE_ID_A4; tileId < Tilemap.TILE_ID_MAX; tileId += AUTOTILE_BLOCK ){
-                if( !isCounterTile( flags[ tileId ] ) ) continue;
-
-                if( Tilemap.isWallTopTile( tileId ) ){
-                    wallTop2UpperLayer( flags, tileId );
-                }else{
-                    wallSide2UpperLayer( flags, tileId );
+                if( isCounterTile( flags[ tileId ] ) ){
+                    if( Tilemap.isWallTopTile( tileId ) ){
+                        wallTop2UpperLayer( flags, tileId );
+                    }else{
+                        wallSide2UpperLayer( flags, tileId );
+                    }
+                }else if( !_IsA4UpperOpen && Tilemap.isWallTopTile( tileId ) ){
+                    wallTop2Close( flags, tileId );
                 }
             }
         }
@@ -600,56 +614,75 @@ DataManager.onLoad = function( object ){
 
     // カウンターの通行設定
     function counter2UpperLayer( flags, tileId ){
-        for( let i=0; i < 47; i++ ){
+        for( let i = 0; i < 47; i++ ){
             flags[ tileId + i  ] = flags[ tileId + i ] & MASK_WITHOUT_DIR_UPPER | COUNTER_PASS[ i ];
         }
     }
 
-    // 空にする。
+    // 内側を空にする。
     function ground2Empty( flags, tileId ){
-        for( let i=0; i < 47; i++ ){
-            flags[ tileId + i  ] = flags[ tileId + i ] & MASK_WITHOUT_DIR_UPPER | A2_EMPTY_PASS[ i ];
+        for( let i = 0; i < 47; i++ ){
+            flags[ tileId + i  ] = flags[ tileId + i ] & MASK_WITHOUT_DIR_UPPER | AUTO_TILE_EMPTY_PASS[ i ];
         }
     }
     
-    //  屋根の通行設定
+    //  屋根の通行設定(カウンターON)
     function roof2UpperLayer( flags, tileId ){
         if( flags[ tileId + 15 ] & MASK_ALL_DIR ){
             // [×] : 上端を高層表示[☆]、適宜通行不可[・]
-            for( let i=0; i < 16; i++ ){
+            for( let i = 0; i < 16; i++ ){
                 flags[ tileId + i ] = flags[ tileId + i ] & MASK_WITHOUT_DIR_UPPER | A3_UPPER_PASS[ i ];
             }
         }else{
             // [○] : 全体を高層表示[☆]かつ通行可
-            for( let i=0; i < 16; i++ ){
+            for( let i = 0; i < 16; i++ ){
                 flags[ tileId + i ] = flags[ tileId + i ] & MASK_WITHOUT_DIR_UPPER | FLAG_UPPER;
             }
         }
     }
+
+    //  屋根の通行設定(カウンターOFF)
+    function roof2Bottom( flags, tileId ){
+        if( !( flags[ tileId + 15 ] & MASK_ALL_DIR ) ) return;
+        // [×] : 全体を閉じる
+        for( let i = 0; i < 16; i++ ){
+            flags[ tileId + i ] = flags[ tileId + i ] & MASK_WITHOUT_DIR_UPPER | A3_BOTTOM_PASS[ i ];
+        }
+    }
+
     //  壁(上面)の通行設定
     function wallTop2UpperLayer( flags, tileId ){
         if( flags[ tileId + 46 ] & MASK_ALL_DIR  ){
             // [×] : 上端を高層表示[☆]、適宜通行不可[・]
-            for( let i=0; i < 47; i++ ){
+            for( let i = 0; i < 47; i++ ){
                 flags[ tileId + i ] = flags[ tileId + i ] & MASK_WITHOUT_DIR_UPPER | A4_UPPER_PASS[ i ];
             }
         }else{
             // [○] : 全体を高層表示[☆]かつ通行可
-            for( let i=0; i < 47; i++ ){
+            for( let i = 0; i < 47; i++ ){
                 flags[ tileId + i ] = flags[ tileId + i ] & MASK_WITHOUT_DIR_UPPER | FLAG_UPPER;
             }
         }
     }
+    //  壁(上面)の通行設定(地面)
+    function wallTop2Close( flags, tileId ){
+        if( !( flags[ tileId + 46 ] & MASK_ALL_DIR  ) ) return;
+        // [×] : 全体を閉じる
+        for( let i = 0; i < 47; i++ ){
+            flags[ tileId + i ] = flags[ tileId + i ] & MASK_WITHOUT_DIR_UPPER | AUTO_TILE_EMPTY_PASS[ i ];
+        }
+    }
+
     //  壁(側面)の通行設定
     function wallSide2UpperLayer( flags, tileId ){
         if( flags[ tileId + 15 ] & MASK_ALL_DIR  ){
             // [×] : 上端を高層表示[☆]、適宜通行不可[・]
-            for( let i=0; i < 16; i++ ){
+            for( let i = 0; i < 16; i++ ){
                 flags[ tileId + i ] = flags[ tileId + i ] & MASK_WITHOUT_DIR_UPPER | WALL_SIDE_PASS_EDGE[ i ];
             }
         }else{
             // [○] : 全体を高層表示[☆]かつ通行可(一番下のみ通行不可)
-            for( let i=0; i < 16; i++ ){
+            for( let i = 0; i < 16; i++ ){
                 flags[ tileId + i ] = flags[ tileId + i ] & MASK_WITHOUT_DIR_UPPER | WALL_SIDE_PASS[ i ];
             }
         }
