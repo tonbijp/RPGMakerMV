@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.7.8.0
+// Version :0.7.9.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -717,10 +717,10 @@ Scene_Map.prototype.onMapLoaded = function( ){
                     // 北タイルで補完ただし、一番南は南で補完
                     const southTileId = getMapData( x, $gameMap.roundY( y + 1 ) , 0 );
                     if( isA3A4Tile( southTileId ) ){
-                        const northTileId = getMapData( x, y - 1, 0 );
-                        setMapData( x, y, 0, northTileId === 0 ? _defaultLowerTileId : northTileId );
+                        const northTileId = getMapData( x, $gameMap.roundY( y - 1 ), 0 );
+                        setMapData( x, y, 0, northTileId ? northTileId : _defaultLowerTileId );
                     }else{
-                        setMapData( x, y, 0, southTileId === 0 ? _defaultLowerTileId : southTileId );
+                        setMapData( x, y, 0, southTileId ? southTileId : _defaultLowerTileId );
                     }
                 } else {
                     // 指定タイルで補完
