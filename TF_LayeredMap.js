@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.7.7.0
+// Version :0.7.8.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -705,37 +705,28 @@ Scene_Map.prototype.onMapLoaded = function( ){
      * カウンター設定のA3・A4オートタイルの箇所に、低層の補完タイルを設定
      */
     function treatDataMap(){
-        const flags = $dataTilesets[ $dataMap.tilesetId ].flags;
         for( let y = 0; y < $dataMap.height; y++ ){
             for( let x = 0; x < $dataMap.width; x++ ){
                 const tileId = getMapData( x, y, 0 );
-
                 if( !isA3A4Tile( tileId ) ) continue;
+
                 // タイルを補完
                 setMapData( x, y, 1, tileId );
 
                 if( _FillWithNeighborTile ){
                     // 北タイルで補完ただし、一番南は南で補完
                     const southTileId = getMapData( x, $gameMap.roundY( y + 1 ) , 0 );
-                    if( tileId === southTileId || isA3A4Tile( southTileId ) ){
-                        setMapData( x, y, 0, getMapData( x, y - 1, 0 ) )
+                    if( isA3A4Tile( southTileId ) ){
+                        const northTileId = getMapData( x, y - 1, 0 );
+                        setMapData( x, y, 0, northTileId === 0 ? _defaultLowerTileId : northTileId );
                     }else{
-                        setMapData( x, y, 0, southTileId );
+                        setMapData( x, y, 0, southTileId === 0 ? _defaultLowerTileId : southTileId );
                     }
                 } else {
                     // 指定タイルで補完
                     setMapData( x, y, 0, _defaultLowerTileId );
                 }
             }
-        }
-    
-        /**
-         * A3・A4のカウンター設定か。
-         * @param {Number} tileId タイルID
-         * @returns {Boolean} 
-         */
-        function isBaseTile( tileId ){
-            return ( Tilemap.isTileA3( tileId ) || Tilemap.isTileA4( tileId ) ) && isCounterTile( flags[ tileId ] );
         }
 
         /**
