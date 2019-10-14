@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.7.10.0
+// Version :0.8.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -65,7 +65,8 @@
  * 
  * 1. Set [counter]option for A3・A4 tile.
  *      [○] Behavior like[☆]   ※
- *      [×] Hide only upper tile.
+ *      [×] Hide only north tiles.
+ *      [×] + [ladder] Behavior like [☆] only north tiles.Other tiles can't enter.
  * 
  * ※ A3, A4 wall tile floor height set automaticaly.
  * 
@@ -151,7 +152,8 @@
  * 
  * 1. A3・A4タイルに[カウンター]を設定
  *      [○] 下を通れる(ほぼ[☆]の状態) ※1
- *      [×] 上部タイルのみ後ろに回り込める
+ *      [×] 北端タイルのみ後ろに回り込める
+ *      [×] + [梯子] 北端タイルのみ[☆]で他は侵入不可
  * 
  * ※1 壁の高さは自動で調整されます。
  * 
@@ -180,8 +182,10 @@
 // flag用定数
 const FLAG_NORTH_DIR = 0x08 // 北の通行設定
 const FLAG_UPPER = 0x10; // 高層[☆]
+const FLAG_LADDER = 0x20; // 梯子
 const FLAG_COUNTER = 0x80; // カウンター
 const MASK_WITHOUT_DIR_UPPER = 0xFFE0; // 方向と高層[☆]を除いたもの用マスク
+const MASK_WITHOUT_DIR_UPPER_LADDER = 0xFFC0; // 方向と高層[☆]と梯子を除いたもの用マスク
 
 // 書割り設定
 const MASK_ALL_DIR = 0xF; // 通行設定用マスク
@@ -530,6 +534,16 @@ const A4_UPPER_PASS = _IsA4UpperOpen ? [
     3, 7, 17, 17, 7, 17, 17, 17
 ];
 
+// 壁(上面) A4 奇数列、北が[☆]設定、他は全通行不可
+const A4_UPPER_STAR_PASS = [
+    15, 15, 15, 15, 15, 15, 15, 15,
+    15, 15, 15, 15, 15, 15, 15, 15,
+    15, 15, 15, 15, 16, 16, 16, 16,
+    15, 15, 15, 15, 15, 15, 15, 15,
+    15, 16, 16, 16, 16, 16,15, 15,
+    15, 15, 16, 16, 15, 16, 16, 16
+];
+
 // 壁(側面) A3・A4 偶数列 [○]
 const WALL_SIDE_PASS_EDGE = [
     15, 15, 17, 17, 
@@ -653,10 +667,17 @@ DataManager.onLoad = function( object ){
     //  壁(上面)の通行設定
     function wallTop2UpperLayer( flags, tileId ){
         if( flags[ tileId + 46 ] & MASK_ALL_DIR  ){
-            // [×] : 上端を高層表示[☆]、適宜通行不可[・]
-            for( let i = 0; i < 47; i++ ){
-                flags[ tileId + i ] = flags[ tileId + i ] & MASK_WITHOUT_DIR_UPPER | A4_UPPER_PASS[ i ];
-            }
+            if( isLadderTile() ){
+                // [×] : 北端を高層表示[☆]、適宜通行不可[・]
+                for( let i = 0; i < 47; i++ ){
+                    flags[ tileId + i ] = flags[ tileId + i ] & MASK_WITHOUT_DIR_UPPER | A4_UPPER_PASS[ i ];
+                }
+            }else{
+                    // [×] : 北端を高層表示[☆]、適宜通行不可[・]
+                    for( let i = 0; i < 47; i++ ){
+                        flags[ tileId + i ] = flags[ tileId + i ] & MASK_WITHOUT_DIR_UPPER_LADDER | A4_UPPER_STAR_PASS[ i ];
+                    }
+            }        
         }else{
             // [○] : 全体を高層表示[☆]かつ通行可
             for( let i = 0; i < 47; i++ ){
@@ -884,6 +905,15 @@ Game_Map.prototype.checkPassage = function( x, y, bit ){
 function isCounterTile( tileFlag ){
     return ( tileFlag  & FLAG_COUNTER ) === FLAG_COUNTER;
 }
+/**
+ * 梯子設定か。
+ * @param {Number} tileFlag タイルのフラグ情報
+ */
+function isLadderTile( tileFlag ){
+   return ( tileFlag  & FLAG_LADDER ) === FLAG_LADDER;
+}
+
+
 
 })();
 // TODO : OverpassTile.js の機能を取り込みたい
