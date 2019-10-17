@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.9.0.0
+// Version :0.9.1.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -903,14 +903,14 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
 
     /**
      * 指定位置の立体交差地形タグを持つタイルの通行判定(4方向)チェック
-     * @param {Number} x タイル数
-     * @param {Number} y タイル数
+     * @param {Number} ax タイル数
+     * @param {Number} ay タイル数
      * @param {Number} d 通行設定(テンキー方向)
      * @returns {Boolean} 立体交差タイルでない場合nullを返す
      */
     const checkOverpassCollision = ( x, y, d )=>{
         const flags = $gameMap.tilesetFlags();
-        const tiles = $gameMap.allTiles( Math.floor( x ), Math.floor( y ) );
+        const tiles = $gameMap.allTiles( Math.floor( $gameMap.roundX( x ) ), Math.floor( $gameMap.roundY( y ) ) );
 
         for ( let i = 0; i < tiles.length; i++ ){
             const flag = flags[ tiles[ i ] ];
@@ -920,67 +920,83 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
         }
         return null;
     }
+    /**
+     * 指定位置の立体交差地形タグを持つタイルの通行判定(4方向)チェック
+     * @param {Number} x タイル数
+     * @param {Number} y タイル数
+     * @returns {Boolean} 立体交差タイルでない場合nullを返す
+     */
+    const isOverpassTile = ( x, y )=>{
+        return $gameMap.terrainTag( $gameMap.roundX( x ), $gameMap.roundY( y ) ) === _overpassTerrainTag;
+    }
 
-    if(
-        ( currentTerrainTag !== _overpassTerrainTag &&
-        checkOverpassCollision( intX, $gameMap.roundY( intY - 1 ), 2 ) === false ) ||
-        ( $gameMap.terrainTag( $gameMap.roundX( intX - 1 ), intY ) !== _overpassTerrainTag &&
-        checkOverpassCollision( $gameMap.roundX( intX - 1 ), $gameMap.roundY( intY - 1 ), 2 ) === false ) ||
+    if(( !isOverpassTile( intX, intY ) && checkOverpassCollision( intX, intY - 1, 2 ) === false ) ||
+        ( !isOverpassTile( intX - 1, intY ) && checkOverpassCollision( intX - 1, intY - 1, 2 ) === false ) ||
         ( ( halfPos === 0 || halfPos === 3 ) &&
-        $gameMap.terrainTag( $gameMap.roundX( intX + 1 ), intY ) !== _overpassTerrainTag &&
-        checkOverpassCollision( $gameMap.roundX( intX + 1 ), $gameMap.roundY( intY - 1 ), 2 ) === false )
+          !isOverpassTile( intX + 1, intY ) && checkOverpassCollision( intX + 1, intY - 1, 2 ) === false )
     ){
         // 1タイルに収まる場合は不要
         this._higherLevel = true;
     }else if( this._higherLevel ){
         // 降りる
-        if( currentTerrainTag !== _overpassTerrainTag ){
-            console.log(`降りた${ checkOverpassCollision( intX, $gameMap.roundY( intY - 1 ), 2 ) }`);
-            this._higherLevel = false;
+        if( ( halfPos === 0 || halfPos === 2 ) ){
+            if( d === 4 ){
+                if( isOverpassTile( intX, intY ) &&
+                    checkOverpassCollision( intX - 1, intY, 6 ) === false
+                ){
+                    this._higherLevel = false;
+                }
+            }else if( d === 6 ){
+                if( !isOverpassTile( intX, intY ) &&
+                    checkOverpassCollision( intX - 1, intY, 4 ) === false
+                ){
+                    this._higherLevel = false;
+                }
+            }
         }
         // 上を通る状態なら、通常の判定通り
         return isMapPassable;
     }
 
-    if( currentTerrainTag === _overpassTerrainTag ){
+    if( isOverpassTile( intX, intY ) ){
         // 下を潜っている状態は端の通行判定を逆転
         if( halfPos === 0 || halfPos === 1 ){
             if( d === 8 ){
-                if( $gameMap.terrainTag( intX, $gameMap.roundY( intY - 2 ) ) !== _overpassTerrainTag ){
-                    if( checkOverpassCollision( intX, $gameMap.roundY( intY - 1 ), 2 ) === false ) return false;
+                if( !isOverpassTile( intX, intY - 2 ) ){
+                    if( checkOverpassCollision( intX, intY - 1, 2 ) === false ) return false;
                 }
             }
         }else{
             if( d === 2 ){
-                if( $gameMap.terrainTag( intX, $gameMap.roundY( intY + 1 ) ) !== _overpassTerrainTag ){
+                if( !isOverpassTile( intX, intY + 1 ) ){
                     if( checkOverpassCollision( intX, intY, 8 ) === false ) return false;
                 }
             }
         }
         if( halfPos === 1 || halfPos === 3 ){
             if( d === 4 ){
-                if( $gameMap.terrainTag( $gameMap.roundX( intX - 1 ), intY ) !== _overpassTerrainTag ){
+                if( !isOverpassTile( intX - 1, intY ) ){
                     if( checkOverpassCollision( intX, intY, 4 ) === false ) return false;
                 }
             }else if( d === 6 ){
-                if( $gameMap.terrainTag( $gameMap.roundX( intX + 1 ), intY ) !== _overpassTerrainTag ){
+                if( !isOverpassTile( intX + 1, intY ) ){
                     if( checkOverpassCollision( intX, intY, 6 ) === false ) return false;
                 }
             }
         }
         return true;
     }else{
-         if( $gameMap.terrainTag( $gameMap.roundX( intX - 1 ), intY ) === _overpassTerrainTag ){
+         if( isOverpassTile( intX - 1, intY ) ){
             if( halfPos === 0 ){
                 if( d === 8 ){
-                    if( $gameMap.terrainTag( $gameMap.roundX( intX - 1 ), $gameMap.roundY( intY - 2 ) ) !== _overpassTerrainTag ){
-                        if( checkOverpassCollision( $gameMap.roundX( intX - 1 ), $gameMap.roundY( intY - 1 ), 2 ) === false ) return false;
+                    if( !isOverpassTile( intX - 1, intY - 2 ) ){
+                        if( checkOverpassCollision( intX - 1, intY - 1, 2 ) === false ) return false;
                     }
                 }
             }else if( halfPos === 2 ){
                 if( d === 2 ){
-                    if( $gameMap.terrainTag( $gameMap.roundX( intX - 1 ), $gameMap.roundY( intY + 1 ) ) !== _overpassTerrainTag ){
-                        if( checkOverpassCollision( $gameMap.roundX( intX - 1 ), intY, 8 ) === false ) return false;
+                    if( !isOverpassTile( intX - 1, intY + 1 ) ){
+                        if( checkOverpassCollision( intX - 1, intY, 8 ) === false ) return false;
                     }
                 }
             }
@@ -988,71 +1004,71 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
         // 潜る
         if( halfPos === 0 ){
             if( d === 8 &&
-                checkOverpassCollision( intX, $gameMap.roundY( intY - 1 ), 2 ) &&
-                checkOverpassCollision( $gameMap.roundX( intX - 1 ), $gameMap.roundY( intY - 1 ), 2 )
+                checkOverpassCollision( intX, intY - 1, 2 ) &&
+                checkOverpassCollision( intX - 1, intY - 1, 2 )
             ) return true;
         }else if( halfPos === 1 ){
             if( d === 4 ){
-                if( checkOverpassCollision(  $gameMap.roundX( intX - 1 ),  intY, 6 ) &&
-                     checkOverpassCollision(  $gameMap.roundX( intX - 1 ), $gameMap.roundY( intY - 1 ), 6 )
+                if( checkOverpassCollision(  intX - 1, intY, 6 ) &&
+                     checkOverpassCollision(  intX - 1, intY - 1, 6 )
                 ) return true;
             }else if( d === 6 ){
-                if( checkOverpassCollision(  $gameMap.roundX( intX + 1 ),  intY, 4 ) &&
-                     checkOverpassCollision(  $gameMap.roundX( intX + 1 ), $gameMap.roundY( intY - 1 ), 4 )
+                if( checkOverpassCollision( intX + 1,  intY, 4 ) &&
+                     checkOverpassCollision( intX + 1, intY - 1, 4 )
                 ) return true;
             }else if( d === 8 ){
-                if( checkOverpassCollision( intX, $gameMap.roundY( intY - 1 ), 2 ) ) return true;
+                if( checkOverpassCollision( intX, intY - 1, 2 ) ) return true;
             }
         }else if( halfPos === 2 ){
             if( d === 2 ){
-                if( checkOverpassCollision( intX, $gameMap.roundY( intY + 1 ), 8 ) &&
-                    checkOverpassCollision( $gameMap.roundX( intX - 1 ), $gameMap.roundY( intY + 1 ), 8 )
+                if( checkOverpassCollision( intX, intY + 1, 8 ) &&
+                    checkOverpassCollision( intX - 1, intY + 1, 8 )
                 ) return true;
             }
         }else if( halfPos === 3 ){
             if( d === 2 ){
-                if( checkOverpassCollision( intX, $gameMap.roundY( intY + 1 ), 8 ) ) return true;
+                if( checkOverpassCollision( intX, intY + 1, 8 ) ) return true;
             }else if( d === 4 ){
-                if( checkOverpassCollision(  $gameMap.roundX( intX - 1 ),  intY, 6 ) &&
-                     checkOverpassCollision(  $gameMap.roundX( intX - 1 ), $gameMap.roundY( intY - 1 ), 6 ) // 1タイルに収まる場合は不要
+                if( checkOverpassCollision( intX - 1,  intY, 6 ) &&
+                     checkOverpassCollision( intX - 1, intY - 1, 6 ) // 1タイルに収まる場合は不要
                 ) return true;
             }else if( d === 6 ){
-                if( checkOverpassCollision(  $gameMap.roundX( intX + 1 ),  intY, 4 ) &&
-                     checkOverpassCollision(  $gameMap.roundX( intX + 1 ), $gameMap.roundY( intY - 1 ), 4 ) // 1タイルに収まる場合は不要
+                if( checkOverpassCollision( intX + 1,  intY, 4 ) &&
+                     checkOverpassCollision( intX + 1, intY - 1, 4 ) // 1タイルに収まる場合は不要
                 ) return true;
             } 
         }
         // 乗る
         if( halfPos === 0 || halfPos === 1 ){
             if( d === 8 ){
-                if( checkOverpassCollision( intX, $gameMap.roundY( intY - 2 ), 2 ) === false ){
-                    console.log(`乗った`);
+                if( checkOverpassCollision( intX, intY - 2, 2 ) === false ){
                     this._higherLevel = true;
                 }
             }
         }
         if( halfPos === 2 || halfPos === 3 ){
             if( d === 2 ){
-                if( checkOverpassCollision( intX, $gameMap.roundY( intY + 1 ), 8 ) === false ){
+                if( checkOverpassCollision( intX, intY + 1, 8 ) === false ){
                     this._higherLevel = true;
                 }
             }
         }
         if( halfPos === 1 || halfPos === 3 ){
             if( d === 4 ){
-                if( checkOverpassCollision( $gameMap.roundX( intX - 1 ), intY, 6 ) === false ){
+                if( checkOverpassCollision( intX - 1, intY, 6 ) === false ){
+                    console.log(`乗った!`);
                     this._higherLevel = true;
                 }
                  // 1タイルに収まる場合は不要
-                if( checkOverpassCollision( $gameMap.roundX( intX - 1 ), $gameMap.roundY( intY - 1 ), 2 ) === false ){
+                if( checkOverpassCollision( intX - 1,  intY - 1, 2 ) === false ){
                     this._higherLevel = true;
                 }
             }else if( d === 6 ){
-                if( checkOverpassCollision( $gameMap.roundX( intX + 1 ), intY, 4 ) === false ){
+                if( checkOverpassCollision( intX + 1, intY, 4 ) === false ){
                     this._higherLevel = true;
                 }
                 // 1タイルに収まる場合は不要
-               if( checkOverpassCollision( $gameMap.roundX( intX + 1 ), $gameMap.roundY( intY - 1 ), 2 ) === false ){
+               if( checkOverpassCollision( intX + 1, intY - 1, 2 ) === false ){
                    this._higherLevel = true;
                }
             }
