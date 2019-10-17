@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.9.1.0
+// Version :0.9.2.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -898,8 +898,13 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
 
 
     // Overpass 用のプログラム
+
+    if( this instanceof  Game_Follower ) {
+        // TODO: followerをスムースに動かすための処理を入れる。
+        console.log( `Follower : ${this._characterIndex }  _higherLevel : ${_higherLevel}`)
+   }
+
     const isMapPassable = _Game_CharacterBase_isMapPassable.apply( this, arguments );
-    const currentTerrainTag =  $gameMap.terrainTag( intX, intY );
 
     /**
      * 指定位置の立体交差地形タグを持つタイルの通行判定(4方向)チェック
@@ -938,23 +943,16 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
         // 1タイルに収まる場合は不要
         this._higherLevel = true;
     }else if( this._higherLevel ){
-        // 降りる
-        if( ( halfPos === 0 || halfPos === 2 ) ){
-            if( d === 4 ){
-                if( isOverpassTile( intX, intY ) &&
-                    checkOverpassCollision( intX - 1, intY, 6 ) === false
-                ){
-                    this._higherLevel = false;
-                }
-            }else if( d === 6 ){
-                if( !isOverpassTile( intX, intY ) &&
-                    checkOverpassCollision( intX - 1, intY, 4 ) === false
-                ){
-                    this._higherLevel = false;
-                }
-            }
-        }
-        // 上を通る状態なら、通常の判定通り
+        // 全周に立体交差タイルの入り口がないなら降りる
+        if( ( halfPos === 1 || halfPos === 3 ) && !isOverpassTile( intX, intY ) &&
+            checkOverpassCollision( intX + 1, intY, 4 ) !== false && checkOverpassCollision( intX - 1, intY, 6 ) !== false &&
+            checkOverpassCollision( intX, intY + 1, 8 ) !== false &&
+            checkOverpassCollision( intX, intY - 1, 2 ) !== false && checkOverpassCollision( intX, intY - 2, 2 ) !== false
+        ){
+            console.log(`降りた${checkOverpassCollision( intX - 1, intY, 6 )}`);
+             this._higherLevel = false;}
+
+        // 通常の判定通り
         return isMapPassable;
     }
 
@@ -1056,7 +1054,6 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
         if( halfPos === 1 || halfPos === 3 ){
             if( d === 4 ){
                 if( checkOverpassCollision( intX - 1, intY, 6 ) === false ){
-                    console.log(`乗った!`);
                     this._higherLevel = true;
                 }
                  // 1タイルに収まる場合は不要
