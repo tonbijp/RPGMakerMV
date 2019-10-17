@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.8.0.0
+// Version :0.9.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -59,14 +59,17 @@
  * Remove the south collision of the wall top(A4)?
  * @default true
  * 
+ * @param OverpassTerrainTag
+ * @desc Terraing tag for overpass tile.
+ * @default 3
  * 
  * @help
  * Change tile behavior by use no effect option at default.
  * 
- * 1. Set [counter]option for A3・A4 tile.
- *      [○] Behavior like[☆]   ※
- *      [×] Hide only north tiles.
- *      [×] + [ladder] Behavior like [☆] only north tiles.Other tiles can't enter.
+ * 1. Set following options for A3・A4 tile.
+ *      [counter][○] : Behavior like[☆]   ※
+ *      [counter][×] : Hide only north tiles.
+ *      [counter][ladder][×] : Behavior like [☆] only north tiles.Other tiles can't enter.
  * 
  * ※ A3, A4 wall tile floor height set automaticaly.
  * 
@@ -104,7 +107,7 @@
  * @param DefaultLowerTile
  * @text 補完用タイル番号
  * @desc [北のタイルでの補完]がOFFの場合に使うタイル
- * 番号はA5左上を0として右への順。デフォルト:16(草原)
+ * 番号はA5左上を0として右への順。規定値:16(草原)
  * @default 16
  * 
  * @param UseLayeredCounter
@@ -119,7 +122,7 @@
  * @type select
  * @option 手前
  * @value front
- * @option 奥(デフォルト)
+ * @option 奥(規定値)
  * @value back
  * @text 奥行き優先度
  * @desc  書き割りの奥・手前配置の設定
@@ -146,14 +149,19 @@
  * 壁の上(A4)の南の衝突判定をなくすか
  * @default true
  * 
+ * @param OverpassTerrainTag
+ * @text 立体交差の地形タグ
+ * @desc 立体交差をさせたいタイルに指定する地形タグ
+ * @default 3
+ * 
  * 
  * @help 
  * RPGツクールMVで未使用の設定で、タイルの重なりが変化します。
  * 
- * 1. A3・A4タイルに[カウンター]を設定
- *      [○] 下を通れる(ほぼ[☆]の状態) ※1
- *      [×] 北端タイルのみ後ろに回り込める
- *      [×] + [梯子] 北端タイルのみ[☆]で他は侵入不可
+ * 1. A3・A4タイルに以下を設定
+ *      [カウンター][○] 下を通れる(ほぼ[☆]の状態) ※1
+ *      [カウンター][×] 北端タイルのみ後ろに回り込める
+ *      [カウンター][梯子][×] 北端タイルのみ[☆]で他は侵入不可
  * 
  * ※1 壁の高さは自動で調整されます。
  * 
@@ -175,6 +183,8 @@
  *      0xE ・・・↓ : 0xC と同じだが南の両脇が通行可 （椅子とか）(HalfMove.js が必要)
  *      0xF ・・・・ : 0x1 と同じだが南の両脇が通行可 （杭などに）(HalfMove.js が必要)
  * 
+ * 3. 地形タグを3(規定値)に設定
+ *      通行設定で侵入可の方向から入ると上を、侵入不可の方向から入ると下を通るようになります。
  * 
  * 利用規約 : MITライセンス
  */
@@ -213,7 +223,8 @@ const pluginParams = PluginManager.parameters( 'TF_LayeredMap' );
  */
 const getBooleanParam = ( paramName, defaultParam )=>{
     return pluginParams[ paramName ] ? ( pluginParams[ paramName ].toLowerCase() == 'true' ) : defaultParam;
-};
+}; 
+
 /**
  * 指定したパラメータの数値を返す。
  * @param {String} paramName パラメータ名
@@ -221,8 +232,9 @@ const getBooleanParam = ( paramName, defaultParam )=>{
  * @returns {Number}
  */
 const getNumberParam = ( paramName, defaultParam )=>{
-    return pluginParams[ paramName ] ? parseInt( pluginParams[ paramName ], 10 ) : defaultParam;
+    return parseInt( pluginParams[ paramName ] || defaultParam, 10 );
 };
+
 /**
  * 指定したパラメータが、指定した値と同じか。
  * @param {String} paramName パラメータ名
@@ -245,6 +257,7 @@ const _BillboardPriority = conpairPluginParam( 'BillboardPriority', 'front', fal
 const _IsA2FullCollision = getBooleanParam( 'IsA2FullCollision', true );
 const _IsA3UpperOpen = getBooleanParam( 'IsA3UpperOpen', false );
 const _IsA4UpperOpen = getBooleanParam( 'IsA4UpperOpen', true );
+const _overpassTerrainTag = getNumberParam( 'OverpassTerrainTag', 3 );
 
 
 /*---- Game_Interpreter ----*/
@@ -262,6 +275,17 @@ Game_Interpreter.prototype.pluginCommand = function ( command, args ){
 };
 
  
+/*---- Tilemap ----*/
+/**
+ * その位置が立体交差であるかチェック(地形タグで決定)
+ */
+const _Tilemap_isOverpassPosition = Tilemap.prototype._isOverpassPosition;
+Tilemap.prototype._isOverpassPosition = function( x, y ) {
+    if( $gameMap.terrainTag( x, y ) === _overpassTerrainTag ) return true;
+    return _Tilemap_isOverpassPosition.apply( this, arguments );
+};
+
+
 /*---- ShaderTilemap ----*/
 /**
  * タイルセットの画像を設定する。
@@ -786,6 +810,15 @@ Scene_Map.prototype.onMapLoaded = function( ){
 
 /*---- Game_CharacterBase ----*/
 /**
+ * レイヤー位置を返す。
+ * @returns {Number} レイヤー位置(立体交差上5、その他3)
+ */
+const _Game_CharacterBase_screenZ = Game_CharacterBase.prototype.screenZ;
+Game_CharacterBase.prototype.screenZ = function() {
+    return this._higherLevel ? 5: _Game_CharacterBase_screenZ.call( this );
+};
+
+/**
  * 指定方向への移動が可能か
  * キャラクタ半分の位置が関係するものは、ここで判定。
  * @param {Number} x タイル数
@@ -797,10 +830,28 @@ const _Game_CharacterBase_isMapPassable = Game_CharacterBase.prototype.isMapPass
 Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
     const intX = Math.floor( x + 0.5 );
     const intY = Math.floor( y + 0.5 );
+    const halfPos = getHalfPos( this._realX, this._realY );
+
+    /**
+     * 指定位置に指定flagがあるか
+     * @param {Number} x タイル数
+     * @param {Number} y タイル数
+     * @param {Number} collisionType 調べるタイルのflag(高層[☆]と通行)
+     * @returns {Boolean} 
+     */
+    const checkCollision = ( x, y, collisionType )=>{
+        const flags = $gameMap.tilesetFlags();
+        const tiles = $gameMap.allTiles( Math.floor( x ), Math.floor( y ) );
+        
+        for ( let i = 0; i < tiles.length; i++ ){
+            if( ( flags[ tiles[ i ] ] & MASK_UPPER_DIR ) === collisionType ) return true;
+        }
+        return false;
+    }
 
     // FLOOR1_N_FULL
     if( d === 8 || d === 2 ){
-        if(  intY <= y ){
+        if( intY <= y ){
              if( checkCollision( x, $gameMap.roundYWithDirection( y + 0.5, d ), FLOOR1_N_FULL ) ) return false;
              if( 0.5 <= x % 1 ){ // キャラが西位置の場合に一つ東のタイルをチェック
                 if( checkCollision( $gameMap.roundX( x + 1 ), $gameMap.roundYWithDirection( y + 0.5, d ), FLOOR1_N_FULL ) ) return false;
@@ -845,25 +896,170 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
         if( intX <= x && intY <= y && checkCollision( x, y, FLOOR1_S_FLAT ) ) return false;
     }
 
-    return _Game_CharacterBase_isMapPassable.apply( this, arguments );
 
+    // Overpass 用のプログラム
+    const isMapPassable = _Game_CharacterBase_isMapPassable.apply( this, arguments );
+    const currentTerrainTag =  $gameMap.terrainTag( intX, intY );
 
     /**
-     * 指定位置に指定flagがあるか
+     * 指定位置の立体交差地形タグを持つタイルの通行判定(4方向)チェック
      * @param {Number} x タイル数
      * @param {Number} y タイル数
-     * @param {Number} collisionType 調べるタイルのflag(高層[☆]と通行)
-     * @returns {Boolean} 
+     * @param {Number} d 通行設定(テンキー方向)
+     * @returns {Boolean} 立体交差タイルでない場合nullを返す
      */
-    function checkCollision( x, y, collisionType ){
+    const checkOverpassCollision = ( x, y, d )=>{
         const flags = $gameMap.tilesetFlags();
         const tiles = $gameMap.allTiles( Math.floor( x ), Math.floor( y ) );
-        
+
         for ( let i = 0; i < tiles.length; i++ ){
-            if( ( flags[ tiles[ i ] ] & MASK_UPPER_DIR ) === collisionType ) return true;
+            const flag = flags[ tiles[ i ] ];
+            if( flag >> 12  === _overpassTerrainTag ){
+                return 0 < ( flag & ( 1 << ( d / 2 - 1 ) ) );
+            }
         }
-        return false;
+        return null;
     }
+
+    if(
+        ( currentTerrainTag !== _overpassTerrainTag &&
+        checkOverpassCollision( intX, $gameMap.roundY( intY - 1 ), 2 ) === false ) ||
+        ( $gameMap.terrainTag( $gameMap.roundX( intX - 1 ), intY ) !== _overpassTerrainTag &&
+        checkOverpassCollision( $gameMap.roundX( intX - 1 ), $gameMap.roundY( intY - 1 ), 2 ) === false ) ||
+        ( ( halfPos === 0 || halfPos === 3 ) &&
+        $gameMap.terrainTag( $gameMap.roundX( intX + 1 ), intY ) !== _overpassTerrainTag &&
+        checkOverpassCollision( $gameMap.roundX( intX + 1 ), $gameMap.roundY( intY - 1 ), 2 ) === false )
+    ){
+        // 1タイルに収まる場合は不要
+        this._higherLevel = true;
+    }else if( this._higherLevel ){
+        // 降りる
+        if( currentTerrainTag !== _overpassTerrainTag ){
+            console.log(`降りた${ checkOverpassCollision( intX, $gameMap.roundY( intY - 1 ), 2 ) }`);
+            this._higherLevel = false;
+        }
+        // 上を通る状態なら、通常の判定通り
+        return isMapPassable;
+    }
+
+    if( currentTerrainTag === _overpassTerrainTag ){
+        // 下を潜っている状態は端の通行判定を逆転
+        if( halfPos === 0 || halfPos === 1 ){
+            if( d === 8 ){
+                if( $gameMap.terrainTag( intX, $gameMap.roundY( intY - 2 ) ) !== _overpassTerrainTag ){
+                    if( checkOverpassCollision( intX, $gameMap.roundY( intY - 1 ), 2 ) === false ) return false;
+                }
+            }
+        }else{
+            if( d === 2 ){
+                if( $gameMap.terrainTag( intX, $gameMap.roundY( intY + 1 ) ) !== _overpassTerrainTag ){
+                    if( checkOverpassCollision( intX, intY, 8 ) === false ) return false;
+                }
+            }
+        }
+        if( halfPos === 1 || halfPos === 3 ){
+            if( d === 4 ){
+                if( $gameMap.terrainTag( $gameMap.roundX( intX - 1 ), intY ) !== _overpassTerrainTag ){
+                    if( checkOverpassCollision( intX, intY, 4 ) === false ) return false;
+                }
+            }else if( d === 6 ){
+                if( $gameMap.terrainTag( $gameMap.roundX( intX + 1 ), intY ) !== _overpassTerrainTag ){
+                    if( checkOverpassCollision( intX, intY, 6 ) === false ) return false;
+                }
+            }
+        }
+        return true;
+    }else{
+         if( $gameMap.terrainTag( $gameMap.roundX( intX - 1 ), intY ) === _overpassTerrainTag ){
+            if( halfPos === 0 ){
+                if( d === 8 ){
+                    if( $gameMap.terrainTag( $gameMap.roundX( intX - 1 ), $gameMap.roundY( intY - 2 ) ) !== _overpassTerrainTag ){
+                        if( checkOverpassCollision( $gameMap.roundX( intX - 1 ), $gameMap.roundY( intY - 1 ), 2 ) === false ) return false;
+                    }
+                }
+            }else if( halfPos === 2 ){
+                if( d === 2 ){
+                    if( $gameMap.terrainTag( $gameMap.roundX( intX - 1 ), $gameMap.roundY( intY + 1 ) ) !== _overpassTerrainTag ){
+                        if( checkOverpassCollision( $gameMap.roundX( intX - 1 ), intY, 8 ) === false ) return false;
+                    }
+                }
+            }
+        }
+        // 潜る
+        if( halfPos === 0 ){
+            if( d === 8 &&
+                checkOverpassCollision( intX, $gameMap.roundY( intY - 1 ), 2 ) &&
+                checkOverpassCollision( $gameMap.roundX( intX - 1 ), $gameMap.roundY( intY - 1 ), 2 )
+            ) return true;
+        }else if( halfPos === 1 ){
+            if( d === 4 ){
+                if( checkOverpassCollision(  $gameMap.roundX( intX - 1 ),  intY, 6 ) &&
+                     checkOverpassCollision(  $gameMap.roundX( intX - 1 ), $gameMap.roundY( intY - 1 ), 6 )
+                ) return true;
+            }else if( d === 6 ){
+                if( checkOverpassCollision(  $gameMap.roundX( intX + 1 ),  intY, 4 ) &&
+                     checkOverpassCollision(  $gameMap.roundX( intX + 1 ), $gameMap.roundY( intY - 1 ), 4 )
+                ) return true;
+            }else if( d === 8 ){
+                if( checkOverpassCollision( intX, $gameMap.roundY( intY - 1 ), 2 ) ) return true;
+            }
+        }else if( halfPos === 2 ){
+            if( d === 2 ){
+                if( checkOverpassCollision( intX, $gameMap.roundY( intY + 1 ), 8 ) &&
+                    checkOverpassCollision( $gameMap.roundX( intX - 1 ), $gameMap.roundY( intY + 1 ), 8 )
+                ) return true;
+            }
+        }else if( halfPos === 3 ){
+            if( d === 2 ){
+                if( checkOverpassCollision( intX, $gameMap.roundY( intY + 1 ), 8 ) ) return true;
+            }else if( d === 4 ){
+                if( checkOverpassCollision(  $gameMap.roundX( intX - 1 ),  intY, 6 ) &&
+                     checkOverpassCollision(  $gameMap.roundX( intX - 1 ), $gameMap.roundY( intY - 1 ), 6 ) // 1タイルに収まる場合は不要
+                ) return true;
+            }else if( d === 6 ){
+                if( checkOverpassCollision(  $gameMap.roundX( intX + 1 ),  intY, 4 ) &&
+                     checkOverpassCollision(  $gameMap.roundX( intX + 1 ), $gameMap.roundY( intY - 1 ), 4 ) // 1タイルに収まる場合は不要
+                ) return true;
+            } 
+        }
+        // 乗る
+        if( halfPos === 0 || halfPos === 1 ){
+            if( d === 8 ){
+                if( checkOverpassCollision( intX, $gameMap.roundY( intY - 2 ), 2 ) === false ){
+                    console.log(`乗った`);
+                    this._higherLevel = true;
+                }
+            }
+        }
+        if( halfPos === 2 || halfPos === 3 ){
+            if( d === 2 ){
+                if( checkOverpassCollision( intX, $gameMap.roundY( intY + 1 ), 8 ) === false ){
+                    this._higherLevel = true;
+                }
+            }
+        }
+        if( halfPos === 1 || halfPos === 3 ){
+            if( d === 4 ){
+                if( checkOverpassCollision( $gameMap.roundX( intX - 1 ), intY, 6 ) === false ){
+                    this._higherLevel = true;
+                }
+                 // 1タイルに収まる場合は不要
+                if( checkOverpassCollision( $gameMap.roundX( intX - 1 ), $gameMap.roundY( intY - 1 ), 2 ) === false ){
+                    this._higherLevel = true;
+                }
+            }else if( d === 6 ){
+                if( checkOverpassCollision( $gameMap.roundX( intX + 1 ), intY, 4 ) === false ){
+                    this._higherLevel = true;
+                }
+                // 1タイルに収まる場合は不要
+               if( checkOverpassCollision( $gameMap.roundX( intX + 1 ), $gameMap.roundY( intY - 1 ), 2 ) === false ){
+                   this._higherLevel = true;
+               }
+            }
+        }
+    }
+
+    return isMapPassable;
 }
 
 
@@ -905,6 +1101,7 @@ Game_Map.prototype.checkPassage = function( x, y, bit ){
 function isCounterTile( tileFlag ){
     return ( tileFlag  & FLAG_COUNTER ) === FLAG_COUNTER;
 }
+
 /**
  * 梯子設定か。
  * @param {Number} tileFlag タイルのフラグ情報
@@ -913,7 +1110,13 @@ function isLadderTile( tileFlag ){
    return ( tileFlag  & FLAG_LADDER ) === FLAG_LADDER;
 }
 
-
+/**
+ * タイル内の位置を返す( 0:左上, 1:上, 2:左下, 3:下 )
+ * @param {Number} x x座標(タイル数)
+ * @param {Number} y y座標(タイル数)
+ */
+function getHalfPos( x, y ){
+    return ( ( ( x % 1 ) === 0 ) ? 1 : 0 ) + ( ( ( y % 1 ) === 0 ) ? 2 : 0 );
+}
 
 })();
-// TODO : OverpassTile.js の機能を取り込みたい
