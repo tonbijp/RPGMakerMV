@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.9.3.0
+// Version :0.9.4.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -900,14 +900,7 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
     // Overpass 用のプログラム
     const isMapPassable = _Game_CharacterBase_isMapPassable.apply( this, arguments );
 
-    if(( !isOverpassTile( intX, intY ) && checkOverpassCollision( intX, intY - 1, 2 ) === false ) ||
-        ( !isOverpassTile( intX - 1, intY ) && checkOverpassCollision( intX - 1, intY - 1, 2 ) === false ) ||
-        ( ( halfPos === 0 || halfPos === 3 ) &&
-          !isOverpassTile( intX + 1, intY ) && checkOverpassCollision( intX + 1, intY - 1, 2 ) === false )
-    ){
-        // 1タイルに収まる場合は不要
-        this._higherLevel = true;
-    }else if( this._higherLevel ){
+    if( this._higherLevel ){
         if( isDownFromUpperTile( intX, intY, d, halfPos ) ) this._higherLevel = false;
 
         // 通常の判定通り
@@ -994,9 +987,9 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
                 ) return true;
             } 
         }
-        // 乗る
-        if( isUp2Higher( intX, intY, d, halfPos ) ) this._higherLevel = true;
     }
+    // 乗る
+    if( isUp2Higher( intX, intY, d, halfPos ) ) this._higherLevel = true;
 
     return isMapPassable;
 }
@@ -1021,7 +1014,7 @@ Game_Follower.prototype.chaseCharacter = function( character ){
     const halfPos = getHalfPos( this._realX, this._realY );
     if( this._higherLevel ){
         if( isDownFromUpperTile( intX, intY, d, halfPos ) ) this._higherLevel = false;
-    }else if( !isOverpassTile( intX, intY ) ){
+    }else{
         if( isUp2Higher( intX, intY, d, halfPos ) ) this._higherLevel = true;
     }
 
@@ -1123,31 +1116,27 @@ function isOverpassTile( x, y ){
  * @returns {Boolean} 
  */
 function isUp2Higher( x, y, d, halfPos ){
-    if( halfPos === 0 || halfPos === 1 ){
-        if( d === 8 ){
-            if( checkOverpassCollision( x, y - 2, 2 ) === false ) return true;
-        }
+    if( halfPos === 0 || halfPos === 2 ){
+        if( !isOverpassTile( x - 1, y ) && checkOverpassCollision( x, y, 4 ) === false ) return true;   // 西出入口境界
     }
-    if( halfPos === 2 || halfPos === 3 ){
-        if( d === 2 ){
-            if( checkOverpassCollision( x, y + 1, 8 ) === false ) return true;
-        }
-    }
-    if( halfPos === 1 || halfPos === 3 ){
-        if( d === 4 ){
-            if( checkOverpassCollision( x - 1, y, 6 ) === false ) return true;
-            // 1タイルに収まる場合は不要
-            if( !isOverpassTile( x - 1, y ) && checkOverpassCollision( x - 1,  y - 1, 2 ) === false ) return true;
-        }else if( d === 6 ){
-            if( checkOverpassCollision( x + 1, y, 4 ) === false ) return true;
-            // 1タイルに収まる場合は不要
-            if( !isOverpassTile( x + 1, y ) && checkOverpassCollision( x + 1, y - 1, 2 ) === false ) return true;
-        }
-    }
+    if( isOverpassTile( x, y ) ) return false;   // 立体交差タイルの上は帰す
+
+    return (
+        checkOverpassCollision( x - 1, y, 6 ) === false ||  // 東出入口
+        checkOverpassCollision( x + 1, y, 4 ) === false ||  // 西出入口
+        checkOverpassCollision( x, y + 1, 8 ) === false ||  // 北入り口↓
+        ( !isOverpassTile( x - 1, y ) && checkOverpassCollision( x - 1, y + 1, 8 ) === false ) ||
+        checkOverpassCollision( x, y - 2, 2 ) === false ||  // 南入口↓
+       ( !isOverpassTile( x - 1, y ) && (
+            checkOverpassCollision( x - 1, y - 2, 2 ) === false ||
+            checkOverpassCollision( x - 1, y - 1, 2 ) === false )
+        ) ||
+       ( !isOverpassTile( x + 1, y ) && checkOverpassCollision( x + 1, y - 1, 2 ) === false )
+    );
 }
 
 /**
- * 降りるタイミングか(全周に立体交差タイルの入り口がない)
+ * 降りるタイミングか
  * @param {Number} x タイル数
  * @param {Number} y タイル数
  * @param {Number} d 通行設定(テンキー方向)
@@ -1155,10 +1144,16 @@ function isUp2Higher( x, y, d, halfPos ){
  * @returns {Boolean} 
  */
 function isDownFromUpperTile( x, y, d, halfPos ){
-    return ( halfPos === 1 || halfPos === 3 ) && !isOverpassTile( x, y ) &&
-    checkOverpassCollision( x + 1, y, 4 ) !== false && checkOverpassCollision( x - 1, y, 6 ) !== false &&
-    checkOverpassCollision( x, y + 1, 8 ) !== false &&
-    checkOverpassCollision( x, y - 1, 2 ) !== false && checkOverpassCollision( x, y - 2, 2 ) !== false
+    if( isOverpassTile( x, y ) ) return false;  // 立体交差タイルの上は帰す
+    if( checkOverpassCollision( x, y - 1, 2 ) === false ) return false;  // 南入り口タイルは帰す
+    if( ( halfPos === 0 || halfPos === 2 ) && checkOverpassCollision( x -1, y - 1, 2 ) === false ) return false;
+
+    // 全周に立体交差タイルの入り口がない
+    return checkOverpassCollision( x + 1, y, 4 ) !== false &&   // 東
+                  checkOverpassCollision( x - 1, y, 6 ) !== false &&    // 西
+                  checkOverpassCollision( x, y + 1, 8 ) !== false &&    // 南
+                  checkOverpassCollision( x - 1, y + 1, 8 ) !== false &&  // 南西
+                  checkOverpassCollision( x, y - 2, 2 ) !== false;  // ふたつ北
 }
 
 })();
