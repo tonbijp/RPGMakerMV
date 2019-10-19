@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.10.0.0
+// Version :0.10.0.1
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -546,9 +546,10 @@ ShaderTilemap.prototype._updateLayerPositions = function( startX, startY ){
 
 /*---- DataManager ---*/
 // オートタイル通行flag
-// 通行不可設定 1:下  2:左  4:右  8:上
-// 16:高層に表示[☆]
-// A2カウンター
+// 16:高層に表示[☆] + 通行不可設定 1:下  2:左  4:右  8:上
+
+// 地面(カウンター) : 北が書き割り(北半分侵入可)、他は周囲通行不可
+// [A2 右側][×][カウンター][UseLayeredCounter:ON]
 const COUNTER_PASS = [
     15, 15, 15, 15, 15, 15, 15, 15, 
     15, 15, 15, 15, 15, 15, 15, 15, 
@@ -557,6 +558,9 @@ const COUNTER_PASS = [
     15, 28, 28, 28, 28, 28, 15, 15, 
     15, 15, 28, 28, 15, 28, 28, 28, 
 ];
+
+// 地面 : 周囲通行不可
+// [A2][×][IsA2FullCollision:OFF]
 const AUTO_TILE_EMPTY_PASS = [
     0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0,
@@ -568,7 +572,8 @@ const AUTO_TILE_EMPTY_PASS = [
 
 const OPTT = ( _OverpassTerrainTag << 12 ); // 立体交差地形タグ
 
-// 屋根 A3 奇数列(立体交差)
+// 屋根 : 北が立体交差、他は周囲通行不可
+// [A3 奇数列][×][カウンター][OverpassTerrainTag]
 const A3_UPPER_OVERPASS = _IsA3UpperOpen ? [
     0, 2, OPTT + 8, OPTT + 10,
     4, 6, OPTT + 12, OPTT + 14,
@@ -581,7 +586,8 @@ const A3_UPPER_OVERPASS = _IsA3UpperOpen ? [
     5, 7, OPTT + 15, OPTT + 13,
 ];
 
-// 屋根 A3 奇数列
+// 屋根  : 北が書き割り、他は周囲通行不可
+// [A3 奇数列][×][カウンター]
 const A3_UPPER_PASS =_IsA3UpperOpen ? [
     0, 2, 17, 17,
     4, 6, 17, 17,
@@ -594,7 +600,8 @@ const A3_UPPER_PASS =_IsA3UpperOpen ? [
     5, 7, 17, 17,
 ];
 
-// 屋根 A3 奇数列(地面)
+// 屋根 (地面) : 周囲通行不可
+// [A3 奇数列][×]
 const A3_BOTTOM_PASS =_IsA3UpperOpen ? [
     0, 2, 8, 10, 
     4, 6, 12, 14, 
@@ -607,7 +614,8 @@ const A3_BOTTOM_PASS =_IsA3UpperOpen ? [
     5, 7, 13, 15, 
 ];
 
-// 壁(上面) A4 奇数列(立体交差)
+// 壁(上面) : 北が立体交差、他は周囲通行不可
+// [A4 奇数列][×][カウンター][OverpassTerrainTag]
 const A4_UPPER_OVERPASS = _IsA4UpperOpen ? [
     0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0,
@@ -624,7 +632,8 @@ const A4_UPPER_OVERPASS = _IsA4UpperOpen ? [
     3, 3, OPTT + 14, OPTT + 11, 7, OPTT + 13, OPTT + 15, OPTT + 15,
 ];
 
-// 壁(上面) A4 奇数列
+// 壁(上面) : 北が書き割り、他は周囲通行不可
+// [A4 奇数列][×][カウンター]
 const A4_UPPER_PASS = _IsA4UpperOpen ? [
     0, 2, 4, 6, 0, 2, 4, 6,
     0, 2, 4, 6, 0, 2, 4, 6,
@@ -641,7 +650,8 @@ const A4_UPPER_PASS = _IsA4UpperOpen ? [
     3, 7, 17, 17, 7, 17, 17, 17,
 ];
 
-// 壁(上面) A4 奇数列、北が[☆]設定、他は全通行不可
+// 壁(上面) : 北が[☆]、他は全通行不可
+// [A4 奇数列][×][カウンター][梯子]
 const A4_UPPER_STAR_PASS = [
     15, 15, 15, 15, 15, 15, 15, 15,
     15, 15, 15, 15, 15, 15, 15, 15,
@@ -651,14 +661,16 @@ const A4_UPPER_STAR_PASS = [
     15, 15, 16, 16, 15, 16, 16, 16,
 ];
 
-// 壁(側面) A3・A4 偶数列 [○]
+// 壁(側面):南が書き割り、他は通行可
+// [A3・A4 偶数列][○]
 const WALL_SIDE_PASS_EDGE = [
     15, 15, 17, 17, 
     15, 15, 17, 17, 
     15, 15, 17, 17, 
     15, 15, 17, 17, 
 ];
-// 壁(側面) A3・A4 偶数列[×]
+// 壁(側面): 北が書き割り、他は全通行不可
+// [A3・A4 偶数列][×]
 const WALL_SIDE_PASS = [
     25, 25, 26, 26, 
     25, 25, 26, 26, 
