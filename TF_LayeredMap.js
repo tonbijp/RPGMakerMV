@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.9.9.0
+// Version :0.10.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -607,6 +607,23 @@ const A3_BOTTOM_PASS =_IsA3UpperOpen ? [
     5, 7, 13, 15, 
 ];
 
+// 壁(上面) A4 奇数列(立体交差)
+const A4_UPPER_OVERPASS = _IsA4UpperOpen ? [
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    2, 2, 2, 2, OPTT + 8, OPTT + 8, OPTT + 8, OPTT + 8,
+    4, 4, 4, 4, 0, 0, 0, 0,
+    6, OPTT + 8, OPTT + 10, OPTT + 10, OPTT + 12, OPTT + 12, 4, 4,
+    2, 2, OPTT + 14, OPTT + 10, 6, OPTT + 12, OPTT + 14, OPTT + 15,
+] : [
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    2, 2, 2, 2, OPTT + 8, OPTT + 8, OPTT + 8, OPTT + 8,
+    4, 4, 4, 4, 1, 1, 1, 1,
+    6, OPTT + 9, OPTT + 10, OPTT + 10, OPTT + 12, OPTT + 12, 5, 5,
+    3, 3, OPTT + 14, OPTT + 11, 7, OPTT + 13, OPTT + 15, OPTT + 15,
+];
+
 // 壁(上面) A4 奇数列
 const A4_UPPER_PASS = _IsA4UpperOpen ? [
     0, 2, 4, 6, 0, 2, 4, 6,
@@ -614,14 +631,14 @@ const A4_UPPER_PASS = _IsA4UpperOpen ? [
     2, 6, 2, 6, 17, 17, 17, 17,
     4, 4, 6, 6, 0, 2, 4, 6,
     6, 17, 17, 17, 17, 17, 4, 6,
-    2, 6, 17, 17, 6, 17, 17, 17
+    2, 6, 17, 17, 6, 17, 17, 17,
 ] : [
     0, 2, 4, 6, 0, 2, 4, 6,
     0, 2, 4, 6, 0, 2, 4, 6,
     2, 6, 2, 6, 17, 17, 17, 17,
     4, 4, 6, 6, 1, 3, 5, 7,
     6, 17, 17, 17, 17, 17, 5, 7,
-    3, 7, 17, 17, 7, 17, 17, 17
+    3, 7, 17, 17, 7, 17, 17, 17,
 ];
 
 // 壁(上面) A4 奇数列、北が[☆]設定、他は全通行不可
@@ -631,7 +648,7 @@ const A4_UPPER_STAR_PASS = [
     15, 15, 15, 15, 16, 16, 16, 16,
     15, 15, 15, 15, 15, 15, 15, 15,
     15, 16, 16, 16, 16, 16,15, 15,
-    15, 15, 16, 16, 15, 16, 16, 16
+    15, 15, 16, 16, 15, 16, 16, 16,
 ];
 
 // 壁(側面) A3・A4 偶数列 [○]
@@ -762,17 +779,23 @@ DataManager.onLoad = function( object ){
 
     //  壁(上面)の通行設定
     function wallTop2UpperLayer( flags, tileId ){
-        if( flags[ tileId + 46 ] & MASK_ALL_DIR  ){
-            if( isLadderTile() ){
+        const flag = flags[ tileId + 46 ];
+        if( flag & MASK_ALL_DIR  ){ // [×] 
+            if( isLadderTile( flag ) ){
+                // [×] : 北端を高層表示[☆]、適宜通行不可[・]
+                for( let i = 0; i < 47; i++ ){
+                    flags[ tileId + i ] = flags[ tileId + i ] & MASK_WITHOUT_DIR_UPPER_LADDER | A4_UPPER_STAR_PASS[ i ];
+                }
+            }else if( _OverpassTerrainTag !== 0 && flag >> 12 === _OverpassTerrainTag ){
+                // [×] : 北端を立体交差、適宜通行不可[・]
+                for( let i = 0; i < 47; i++ ){
+                    flags[ tileId + i ] = flags[ tileId + i ] & MASK_CLIF | A4_UPPER_OVERPASS[ i ];
+                }
+            }else{
                 // [×] : 北端を高層表示[☆]、適宜通行不可[・]
                 for( let i = 0; i < 47; i++ ){
                     flags[ tileId + i ] = flags[ tileId + i ] & MASK_WITHOUT_DIR_UPPER | A4_UPPER_PASS[ i ];
                 }
-            }else{
-                    // [×] : 北端を高層表示[☆]、適宜通行不可[・]
-                    for( let i = 0; i < 47; i++ ){
-                        flags[ tileId + i ] = flags[ tileId + i ] & MASK_WITHOUT_DIR_UPPER_LADDER | A4_UPPER_STAR_PASS[ i ];
-                    }
             }        
         }else{
             // [○] : 全体を高層表示[☆]かつ通行可
@@ -1108,14 +1131,14 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
             checkOverpassCollision( x + 1, y + 1, 8 ) ) return false;
         }
     }else{
-        if( halfPos === 2 && d === 2 ){
-            if( !isOverpassTile( x, y + 1 ) &&  !isOverpassTile( x - 1, y + 1 ) ){
-                if( !isOverpassTile( x - 1, y + 2 ) &&
-                checkOverpassCollision( x, y + 2, 4 ) === false &&
-                checkOverpassCollision( x, y + 2, 2 ) ) return false;
-                if( !isOverpassTile( x, y + 2 ) &&
-                checkOverpassCollision( x - 1, y + 2, 6 ) === false &&
-                checkOverpassCollision( x - 1, y + 2, 2 ) ) return false;
+        if( halfPos === 0 && d === 2 ){
+            if( !isOverpassTile( x, y ) &&  !isOverpassTile( x - 1, y ) ){
+                if( !isOverpassTile( x - 1, y + 1 ) &&
+                checkOverpassCollision( x, y + 1, 4 ) === false &&
+                checkOverpassCollision( x, y + 1, 2 ) ) return false;
+                if( !isOverpassTile( x, y + 1 ) &&
+                checkOverpassCollision( x - 1, y + 1, 6 ) === false &&
+                checkOverpassCollision( x - 1, y + 1, 2 ) ) return false;
             }
         }
     }
