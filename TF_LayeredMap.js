@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.9.8.1
+// Version :0.9.9.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -301,13 +301,14 @@ const conpairPluginParam = ( paramName, param, defaultParam )=>{
 };
 
 const _FillWithNeighborTile = getBooleanParam( 'FillWithNeighborTile', true );
-const _defaultLowerTileId = Tilemap.TILE_ID_A5 + getNumberParam( 'DefaultLowerTile', 16 );
-const _useLayeredCounter = getBooleanParam( 'UseLayeredCounter', true );
+const _DefaultLowerTileId = Tilemap.TILE_ID_A5 + getNumberParam( 'DefaultLowerTile', 16 );
+const _UseLayeredCounter = getBooleanParam( 'UseLayeredCounter', true );
 const _BillboardPriority = conpairPluginParam( 'BillboardPriority', 'front', false ) ? Infinity : -Infinity;
 const _IsA2FullCollision = getBooleanParam( 'IsA2FullCollision', true );
 const _IsA3UpperOpen = getBooleanParam( 'IsA3UpperOpen', false );
 const _IsA4UpperOpen = getBooleanParam( 'IsA4UpperOpen', true );
-const _overpassTerrainTag = getNumberParam( 'OverpassTerrainTag', 3 );
+const _OverpassTerrainTag = getNumberParam( 'OverpassTerrainTag', 3 );
+const _UseTallSizeCharacter = getNumberParam( 'UseTallSizeCharacter', 3 );
 
 
 /*---- Game_Interpreter ----*/
@@ -331,7 +332,7 @@ Game_Interpreter.prototype.pluginCommand = function ( command, args ){
  */
 const _Tilemap_isOverpassPosition = Tilemap.prototype._isOverpassPosition;
 Tilemap.prototype._isOverpassPosition = function( x, y ) {
-    if( _overpassTerrainTag !== 0 && $gameMap.terrainTag( x, y ) === _overpassTerrainTag ) return true;
+    if( _OverpassTerrainTag !== 0 && $gameMap.terrainTag( x, y ) === _OverpassTerrainTag ) return true;
     return _Tilemap_isOverpassPosition.apply( this, arguments );
 };
 
@@ -565,7 +566,7 @@ const AUTO_TILE_EMPTY_PASS = [
     3, 3, 14, 11, 7, 13, 15, 15
 ];
 
-const OPTT = ( _overpassTerrainTag << 12 ); // 立体交差地形タグ
+const OPTT = ( _OverpassTerrainTag << 12 ); // 立体交差地形タグ
 
 // 屋根 A3 奇数列(立体交差)
 const A3_UPPER_OVERPASS = _IsA3UpperOpen ? [
@@ -669,7 +670,7 @@ DataManager.onLoad = function( object ){
             if( !curTileset ) continue;
             const flags = curTileset.flags;
 
-            if( _useLayeredCounter ){
+            if( _UseLayeredCounter ){
                 // カウンタータイル(A2)を走査
                 for( let tileId = Tilemap.TILE_ID_A2; tileId < Tilemap.TILE_ID_A3; tileId += AUTOTILE_BLOCK ){
                     if( isCounterTile( flags[ tileId ] ) ) counter2UpperLayer( flags, tileId );
@@ -732,7 +733,7 @@ DataManager.onLoad = function( object ){
     function roof2UpperLayer( flags, tileId ){
         const flag = flags[ tileId + 15 ];
         if( flag & MASK_ALL_DIR ){  // [×] 
-            if( _overpassTerrainTag !== 0 && flag >> 12 === _overpassTerrainTag ){
+            if( _OverpassTerrainTag !== 0 && flag >> 12 === _OverpassTerrainTag ){
                 // 上端を立体交差表示、適宜通行不可[・]
                 for( let i = 0; i < 16; i++ ){
                     flags[ tileId + i ] = flags[ tileId + i ] & MASK_CLIF | A3_UPPER_OVERPASS[ i ];
@@ -835,13 +836,13 @@ Scene_Map.prototype.onMapLoaded = function( ){
                     const southTileId = getMapData( x, $gameMap.roundY( y + 1 ) , 0 );
                     if( isA3A4Tile( southTileId ) ){
                         const northTileId = getMapData( x, $gameMap.roundY( y - 1 ), 0 );
-                        setMapData( x, y, 0, northTileId ? northTileId : _defaultLowerTileId );
+                        setMapData( x, y, 0, northTileId ? northTileId : _DefaultLowerTileId );
                     }else{
-                        setMapData( x, y, 0, southTileId ? southTileId : _defaultLowerTileId );
+                        setMapData( x, y, 0, southTileId ? southTileId : _DefaultLowerTileId );
                     }
                 } else {
                     // 指定タイルで補完
-                    setMapData( x, y, 0, _defaultLowerTileId );
+                    setMapData( x, y, 0, _DefaultLowerTileId );
                 }
             }
         }
@@ -978,23 +979,13 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
 
     // Overpass 用のプログラム
     const isMapPassable = _Game_CharacterBase_isMapPassable.apply( this, arguments );
-    if( _overpassTerrainTag === 0 ) return isMapPassable;
+    if( _OverpassTerrainTag === 0 ) return isMapPassable;
 
     if( this._higherLevel ){
         if( isDownFromUpperTile( x, y, d, halfPos ) ) this._higherLevel = false;
         return isMapPassable;
     }
 
-    // 東の境界のみの処理
-    if( halfPos === 0 ){
-        if( d === 8 && isOverpassTile( x - 1, y ) ){
-            return !( !isOverpassTile( x - 1, y - 2 ) && checkOverpassCollision( x - 1, y - 1, 2 ) === false );
-        }
-    }else if( halfPos === 2 ){
-        if( d === 2 && isOverpassTile( x - 1, y ) ){
-            return !( !isOverpassTile( x - 1, y + 1 ) && checkOverpassCollision( x - 1, y, 8 ) === false );
-        }
-    }
 
     // 下を潜っている状態は端の通行判定を逆転
     if( isOverpassTile( x, y ) ){
@@ -1004,7 +995,7 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
             }
         }else{
             if( d === 2 ){
-                if( !isOverpassTile( x, y + 1 ) && checkOverpassCollision( x, y, 8 ) === false ) return false;
+                if( !isOverpassTile( x, y + 1 ) && checkOverpassCollision( x, y, 2 ) === false ) return false;
             }
         }
         if( halfPos === 1 || halfPos === 3 ){
@@ -1015,6 +1006,22 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
             }
         }
         return true;
+    }else{
+        // 東の境界
+        if( halfPos === 0 ){
+            if( d === 8 && isOverpassTile( x - 1, y ) ){
+                return !( !isOverpassTile( x - 1, y - 2 ) && checkOverpassCollision( x - 1, y - 1, 2 ) === false );
+            }
+        }else if( halfPos === 2 ){
+            if( d === 2 ){
+                if( isOverpassTile( x - 1, y ) ){
+                    return !( !isOverpassTile( x - 1, y + 1 ) && checkOverpassCollision( x - 1, y, 2 ) === false );
+                }
+                if( checkOverpassCollision( x - 1, y + 1, 8 ) && checkOverpassCollision( x - 1, y + 1, 6 ) ) return true;
+                // 西の境界
+                if( checkOverpassCollision( x, y + 1, 8 ) && checkOverpassCollision( x, y + 1, 4 ) ) return true;
+            }
+        }
     }
 
     // 潜る
@@ -1025,13 +1032,24 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
         ) return true;
     }else if( halfPos === 1 ){
         if( d === 4 ){
+            if( checkOverpassCollision( x - 1,  y, 6 ) ){
+                if( checkOverpassCollision( x - 1,  y, 8 ) ){
+                    return true;
+                }else{
+                    if( checkOverpassCollision( x - 1, y - 1, 6 ) ) return true;
+                }
+            }
             if( checkOverpassCollision(  x - 1, y, 6 ) &&
                  checkOverpassCollision(  x - 1, y - 1, 6 )
             ) return true;
         }else if( d === 6 ){
-            if( checkOverpassCollision( x + 1,  y, 4 ) &&
-                 checkOverpassCollision( x + 1, y - 1, 4 )
-            ) return true;
+            if( checkOverpassCollision( x + 1,  y, 4 ) ){
+                if( checkOverpassCollision( x + 1,  y, 8 ) ){
+                    return true;
+                }else{
+                    if( checkOverpassCollision( x + 1, y - 1, 4 ) ) return true;
+                }
+            }
         }else if( d === 8 ){
             if( checkOverpassCollision( x, y - 1, 2 ) ) return true;
         }
@@ -1045,19 +1063,35 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
         if( d === 2 ){
             if( checkOverpassCollision( x, y + 1, 8 ) ) return true;
         }else if( d === 4 ){
-            if( checkOverpassCollision( x - 1,  y, 6 ) &&
-                    checkOverpassCollision( x - 1, y - 1, 6 ) // 1タイルに収まる場合は不要
-            ) return true;
+            if( checkOverpassCollision( x - 1,  y, 6 ) ){
+                if( checkOverpassCollision( x - 1,  y, 8 ) ){
+                    return true;
+                }else{
+                    if( _UseTallSizeCharacter ){
+                                if( checkOverpassCollision( x - 1, y - 1, 6 ) ) return true;
+                    }else{
+                        return true;
+                    }
+                }
+            }
         }else if( d === 6 ){
-            if( checkOverpassCollision( x + 1,  y, 4 ) &&
-                    checkOverpassCollision( x + 1, y - 1, 4 ) // 1タイルに収まる場合は不要
-            ) return true;
+            if( checkOverpassCollision( x + 1,  y, 4 ) ){
+                if( checkOverpassCollision( x + 1,  y, 8 ) ){
+                    return true;
+                }else{
+                    if( _UseTallSizeCharacter ){
+                                if( checkOverpassCollision( x + 1, y - 1, 4 ) ) return true;
+                    }else{
+                        return true;
+                    }
+                }
+            }
         } 
     }
 
 
     // 境界の北の衝突判定
-    if( halfPos === 1 || halfPos === 3 ){
+    if( halfPos === 3 ){
         if( d === 4 ){
             if( !isOverpassTile( x - 1, y ) &&  !isOverpassTile( x - 1, y + 1 ) &&
             checkOverpassCollision( x, y + 1, 4 ) === false &&
@@ -1073,19 +1107,21 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
             checkOverpassCollision( x + 1, y + 1, 4 ) === false &&
             checkOverpassCollision( x + 1, y + 1, 8 ) ) return false;
         }
-    }else if( halfPos === 2 && d === 2 ){
-        if( !isOverpassTile( x, y + 1 ) &&  !isOverpassTile( x - 1, y + 1 ) ){
-            if( !isOverpassTile( x - 1, y + 2 ) &&
-            checkOverpassCollision( x, y + 2, 4 ) === false &&
-            checkOverpassCollision( x, y + 2, 2 ) ) return false;
-            if( !isOverpassTile( x, y + 2 ) &&
-            checkOverpassCollision( x - 1, y + 2, 6 ) === false &&
-            checkOverpassCollision( x - 1, y + 2, 2 ) ) return false;
+    }else{
+        if( halfPos === 2 && d === 2 ){
+            if( !isOverpassTile( x, y + 1 ) &&  !isOverpassTile( x - 1, y + 1 ) ){
+                if( !isOverpassTile( x - 1, y + 2 ) &&
+                checkOverpassCollision( x, y + 2, 4 ) === false &&
+                checkOverpassCollision( x, y + 2, 2 ) ) return false;
+                if( !isOverpassTile( x, y + 2 ) &&
+                checkOverpassCollision( x - 1, y + 2, 6 ) === false &&
+                checkOverpassCollision( x - 1, y + 2, 2 ) ) return false;
+            }
         }
     }
 
     // 境界の南の衝突判定
-    if( halfPos === 1 || halfPos === 3 ){
+    if( halfPos === 1 || ( _UseTallSizeCharacter && halfPos === 3 ) ){
         if( d === 4 ){
             if( !isOverpassTile( x - 1, y ) &&  !isOverpassTile( x - 1, y - 1 ) &&
             checkOverpassCollision( x, y - 1, 4 ) === false &&
@@ -1101,14 +1137,27 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
             checkOverpassCollision( x + 1, y - 1, 4 ) === false &&
             checkOverpassCollision( x + 1, y - 1, 2 ) ) return false;
         }
-    }else if( halfPos === 0 && d === 8 ){
-        if( !isOverpassTile( x, y - 1 ) &&  !isOverpassTile( x - 1, y - 1 ) ){
-            if( !isOverpassTile( x - 1, y - 2 ) &&
-            checkOverpassCollision( x, y - 2, 4 ) === false &&
-            checkOverpassCollision( x, y - 2, 2 ) ) return false;
-            if( !isOverpassTile( x, y - 2 ) &&
-            checkOverpassCollision( x - 1, y - 2, 6 ) === false &&
-            checkOverpassCollision( x - 1, y - 2, 2 ) ) return false;
+    }else if( _UseTallSizeCharacter ){
+        if( halfPos === 0 && d === 8 ){
+            if( !isOverpassTile( x, y - 1 ) &&  !isOverpassTile( x - 1, y - 1 ) ){
+                if( !isOverpassTile( x - 1, y - 2 ) &&
+                checkOverpassCollision( x, y - 2, 4 ) === false &&
+                checkOverpassCollision( x, y - 2, 2 ) ) return false;
+                if( !isOverpassTile( x, y - 2 ) &&
+                checkOverpassCollision( x - 1, y - 2, 6 ) === false &&
+                checkOverpassCollision( x - 1, y - 2, 2 ) ) return false;
+            }
+        }
+    }else{
+        if( halfPos === 2 && d === 8 ){
+            if( !isOverpassTile( x, y ) &&  !isOverpassTile( x - 1, y ) ){
+                if( !isOverpassTile( x - 1, y - 1 ) &&
+                checkOverpassCollision( x, y - 1, 4 ) === false &&
+                checkOverpassCollision( x, y - 1, 2 ) ) return false;
+                if( !isOverpassTile( x, y - 1 ) &&
+                checkOverpassCollision( x - 1, y - 1, 6 ) === false &&
+                checkOverpassCollision( x - 1, y - 1, 2 ) ) return false;
+            }
         }
     }
 
@@ -1125,7 +1174,7 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
  */
 const _Game_Follower_chaseCharacter      = Game_Follower.prototype.chaseCharacter;
 Game_Follower.prototype.chaseCharacter = function( character ){
-    if( _overpassTerrainTag === 0 ){
+    if( _OverpassTerrainTag === 0 ){
         _Game_Follower_chaseCharacter.apply( this, arguments );
         return;
     }
@@ -1206,6 +1255,14 @@ function getHalfPos( x, y ){
     return ( ( ( x % 1 ) === 0 ) ? 1 : 0 ) + ( ( ( y % 1 ) === 0 ) ? 2 : 0 );
 }
 
+function isRoofTile( x, y ){
+    const tiles = $gameMap.allTiles( Math.floor( $gameMap.roundX( x ) ), Math.floor( $gameMap.roundY( y ) ) );
+
+    for ( let i = 0; i < tiles.length; i++ ){
+        if( Tilemap.isRoofTile( tiles[ i ] ) ) return true;
+    }
+    return false;
+}
 /**
  * 指定位置の立体交差地形タグを持つタイルの通行判定(4方向)チェック
  * @param {Number} ax タイル数
@@ -1219,7 +1276,7 @@ function checkOverpassCollision( x, y, d ){
 
     for ( let i = 0; i < tiles.length; i++ ){
         const flag = flags[ tiles[ i ] ];
-        if( flag >> 12  === _overpassTerrainTag ){
+        if( flag >> 12  === _OverpassTerrainTag ){
             return 0 < ( flag & ( 1 << ( d / 2 - 1 ) ) );
         }
     }
@@ -1233,7 +1290,7 @@ function checkOverpassCollision( x, y, d ){
  * @returns {Boolean} 立体交差タイルでない場合nullを返す
  */
 function isOverpassTile( x, y ){
-    return $gameMap.terrainTag( $gameMap.roundX( x ), $gameMap.roundY( y ) ) === _overpassTerrainTag;
+    return $gameMap.terrainTag( $gameMap.roundX( x ), $gameMap.roundY( y ) ) === _OverpassTerrainTag;
 }
 
 /**
