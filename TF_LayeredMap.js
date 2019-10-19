@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.9.6.0
+// Version :0.9.7.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -986,6 +986,35 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
                     checkOverpassCollision( x + 1, y - 1, 4 ) // 1タイルに収まる場合は不要
             ) return true;
         } 
+    }
+
+
+    // 境界の北の衝突判定
+    if( halfPos === 1 || halfPos === 3 ){
+        if( d === 4 ){
+            if( !isOverpassTile( x - 1, y ) &&  !isOverpassTile( x - 1, y + 1 ) &&
+            checkOverpassCollision( x, y + 1, 4 ) === false &&
+            checkOverpassCollision( x, y + 1, 8 ) ) return false;
+            if( !isOverpassTile( x - 1, y ) &&  !isOverpassTile( x, y + 1 ) &&
+            checkOverpassCollision( x - 1, y + 1, 6 ) === false &&
+            checkOverpassCollision( x - 1, y + 1, 8 ) ) return false;
+        }else if( d === 6 ){
+            if( !isOverpassTile( x + 1, y ) &&  !isOverpassTile( x + 1, y + 1 ) &&
+            checkOverpassCollision( x, y + 1, 6 ) === false &&
+            checkOverpassCollision( x, y + 1, 8 ) ) return false;
+            if( !isOverpassTile( x + 1, y ) &&  !isOverpassTile( x, y + 1 ) &&
+            checkOverpassCollision( x + 1, y + 1, 4 ) === false &&
+            checkOverpassCollision( x + 1, y + 1, 8 ) ) return false;
+        }
+    }else if( halfPos === 2 && d === 2 ){
+        if( !isOverpassTile( x, y + 1 ) &&  !isOverpassTile( x - 1, y + 1 ) ){
+            if( !isOverpassTile( x - 1, y + 2 ) &&
+            checkOverpassCollision( x, y + 2, 4 ) === false &&
+            checkOverpassCollision( x, y + 2, 2 ) ) return false;
+            if( !isOverpassTile( x, y + 2 ) &&
+            checkOverpassCollision( x - 1, y + 2, 6 ) === false &&
+            checkOverpassCollision( x - 1, y + 2, 2 ) ) return false;
+        }
     }
 
     // 境界の南の衝突判定
