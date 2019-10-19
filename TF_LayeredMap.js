@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.9.7.0
+// Version :0.9.8.1
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -13,24 +13,6 @@
  * @plugindesc Upper[☆]tile display like billboard.
  * @author Tonbi@Tobishima-Factory
  * 
- * @param FillWithNeighborTile
- * @type boolean
- * @desc ON(true) | DefaultLowerTile : OFF(false)
- * Fill with neighbor tile.It is function for A3 or A4 tile.
- * @default true
- * 
- * @param DefaultLowerTile
- * @desc If FillWithNorthTile option is OFF, fill with this tile.
- * Start with 0 at upper left A5 to right.
- * @default 16
- * 
- * @param UseLayeredCounter
- * @type boolean
- * @desc ON(true) | Normal : OFF(false)
- * Counter becomes layered.
- * A2 counter tile can layered like billboard.
- *  (HalfMove.js is needed)
- * @default true
  * 
  * @param BillboardPriority
  * @type select
@@ -41,27 +23,66 @@
  * @desc Put billboard in front or back.
  * @default back
  * 
+ * 
+ * @param Autotile
+ * 
+ * @param FillWithNeighborTile
+ * @type boolean
+ * @desc ON(true) | DefaultLowerTile : OFF(false)
+ * Fill with neighbor tile.It is function for A3 or A4 tile.
+ * @default true
+ * @parent Autotile
+ * 
+ * @param DefaultLowerTile
+ * @desc If FillWithNorthTile option is OFF, fill with this tile.
+ * Start with 0 at upper left A5 to right.
+ * @default 16
+ * @parent Autotile
+ * 
+ * @param UseLayeredCounter
+ * @type boolean
+ * @desc ON(true) | Normal : OFF(false)
+ * Counter becomes layered.
+ * A2 counter tile can layered like billboard.
+ *  (HalfMove.js is needed)
+ * @default true
+ * @parent Autotile
+ * 
  * @param IsA2FullCollision
  * @type boolean
  * @desc Full collision : ON(true) | Closed and inside is accessible : OFF(false)
  * Entire tile on the ground(A2) collision to activate.
  * @default true
+ * @parent Autotile
  * 
  * @param IsA3UpperOpen
  * @type boolean
  * @desc Open : ON(true) | Close : OFF(false)
  * Remove the south collision of the roof(A3)?
  * @default false
+ * @parent Autotile
  * 
  * @param IsA4UpperOpen
  * @type boolean
  * @desc Open : ON(true) | Close : OFF(false)
  * Remove the south collision of the wall top(A4)?
  * @default true
+ * @parent Autotile
+ * 
+ * 
+ * @param Overpass
  * 
  * @param OverpassTerrainTag
  * @desc Terraing tag for overpass tile.
  * @default 3
+ * @parent Overpass
+ * 
+ * @param UseTallSizeCharacter
+ * @desc 2tile size : ON(true) | default 1 tile size : OFF(false)
+ * Change collision of overpass for 2 tile size character.
+ * @default false
+ * @parent Overpass
+ * 
  * 
  * @help
  * Change tile behavior by use no effect option at default.
@@ -101,26 +122,6 @@
  * @plugindesc 高層[☆]タイルを書き割り風に配置する
  * @author とんび@鳶嶋工房
  * 
- * @param FillWithNeighborTile
- * @type boolean
- * @text 周辺のタイルでの補完
- * @desc 周辺のタイル ON(true) | [補完用タイル番号] : OFF(false)
- * 低層(地面)を北(画面上では上)のタイルで補完するか
- * @default true
- * 
- * @param DefaultLowerTile
- * @text 補完用タイル番号
- * @desc [北のタイルでの補完]がOFFの場合に使うタイル
- * 番号はA5左上を0として右への順。規定値:16(草原)
- * @default 16
- * 
- * @param UseLayeredCounter
- * @type boolean
- * @text カウンター回り込み
- * @desc 回り込み : ON(true) | 通常 : OFF(false)
- * A2のカウンターの後ろに回り込めるようにするか
- * (HalfMove.js が必要)
- * @default true
  * 
  * @param BillboardPriority
  * @type select
@@ -132,12 +133,41 @@
  * @desc  書き割りの奥・手前配置の設定
  * @default back
  * 
+ * 
+ * @param Autotile
+ * @text オートタイル
+ * 
+ * @param FillWithNeighborTile
+ * @type boolean
+ * @text 周辺のタイルでの補完
+ * @desc 周辺のタイル ON(true) | [補完用タイル番号] : OFF(false)
+ * 低層(地面)を北(画面上では上)のタイルで補完するか
+ * @default true
+ * @parent Autotile
+ * 
+ * @param DefaultLowerTile
+ * @text 補完用タイル番号
+ * @desc [北のタイルでの補完]がOFFの場合に使うタイル
+ * 番号はA5左上を0として右への順。規定値:16(草原)
+ * @default 16
+ * @parent Autotile
+ * 
+ * @param UseLayeredCounter
+ * @type boolean
+ * @text カウンター回り込み
+ * @desc 回り込み : ON(true) | 通常 : OFF(false)
+ * A2のカウンターの後ろに回り込めるようにするか
+ * (HalfMove.js が必要)
+ * @default true
+ * @parent Autotile
+ * 
  * @param IsA2FullCollision
  * @type boolean
  * @text タイル全体を通行不可にするか
  * @desc 通行止め : ON(true) | 閉じて内側は通行可 : OFF(false)
  * 地面(A2)のタイル全体を通行不可にするか
  * @default true
+ * @parent Autotile
  * 
  * @param IsA3UpperOpen
  * @type boolean
@@ -145,6 +175,7 @@
  * @desc 開く : ON(true) | 閉じて内側は通行可 : OFF(false)
  * 屋根(A3)の南の衝突判定をなくすか
  * @default false
+ * @parent Autotile
  * 
  * @param IsA4UpperOpen
  * @type boolean
@@ -152,12 +183,25 @@
  * @desc 開く : ON(true) | 閉じて内側は通行可 : OFF(false)
  * 壁の上(A4)の南の衝突判定をなくすか
  * @default true
+ * @parent Autotile
+ * 
+ * 
+ * @param Overpass
+ * @text 立体交差
  * 
  * @param OverpassTerrainTag
  * @text 立体交差の地形タグ
  * @desc 立体交差不使用 : 0
  * 立体交差をさせたいタイルに指定する地形タグ
  * @default 3
+ * @parent Overpass
+ * 
+ * @param UseTallSizeCharacter
+ * @text 2タイルサイズのキャラ
+ * @desc 2タイルサイズ : ON(true) | 標準1タイル : OFF(false)
+ * 2タイルサイズのキャラ用に立体交差の衝突判定を変更
+ * @default false
+ * @parent Overpass
  * 
  * 
  * @help 
@@ -199,6 +243,7 @@ const FLAG_NORTH_DIR = 0x08 // 北の通行設定
 const FLAG_UPPER = 0x10; // 高層[☆]
 const FLAG_LADDER = 0x20; // 梯子
 const FLAG_COUNTER = 0x80; // カウンター
+const MASK_CLIF = 0xFE0; // 方向と高層[☆]と地形タグを除いたもの用マスク
 const MASK_WITHOUT_DIR_UPPER = 0xFFE0; // 方向と高層[☆]を除いたもの用マスク
 const MASK_WITHOUT_DIR_UPPER_LADDER = 0xFFC0; // 方向と高層[☆]と梯子を除いたもの用マスク
 
@@ -520,17 +565,32 @@ const AUTO_TILE_EMPTY_PASS = [
     3, 3, 14, 11, 7, 13, 15, 15
 ];
 
+const OPTT = ( _overpassTerrainTag << 12 ); // 立体交差地形タグ
+
+// 屋根 A3 奇数列(立体交差)
+const A3_UPPER_OVERPASS = _IsA3UpperOpen ? [
+    0, 2, OPTT + 8, OPTT + 10,
+    4, 6, OPTT + 12, OPTT + 14,
+    0, 2, OPTT + 8, OPTT + 10,
+    4, 6, OPTT + 12, OPTT + 14,
+] : [
+    0, 2, OPTT + 8, OPTT + 10,
+    4, 6, OPTT + 12, OPTT + 14,
+    1, 3, OPTT + 9, OPTT + 11,
+    5, 7, OPTT + 15, OPTT + 13,
+];
+
 // 屋根 A3 奇数列
 const A3_UPPER_PASS =_IsA3UpperOpen ? [
-    0, 2, 17, 17, 
-    4, 6, 17, 17, 
-    0, 2, 17, 17, 
-    4, 6, 17, 17, 
+    0, 2, 17, 17,
+    4, 6, 17, 17,
+    0, 2, 17, 17,
+    4, 6, 17, 17,
 ] : [
-    0, 2, 17, 17, 
-    4, 6, 17, 17, 
-    1, 3, 17, 17, 
-    5, 7, 17, 17, 
+    0, 2, 17, 17,
+    4, 6, 17, 17,
+    1, 3, 17, 17,
+    5, 7, 17, 17,
 ];
 
 // 屋根 A3 奇数列(地面)
@@ -654,7 +714,6 @@ DataManager.onLoad = function( object ){
 
     }
 
-
     // カウンターの通行設定
     function counter2UpperLayer( flags, tileId ){
         for( let i = 0; i < 47; i++ ){
@@ -671,13 +730,20 @@ DataManager.onLoad = function( object ){
     
     //  屋根の通行設定(カウンターON)
     function roof2UpperLayer( flags, tileId ){
-        if( flags[ tileId + 15 ] & MASK_ALL_DIR ){
-            // [×] : 上端を高層表示[☆]、適宜通行不可[・]
-            for( let i = 0; i < 16; i++ ){
-                flags[ tileId + i ] = flags[ tileId + i ] & MASK_WITHOUT_DIR_UPPER | A3_UPPER_PASS[ i ];
+        const flag = flags[ tileId + 15 ];
+        if( flag & MASK_ALL_DIR ){  // [×] 
+            if( _overpassTerrainTag !== 0 && flag >> 12 === _overpassTerrainTag ){
+                // 上端を立体交差表示、適宜通行不可[・]
+                for( let i = 0; i < 16; i++ ){
+                    flags[ tileId + i ] = flags[ tileId + i ] & MASK_CLIF | A3_UPPER_OVERPASS[ i ];
+                }
+            }else{
+                // 上端を書き割り表示[☆]、適宜通行不可[・]
+                for( let i = 0; i < 16; i++ ){
+                    flags[ tileId + i ] = flags[ tileId + i ] & MASK_WITHOUT_DIR_UPPER | A3_UPPER_PASS[ i ];
+                }
             }
-        }else{
-            // [○] : 全体を高層表示[☆]かつ通行可
+        }else{  // [○] : 全体を高層表示[☆]かつ通行可
             for( let i = 0; i < 16; i++ ){
                 flags[ tileId + i ] = flags[ tileId + i ] & MASK_WITHOUT_DIR_UPPER | FLAG_UPPER;
             }
@@ -761,7 +827,8 @@ Scene_Map.prototype.onMapLoaded = function( ){
                 if( !isA3A4Tile( tileId ) ) continue;
 
                 // タイルを補完
-                setMapData( x, y, 1, tileId );
+                //setMapData( x, y, 1, tileId );
+                setMapData( x, y, 2, tileId ); // TODO : 立体交差地形タグ表示レイヤー変更
 
                 if( _FillWithNeighborTile ){
                     // 北タイルで補完ただし、一番南は南で補完
