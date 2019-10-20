@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.10.0.3
+// Version :0.10.0.4
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -66,7 +66,7 @@
  * @type boolean
  * @desc Open : ON(true) | Close : OFF(false)
  * Remove the south collision of the wall top(A4)?
- * @default true
+ * @default false
  * @parent Autotile
  * 
  * 
@@ -182,7 +182,7 @@
  * @text 壁の上面南を開くか
  * @desc 開く : ON(true) | 閉じて内側は通行可 : OFF(false)
  * 壁の上(A4)の南の衝突判定をなくすか
- * @default true
+ * @default false
  * @parent Autotile
  * 
  * 
@@ -306,7 +306,7 @@ const _UseLayeredCounter = getBooleanParam( 'UseLayeredCounter', true );
 const _BillboardPriority = conpairPluginParam( 'BillboardPriority', 'front', false ) ? Infinity : -Infinity;
 const _IsA2FullCollision = getBooleanParam( 'IsA2FullCollision', false );
 const _IsA3UpperOpen = getBooleanParam( 'IsA3UpperOpen', false );
-const _IsA4UpperOpen = getBooleanParam( 'IsA4UpperOpen', true );
+const _IsA4UpperOpen = getBooleanParam( 'IsA4UpperOpen', false );
 const _OverpassTerrainTag = getNumberParam( 'OverpassTerrainTag', 3 );
 const _UseTallSizeCharacter = getNumberParam( 'UseTallSizeCharacter', 3 );
 
