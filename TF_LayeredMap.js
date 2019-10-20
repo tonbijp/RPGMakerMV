@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.10.0.4
+// Version :0.10.0.5
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -548,16 +548,6 @@ ShaderTilemap.prototype._updateLayerPositions = function( startX, startY ){
 // オートタイル通行flag
 // 16:高層に表示[☆] + 通行不可設定 1:下  2:左  4:右  8:上
 
-// 地面(カウンター) : 北が半分侵入可書き割り、他は周囲通行不可
-// [A2 右側][×][カウンター][UseLayeredCounter:ON]
-const COUNTER_PASS = [
-    15, 15, 15, 15, 15, 15, 15, 15, 
-    15, 15, 15, 15, 15, 15, 15, 15, 
-    15, 15, 15, 15, 28, 28, 28, 28, 
-    15, 15, 15, 15, 15, 15, 15, 15, 
-    15, 28, 28, 28, 28, 28, 15, 15, 
-    15, 15, 28, 28, 15, 28, 28, 28, 
-];
 
 
 const OPTT = ( _OverpassTerrainTag << 12 ); // 立体交差地形タグ
@@ -746,10 +736,21 @@ DataManager.onLoad = function( object ){
                 }
             }
 
-            // 地面タイル(A2)を走査し[×]判定の中を通行可に変更
-            // 地面 : 周囲通行不可
-            // [A2][×][IsA2FullCollision:OFF]
-            const setA2EmptyCollision = ()=>{
+
+
+            // 地面タイル(A2)を走査し、カウンターの北侵入可と[×]判定の中を通行可に変更
+            const setA2Collision = ()=>{
+                // 地面(カウンター) : 北が半分侵入可書き割り、■通行不可
+                // [A2 右側][×][カウンター][UseLayeredCounter:ON]
+                const COUNTER_PASS = [
+                    15, 15, 15, 15, 15, 15, 15, 15, 
+                    15, 15, 15, 15, 15, 15, 15, 15, 
+                    15, 15, 15, 15, 28, 28, 28, 28, 
+                    15, 15, 15, 15, 15, 15, 15, 15, 
+                    15, 28, 28, 28, 28, 28, 15, 15, 
+                    15, 15, 28, 28, 15, 28, 28, 28, 
+                ];
+                // [A2][×][IsA2FullCollision:OFF] □周囲=通行不可
                 const EMPTY_PASS = [
                     0, 0, 0, 0, 0, 0, 0, 0,
                     0, 0, 0, 0, 0, 0, 0, 0,
@@ -760,21 +761,16 @@ DataManager.onLoad = function( object ){
                 ];
                 for( let tileId = Tilemap.TILE_ID_A2; tileId < Tilemap.TILE_ID_A3; tileId += AUTOTILE_BLOCK ){
                     if( hasCollisionTile( flags[ tileId + 46 ] ) ){
-                        replaceCollision( tileId, MASK_WITHOUT_DIR_UPPER, EMPTY_PASS );
+                        if( isCounterTile( flags[ tileId ] ) ){
+                            if( _UseLayeredCounter ) replaceCollision( tileId, MASK_WITHOUT_DIR_UPPER, COUNTER_PASS );
+                        }else if( !_IsA2FullCollision ){
+                            replaceCollision( tileId, MASK_WITHOUT_DIR_UPPER, EMPTY_PASS );
+                        }
                     }
                 }
             }
 
-            if( _UseLayeredCounter ){
-                // カウンタータイル(A2)を走査
-                for( let tileId = Tilemap.TILE_ID_A2; tileId < Tilemap.TILE_ID_A3; tileId += AUTOTILE_BLOCK ){
-                    if( isCounterTile( flags[ tileId ] ) ){
-                        replaceCollision( tileId, MASK_WITHOUT_DIR_UPPER, COUNTER_PASS );
-                    }
-                }
-            }
-
-            if( !_IsA2FullCollision ) setA2EmptyCollision();
+            setA2Collision();
 
             // 屋根タイル(A3)を走査
             for( let tileId = Tilemap.TILE_ID_A3; tileId < Tilemap.TILE_ID_A4; tileId += AUTOTILE_BLOCK ){
@@ -1285,7 +1281,7 @@ function isOverpassTile( x, y ){
 }
 
 /**
- * オートタイルが衝突判定を持っているか
+ * 指定タイルが衝突判定を持っているか
  * @param {Number} tileFlag タイルのフラグ情報
  */
 function hasCollisionTile( tileFlag ){
