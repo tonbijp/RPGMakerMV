@@ -559,16 +559,6 @@ const COUNTER_PASS = [
     15, 15, 28, 28, 15, 28, 28, 28, 
 ];
 
-// 地面 : 周囲通行不可
-// [A2][×][IsA2FullCollision:OFF]
-const AUTO_TILE_EMPTY_PASS = [
-    0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0,
-    2, 2, 2, 2, 8, 8, 8, 8,
-    4, 4, 4, 4, 1, 1, 1, 1,
-    6, 9, 10, 10, 12, 12, 5, 5,
-    3, 3, 14, 11, 7, 13, 15, 15
-];
 
 const OPTT = ( _OverpassTerrainTag << 12 ); // 立体交差地形タグ
 
@@ -756,6 +746,25 @@ DataManager.onLoad = function( object ){
                 }
             }
 
+            // 地面タイル(A2)を走査し[×]判定の中を通行可に変更
+            // 地面 : 周囲通行不可
+            // [A2][×][IsA2FullCollision:OFF]
+            const setA2EmptyCollision = ()=>{
+                const EMPTY_PASS = [
+                    0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0,
+                    2, 2, 2, 2, 8, 8, 8, 8,
+                    4, 4, 4, 4, 1, 1, 1, 1,
+                    6, 9, 10, 10, 12, 12, 5, 5,
+                    3, 3, 14, 11, 7, 13, 15, 15
+                ];
+                for( let tileId = Tilemap.TILE_ID_A2; tileId < Tilemap.TILE_ID_A3; tileId += AUTOTILE_BLOCK ){
+                    if( hasCollisionTile( flags[ tileId + 46 ] ) ){
+                        replaceCollision( tileId, MASK_WITHOUT_DIR_UPPER, EMPTY_PASS );
+                    }
+                }
+            }
+
             if( _UseLayeredCounter ){
                 // カウンタータイル(A2)を走査
                 for( let tileId = Tilemap.TILE_ID_A2; tileId < Tilemap.TILE_ID_A3; tileId += AUTOTILE_BLOCK ){
@@ -765,14 +774,7 @@ DataManager.onLoad = function( object ){
                 }
             }
 
-            if( !_IsA2FullCollision ){
-                // 地面タイル(A2)を走査し[×]判定の中を通行可に変更
-                for( let tileId = Tilemap.TILE_ID_A2; tileId < Tilemap.TILE_ID_A3; tileId += AUTOTILE_BLOCK ){
-                    if( flags[ tileId + 15 ] & MASK_ALL_DIR ){
-                        replaceCollision( tileId, MASK_WITHOUT_DIR_UPPER, AUTO_TILE_EMPTY_PASS );
-                    }
-                }
-            }
+            if( !_IsA2FullCollision ) setA2EmptyCollision();
 
             // 屋根タイル(A3)を走査
             for( let tileId = Tilemap.TILE_ID_A3; tileId < Tilemap.TILE_ID_A4; tileId += AUTOTILE_BLOCK ){
@@ -1252,14 +1254,6 @@ function getHalfPos( x, y ){
     return ( ( ( x % 1 ) === 0 ) ? 1 : 0 ) + ( ( ( y % 1 ) === 0 ) ? 2 : 0 );
 }
 
-function isRoofTile( x, y ){
-    const tiles = $gameMap.allTiles( Math.floor( $gameMap.roundX( x ) ), Math.floor( $gameMap.roundY( y ) ) );
-
-    for ( let i = 0; i < tiles.length; i++ ){
-        if( Tilemap.isRoofTile( tiles[ i ] ) ) return true;
-    }
-    return false;
-}
 /**
  * 指定位置の立体交差地形タグを持つタイルの通行判定(4方向)チェック
  * @param {Number} ax タイル数
@@ -1288,6 +1282,14 @@ function checkOverpassCollision( x, y, d ){
  */
 function isOverpassTile( x, y ){
     return $gameMap.terrainTag( $gameMap.roundX( x ), $gameMap.roundY( y ) ) === _OverpassTerrainTag;
+}
+
+/**
+ * オートタイルが衝突判定を持っているか
+ * @param {Number} tileFlag タイルのフラグ情報
+ */
+function hasCollisionTile( tileFlag ){
+    return 0 < ( tileFlag & MASK_ALL_DIR );
 }
 
 /**
