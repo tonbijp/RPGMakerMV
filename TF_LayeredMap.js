@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.10.0.2
+// Version :0.10.0.3
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -52,7 +52,7 @@
  * @type boolean
  * @desc Full collision : ON(true) | Closed and inside is accessible : OFF(false)
  * Entire tile on the ground(A2) collision to activate.
- * @default true
+ * @default false
  * @parent Autotile
  * 
  * @param IsA3UpperOpen
@@ -166,7 +166,7 @@
  * @text タイル全体を通行不可にするか
  * @desc 通行止め : ON(true) | 閉じて内側は通行可 : OFF(false)
  * 地面(A2)のタイル全体を通行不可にするか
- * @default true
+ * @default false
  * @parent Autotile
  * 
  * @param IsA3UpperOpen
@@ -304,7 +304,7 @@ const _FillWithNeighborTile = getBooleanParam( 'FillWithNeighborTile', true );
 const _DefaultLowerTileId = Tilemap.TILE_ID_A5 + getNumberParam( 'DefaultLowerTile', 16 );
 const _UseLayeredCounter = getBooleanParam( 'UseLayeredCounter', true );
 const _BillboardPriority = conpairPluginParam( 'BillboardPriority', 'front', false ) ? Infinity : -Infinity;
-const _IsA2FullCollision = getBooleanParam( 'IsA2FullCollision', true );
+const _IsA2FullCollision = getBooleanParam( 'IsA2FullCollision', false );
 const _IsA3UpperOpen = getBooleanParam( 'IsA3UpperOpen', false );
 const _IsA4UpperOpen = getBooleanParam( 'IsA4UpperOpen', true );
 const _OverpassTerrainTag = getNumberParam( 'OverpassTerrainTag', 3 );
@@ -548,7 +548,7 @@ ShaderTilemap.prototype._updateLayerPositions = function( startX, startY ){
 // オートタイル通行flag
 // 16:高層に表示[☆] + 通行不可設定 1:下  2:左  4:右  8:上
 
-// 地面(カウンター) : 北が書き割り(北半分侵入可)、他は周囲通行不可
+// 地面(カウンター) : 北が半分侵入可書き割り、他は周囲通行不可
 // [A2 右側][×][カウンター][UseLayeredCounter:ON]
 const COUNTER_PASS = [
     15, 15, 15, 15, 15, 15, 15, 15, 
