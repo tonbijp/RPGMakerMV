@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.10.0.6
+// Version :0.10.1.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -87,14 +87,7 @@
  * @help
  * Change tile behavior by use no effect option at default.
  * 
- * 1. Set following options for A3・A4 tile.
- *      [counter][○] : Behavior like[☆]   ※
- *      [counter][×] : Hide only north tiles.
- *      [counter][ladder][×] : Behavior like [☆] only north tiles.Other tiles can't enter.
- * 
- * ※ A3, A4 wall tile floor height set automaticaly.
- * 
- * 2. set [☆] to BCDE tile, and set 4 direction setting.
+ * 1. set [☆] to BCDE tile, and set 4 direction setting.
  *      0x0 ↑→←↓ : [☆]  Same as no plugin.
  *      0x1 ↑→←・ : billboard, ↑　←→ pass, ground (for fence)
  *      0x2 ↑→・↓ : billboard, ↑↓　→ pass, ground (left side of fence)┃
@@ -112,9 +105,18 @@
  *      0xE ・・・↓ : Same as 0xC and collision is half  (for chair) (HalfMove.js is needed)
  *      0xF ・・・・ : Same as 0x1 and collision is half (for peg)(HalfMove.js is needed)
  * 
- * 3. Set TerrainTag to 3(default)
+ * 2. Set TerrainTag to 3(default)
  *      If you enter from blocke direction, you can move under the tile.
  *      If you enter from pass direction, you can move over the tile.
+ * 
+ * 3. Set following options for A3・A4 tile.
+ *      [counter][○] : Behavior like[☆]   ※
+ *      [counter][×] : Hide only north tiles.
+ *      [TerrainTag:3][×] : Behavior like [☆] only north tiles.Other tiles can't enter.
+ *      [counter][TerrainTag:3][○] : Overpass.
+ *      [counter][TerrainTag:3][×] : Overpass only north tiles.
+ * 
+ * ※ A3, A4 wall tile floor height set automaticaly.
  * 
  * Released under the MIT License.
  */
@@ -207,14 +209,7 @@
  * @help 
  * RPGツクールMVで未使用の設定で、タイルの重なりが変化します。
  * 
- * 1. A3・A4タイルに以下を設定
- *      [カウンター][○] 下を通れる(ほぼ[☆]の状態) ※1
- *      [カウンター][×] 北端タイルのみ後ろに回り込める
- *      [カウンター][梯子][×] 北端タイルのみ[☆]で他は侵入不可
- * 
- * ※1 壁の高さは自動で調整されます。
- * 
- * 2. BCDEタイルに[☆]を指定したあと、通行設定(4方向)
+ * 1. BCDEタイルに[☆]を指定したあと、通行設定(4方向)
  *      0x0 ↑→←↓ : [☆] 設定、全方向に 通行可(プラグインなしと同じ)
  *      0x1 ↑→←・ : 書き割り、北　西東 通行可、1階 【基本、柵とか】
  *      0x2 ↑→・↓ : 書き割り、北南　東 通行可、1階 （柵の西側とか）┃
@@ -232,8 +227,17 @@
  *      0xE ・・・↓ : 0xC と同じだが南の両脇が通行可 （椅子とか）(HalfMove.js が必要)
  *      0xF ・・・・ : 0x1 と同じだが南の両脇が通行可 （杭などに）(HalfMove.js が必要)
  * 
- * 3. 地形タグを3(規定値)に設定
+ * 2. 地形タグを3(規定値)に設定
  *      通行設定で侵入可の方向から入ると上を、侵入不可の方向から入ると下を通るようになります。
+ * 
+ * 3. A3・A4タイルに以下を設定
+ *      [カウンター][○] 下を通れる(ほぼ[☆]の状態) ※1
+ *      [カウンター][×] 北端タイルのみ後ろに回り込める
+ *      [地形タグ:3][×] 北端タイルのみ[☆]で他は侵入不可
+ *      [カウンター][地形タグ:3][○] 全体が立体交差
+ *      [カウンター][地形タグ:3][×] 北端タイルのみ立体交差
+ * 
+ * ※1 壁の高さは自動で調整されます。
  * 
  * 利用規約 : MITライセンス
  */
@@ -241,11 +245,10 @@
 // flag用定数
 const FLAG_NORTH_DIR = 0x08 // 北の通行設定
 const FLAG_UPPER = 0x10; // 高層[☆]
-const FLAG_LADDER = 0x20; // 梯子
 const FLAG_COUNTER = 0x80; // カウンター
 const MASK_CLIF = 0xFE0; // 方向と高層[☆]と地形タグを除いたもの用マスク
 const MASK_WITHOUT_DIR_UPPER = 0xFFE0; // 方向と高層[☆]を除いたもの用マスク
-const MASK_WITHOUT_DIR_UPPER_LADDER = 0xFFC0; // 方向と高層[☆]と梯子を除いたもの用マスク
+const MASK_WITHOUT_TAG_DIR_UPPER = 0x0FE0; // 方向と高層[☆]を除いたもの用マスク
 
 // 書割り設定
 const MASK_ALL_DIR = 0xF; // 通行設定用マスク
@@ -575,13 +578,6 @@ function isCounterTile( tileFlag ){
     return ( tileFlag  & FLAG_COUNTER ) === FLAG_COUNTER;
 }
 /**
- * 梯子設定か。
- * @param {Number} tileFlag タイルのフラグ情報
- */
-function isLadderTile( tileFlag ){
-   return ( tileFlag  & FLAG_LADDER ) === FLAG_LADDER;
-}
-/**
  * 指定タイルが立体交差地形タグを持っているか。
  * @param {Number} tileFlag タイルのフラグ情報
  */
@@ -597,7 +593,7 @@ function isCollisionTile( tileFlag ){
     return 0 < ( tileFlag & MASK_ALL_DIR );
 }
 
-// A2タイルの走査・変更
+// A2タイルの走査・変更([○]と[3]に適用する設定はない)
 function treatA2Tilesets( flags ){
     for( let tileId = Tilemap.TILE_ID_A2; tileId < Tilemap.TILE_ID_A3; tileId += AUTOTILE_BLOCK ){
         if( isCollisionTile( flags[ tileId + 46 ] ) ){
@@ -623,18 +619,38 @@ function treatA3Tilesets( flags ){
                     }else{
                         setRoofUpperPass( flags, tileId );
                     }
-                }else{
-                    setRoofBottomPass( flags, tileId );
+                }else{// [♢][屋根][○]
+                    if( isOverpassTile( flags[ tileId ] ) ){
+                        // [3]
+                    }else{
+                        setAutoUpperPass( flags, tileId, 16 );
+                    }
                 }
-            }else{
-                if( isCollisionTile( flags[ tileId + 15 ] ) ){
-                    setWallSideEdgePass( flags, tileId );
+            }else{// [♢][壁]
+                if( isOverpassTile( flags[ tileId ] ) ){
+                    // [3] + [○] or [×]
                 }else{
-                    setWallSidePass( flags, tileId );
+                    if( isCollisionTile( flags[ tileId + 15 ] ) ){
+                        setWallSideEdgePass( flags, tileId );
+                    }else{
+                        setWallSidePass( flags, tileId );
+                    }
                 }
             }
-        }else if( Tilemap.isRoofTile( tileId ) && isCollisionTile( flags[ tileId + 15 ] ) ){
-            setAutoUpperPass( flags, tileId, 16 );
+        }else{// [♢]でない
+            if( isOverpassTile( flags[ tileId ] ) ){
+                // [3]
+            }else{
+                if( Tilemap.isRoofTile( tileId ) ){
+                    if( isCollisionTile( flags[ tileId + 15 ] ) ){
+                        setAutoUpperPass( flags, tileId, 16 );
+                    }else{
+                        // [屋根][○]
+                    }
+                }else{
+                    // [壁]
+                }
+            }
         }
     }
 }
@@ -645,9 +661,7 @@ function treatA4Tilesets( flags ){
         if( isCounterTile( flags[ tileId ] ) ){
             if( Tilemap.isWallTopTile( tileId ) ){
                 if( isCollisionTile( flags[ tileId + 46 ] ) ){
-                    if( isLadderTile( flags[ tileId ] ) ){
-                        setA4UpperStarPass( flags, tileId );
-                    }else if( isOverpassTile( flags[ tileId ] ) ){
+                    if( isOverpassTile( flags[ tileId ] ) ){
                         setA4UpperOverPass( flags, tileId );
                     }else{
                         setA4UpperPass( flags, tileId );
@@ -662,8 +676,24 @@ function treatA4Tilesets( flags ){
                     setWallSidePass( flags, tileId );
                 }
             }
-        }else if( !_IsA4UpperOpen && Tilemap.isWallTopTile( tileId ) && isCollisionTile( flags[ tileId + 46 ] ) ){
-            setEmptyLinePass( flags, tileId );
+        }else{ // [♢]で無い
+            if( Tilemap.isWallTopTile( tileId ) ){
+                if( isOverpassTile( flags[ tileId ] ) ){// 
+                    if( isCollisionTile( flags[ tileId + 46 ] ) ){
+                        setA4UpperStarPass( flags, tileId );
+                    }else{
+                        // [上面][3][○]
+                    }
+                }else{
+                    if( isCollisionTile( flags[ tileId + 46 ] ) ){
+                        if( !_IsA4UpperOpen ) setEmptyLinePass( flags, tileId ) ;
+                    }else{
+                        // [上面][○]
+                    }
+                }
+            }else{
+                // [壁]
+            }
         }
     }
 }
@@ -802,7 +832,7 @@ function setA4UpperPass( flags, tileId ){
     replaceCollision( flags, tileId, MASK_WITHOUT_DIR_UPPER, A4_UPPER_PASS );
 }
 // 壁(上面) : 北が[☆]、他は全通行不可
-// [A4 奇数列][×][カウンター][梯子]
+// [A4 奇数列][×][OverpassTerrainTag]
 function setA4UpperStarPass( flags, tileId ){
     const A4_UPPER_STAR_PASS = [
         15, 15, 15, 15, 15, 15, 15, 15,
@@ -812,7 +842,7 @@ function setA4UpperStarPass( flags, tileId ){
         15, 16, 16, 16, 16, 16,15, 15,
         15, 15, 16, 16, 15, 16, 16, 16,
     ];
-    replaceCollision( flags, tileId, MASK_WITHOUT_DIR_UPPER_LADDER, A4_UPPER_STAR_PASS );
+    replaceCollision( flags, tileId, MASK_WITHOUT_TAG_DIR_UPPER, A4_UPPER_STAR_PASS );
 }
 // 壁(側面):南が書き割り、他は通行可
 // [A3・A4 偶数列][○]
