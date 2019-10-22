@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :1.8.3.0
+// Version :1.8.3.1
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -157,6 +157,7 @@ if( !PluginManager._scripts.contains( 'HalfMove' ) ){
 
 // パラメータを受け取る
 const pluginParams = PluginManager.parameters( 'TF_Undulation' );
+
 /**
  * 指定したパラメータの数値を返す。
  * @param {String} paramName パラメータ名
@@ -164,7 +165,7 @@ const pluginParams = PluginManager.parameters( 'TF_Undulation' );
  * @returns {Number}
  */
 const getNumberParam = ( paramName, defaultParam )=>{
-    return pluginParams[ paramName ] ? parseInt( pluginParams[ paramName ], 10 ) : defaultParam;
+    return parseInt( pluginParams[ paramName ] || defaultParam, 10 );
 };
 
 const _TerrainTag = getNumberParam( 'TerrainTag', 1 );    // 東西用の地形タグ規定値
@@ -271,10 +272,10 @@ const LAYOUT_SOUTH = 2;
  * @returns {Boolean} 移動可能か
  */
 const _Game_CharacterBase_isMapPassable = Game_CharacterBase.prototype.isMapPassable;
-Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
-    const intX = Math.floor( x + 0.5 );
-    const intY = Math.floor( y + 0.5 );
-    const halfPos = getHalfPos( this._realX, this._realY );
+Game_CharacterBase.prototype.isMapPassable = function( halfX, halfY, d ){
+    const x = Math.floor( halfX + 0.5 );
+    const y = Math.floor( halfY + 0.5 );
+    const halfPos = getHalfPos( halfX, halfY );
 
     /**
      * 移動先の地形を調べて配置タイプを返す。
@@ -285,11 +286,11 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
     const getTileLayout = ( undulation, d )=>{
         const dx = (d - 1) % 3 -1;
         const dy = 1 - Math.floor( ( d - 1 ) / 3 );
-        if( undulation !== getUndulation( intX + dx, intY + dy ) ) return LAYOUT_NONE;
-        if( isSamePitch( undulation, getUndulation( intX + dx, intY + dy - 1 ) ) ){
-            return isSamePitch( undulation, getUndulation( intX + dx, intY + dy + 1 ) ) ? LAYOUT_CENTER : LAYOUT_SOUTH;
+        if( undulation !== getUndulation( x + dx, y + dy ) ) return LAYOUT_NONE;
+        if( isSamePitch( undulation, getUndulation( x + dx, y + dy - 1 ) ) ){
+            return isSamePitch( undulation, getUndulation( x + dx, y + dy + 1 ) ) ? LAYOUT_CENTER : LAYOUT_SOUTH;
         }else{
-            return isSamePitch( undulation, getUndulation( intX + dx, intY + dy + 1 ) ) ? LAYOUT_NORTH : LAYOUT_SINGLE;
+            return isSamePitch( undulation, getUndulation( x + dx, y + dy + 1 ) ) ? LAYOUT_NORTH : LAYOUT_SINGLE;
         }
     };
 
@@ -306,103 +307,103 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
     // ⤾ WSU
     if( halfPos === 1 || halfPos === 3 ){
         if( d === 4 ){
-            if( getUndulation( intX - 1, intY ) === WSU ) return false;
+            if( getUndulation( x - 1, y ) === WSU ) return false;
         }else if( d === 6 ){
-            if( getUndulation( intX, intY ) === WSU ) return false;
+            if( getUndulation( x, y ) === WSU ) return false;
         }
     }else if( halfPos === 0 ){
         if( d === 2 ){
-            if( getUndulation( intX, intY ) === WSU ) return false;
+            if( getUndulation( x, y ) === WSU ) return false;
         }
     }else if( halfPos === 2 ){
         if( d === 8 ){
-            if( getUndulation( intX, intY ) === WSU ) return false;
+            if( getUndulation( x, y ) === WSU ) return false;
         }
     }
 
     // ⤾ WSN
     if( halfPos === 0 ){
         if( d === 8 ){
-            if( getUndulation( intX, intY - 1 ) === WSN ) return false;
-            if( getUndulation( intX - 1, intY - 1 ) === WSN ) return false;
+            if( getUndulation( x, y - 1 ) === WSN ) return false;
+            if( getUndulation( x - 1, y - 1 ) === WSN ) return false;
         }
     }else if( halfPos === 1 ){
         if( d === 6 ){
-            if( getUndulation( intX + 1, intY ) === WSN ) return false;
+            if( getUndulation( x + 1, y ) === WSN ) return false;
         }
     }else if( halfPos === 3 ){
         if( d === 4 ){
-            if( getUndulation( intX, intY ) === WSN ) return false;
-            if( getUndulation( intX - 1, intY ) === WSN ) return false;
+            if( getUndulation( x, y ) === WSN ) return false;
+            if( getUndulation( x - 1, y ) === WSN ) return false;
         }else if( d === 6 ){
-            if( getUndulation( intX, intY ) === WSN ) return true;
-            if( getUndulation( intX + 1, intY ) === WSN ) return false;
+            if( getUndulation( x, y ) === WSN ) return true;
+            if( getUndulation( x + 1, y ) === WSN ) return false;
         }
     }
 
     // ⤾ WSS
     if( halfPos === 1 ){ 
         if( d === 4 ){
-            if( getUndulation( intX, intY ) === WSS ) return false;
-            if( getUndulation( intX - 1, intY ) === WSS ) return false;
+            if( getUndulation( x, y ) === WSS ) return false;
+            if( getUndulation( x - 1, y ) === WSS ) return false;
         }else if( d === 6 ){
-            if( getUndulation( intX, intY ) === WSS ) return true;
-            if( getUndulation( intX + 1, intY ) === WSS ) return false;
+            if( getUndulation( x, y ) === WSS ) return true;
+            if( getUndulation( x + 1, y ) === WSS ) return false;
         }
     }else if( halfPos === 2 ){
         if( d === 2 ){
-            if( getUndulation( intX - 1, intY + 1 ) === WSS ) return false;
-            if( getUndulation( intX, intY + 1 ) === WSS ) return false;
+            if( getUndulation( x - 1, y + 1 ) === WSS ) return false;
+            if( getUndulation( x, y + 1 ) === WSS ) return false;
         }
     }else if( halfPos === 3 ){
         if( d === 6 ){
-            if( getUndulation( intX + 1, intY ) === WSS ) return false;
+            if( getUndulation( x + 1, y ) === WSS ) return false;
         }
     }
 
     // ⤿ ESU
     if( halfPos === 0 ){
         if( d === 2 ){
-            if( getUndulation( intX - 1, intY ) === ESU ) return false;
+            if( getUndulation( x - 1, y ) === ESU ) return false;
         }
     }else if( halfPos === 1 | halfPos === 3 ){
         if( d === 4 ){
-            if( getUndulation( intX - 1, intY ) === ESU ) return true;
+            if( getUndulation( x - 1, y ) === ESU ) return true;
         }else if( d === 6 ){
-            if( getUndulation( intX, intY ) === ESU ) return true;
+            if( getUndulation( x, y ) === ESU ) return true;
         }
     }else if( halfPos === 2 ){
         if( d === 8 ){
-            if( getUndulation( intX - 1, intY ) === ESU ) return false;
+            if( getUndulation( x - 1, y ) === ESU ) return false;
         }
     }
 
     // ⤿ ESN
     if( halfPos === 1 ){
-        if( d === 6 && getUndulation( intX + 1, intY ) === ESN ) return true;
+        if( d === 6 && getUndulation( x + 1, y ) === ESN ) return true;
     }else if( halfPos === 3 ){
-        if( d === 4 && getUndulation( intX, intY ) === ESN ) return true;
+        if( d === 4 && getUndulation( x, y ) === ESN ) return true;
     }
 
     // ⤿ ESS
     if( halfPos === 1 ){
-        if( d === 4 && getUndulation( intX, intY ) === ESS ) return true;
+        if( d === 4 && getUndulation( x, y ) === ESS ) return true;
     }else if( halfPos === 3 ){
-        if( d === 6 && getUndulation( intX + 1, intY ) === ESS ) return true;
+        if( d === 6 && getUndulation( x + 1, y ) === ESS ) return true;
     }
 
 
     // CENTER_LINE
     if( halfPos === 0 || halfPos === 2 ){
         if( d === 4 ){
-            if( getUndulation( intX - 1, intY ) === CENTER_LINE ) return false;
+            if( getUndulation( x - 1, y ) === CENTER_LINE ) return false;
         }else if( d === 6 ){
-            if( getUndulation( intX, intY ) === CENTER_LINE ) return false;
+            if( getUndulation( x, y ) === CENTER_LINE ) return false;
         }
     }else if( halfPos === 1 ){
-        if( d === 8 && getUndulation( intX, intY - 1 ) === CENTER_LINE ) return false;
+        if( d === 8 && getUndulation( x, y - 1 ) === CENTER_LINE ) return false;
     }else if( halfPos === 3  ){
-        if( d === 2 && getUndulation( intX, intY + 1 ) === CENTER_LINE  ) return false;
+        if( d === 2 && getUndulation( x, y + 1 ) === CENTER_LINE  ) return false;
     }
 
 
@@ -717,10 +718,10 @@ const _Game_CharacterBase_shiftY = Game_CharacterBase.prototype.shiftY;
 Game_CharacterBase.prototype.shiftY = function(){
     const shiftY = _Game_CharacterBase_shiftY.call( this );
     let tileX = ( this._realX + 0.5 ) % 1;
-    const intX = Math.floor( this._realX + 0.5 );
-    const intY = Math.floor( this._realY + 0.5 );
-    const undulationL = ( tileX === 0 )? getUndulation( intX - 1, intY ) : -1;
-    const undulationR = getUndulation( intX, intY );
+    const x = Math.floor( this._realX + 0.5 );
+    const y = Math.floor( this._realY + 0.5 );
+    const undulationL = ( tileX === 0 )? getUndulation( x - 1, y ) : -1;
+    const undulationR = getUndulation( x, y );
     if( undulationL & MASK_BUMP ||  undulationR & MASK_BUMP ){
         const dYL = getBump( undulationL );
         const dYR = getBump( undulationR );
@@ -778,13 +779,13 @@ Game_Map.prototype.isPassable = function( x, y, d ){
 
 // 地形タグ0設定されていれば処理を無視
 const _Game_Map_isLadder = Game_Map.prototype.isLadder;
-Game_Map.prototype.isLadder = function(x, y) {
+Game_Map.prototype.isLadder = function( x, y ){
     if( isBump( x, y ) ) return false;
     return _Game_Map_isLadder.apply( this, arguments );
 };
 
 const _Game_Map_isDamageFloor = Game_Map.prototype.isDamageFloor;
-Game_Map.prototype.isDamageFloor = function(x, y) {
+Game_Map.prototype.isDamageFloor = function( x, y ){
     if( isBump( x, y ) ) return false;
     return _Game_Map_isDamageFloor.apply( this, arguments );
 };
