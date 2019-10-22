@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.11.2.0
+// Version :0.11.2.1
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -980,16 +980,16 @@ Game_CharacterBase.prototype.screenZ = function() {
 /**
  * 指定方向への移動が可能か
  * キャラクタ半分の位置が関係するものは、ここで判定。
- * @param {Number} x タイル数
- * @param {Number} y タイル数
+ * @param {Number} halfX タイル数(0.5刻み)
+ * @param {Number} halfY タイル数(0.5刻み)
  * @param {Number} d 向き(テンキー対応)
  * @returns {Boolean} 移動可能か
  */
 const _Game_CharacterBase_isMapPassable = Game_CharacterBase.prototype.isMapPassable;
-Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
-    x = Math.floor( this._realX + 0.5 );
-    y = Math.floor( this._realY + 0.5 );
-    const halfPos = getHalfPos( this._realX, this._realY );
+Game_CharacterBase.prototype.isMapPassable = function( halfX, halfY, d ){
+    const x = Math.floor( halfX + 0.5 );
+    const y = Math.floor( halfY + 0.5 );
+    const halfPos = getHalfPos( halfX, halfY );
 
     /**
      * 指定位置に指定flagがあるか
