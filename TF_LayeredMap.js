@@ -615,7 +615,7 @@ function isCollisionTile( tileFlag ){
     return 0 < ( tileFlag & MASK_ALL_DIR );
 }
 
-// A2タイルの走査・変更([○]と[3]に適用する設定はない)
+// A2タイルの走査・変更
 function treatA2Tilesets( flags ){
     for( let tileId = Tilemap.TILE_ID_A2; tileId < Tilemap.TILE_ID_A3; tileId += AUTOTILE_BLOCK ){
         const autotileFlags =
@@ -638,23 +638,20 @@ function treatA3Tilesets( flags ){
             ( isCollisionTile( flags[ tileId + 15 ] ) ? 1 : 0 );
         switch( autotileFlags ){
             // 側面
-            case 0 : ; break;   // [○]
-            case 1 : ; break;   // [×]
             case 2 : setWallSidePass( flags, tileId ); break;   // [○][♢]
             case 3 : setWallSideEdgePass( flags, tileId ); break;   // [×][♢]
-            case 4 : setBridgeWEPass( flags, tileId, false ); break;   // [○][TT]        東西 = 通行
-            case 5 : ; break;   // [×][TT]
-            case 6 : setBridgeWEPass( flags, tileId, true ); break;   // [○][♢][TT]  東西 = 立体交差
-            case 7 : ; break;   // [×][♢][TT]
+            case 4 : setBridgeWEPass( flags, tileId, false ); break;   // [○][TT]
+            // case 5 : ; break;   // [×][TT]
+            case 6 : setBridgeWEPass( flags, tileId, true ); break;   // [○][♢][TT]
+            // case 7 : ; break;   // [×][♢][TT]
 
             // 上面
-            case 8 : ; break;   // [○]
-            case 9 : ; break;   // [×]
+            case 9 : setRoofBottomPass( flags, tileId ); break;   // [×]
             case 10 : setAutoUpperPass( flags, tileId, 16 ); break;   // [○][♢]
             case 11 : setRoofUpperPass( flags, tileId ); break;   // [×][♢]
-            case 12 : setBridgeSNPass( flags, tileId, false ); break;    // [○][TT]         南北 = 通行
-            case 13 : ; break;   // [×][TT]             柵
-            case 14 : setBridgeSNPass( flags, tileId, true ); break;     // [○][♢][TT]  南北 = 立体交差
+            case 12 : setBridgeSNPass( flags, tileId, false ); break;    // [○][TT]
+            // case 13 : ; break;   // [×][TT]
+            case 14 : setBridgeSNPass( flags, tileId, true ); break;     // [○][♢][TT]
             case 15 : setA3UpperOverPass( flags, tileId ); break;       // [×][♢][TT]
         }
     }
@@ -670,23 +667,20 @@ function treatA4Tilesets( flags ){
             ( isCollisionTile( flags[ tileId + 46 ] ) ? 1 : 0 );
         switch( autotileFlags ){
             // 側面
-            case 0 : ; break;   // [○]
-            case 1 : ; break;   // [×]
             case 2 : setWallSidePass( flags, tileId ); break;                  // [○][♢]
             case 3 : setWallSideEdgePass( flags, tileId ); break;       // [×][♢]
-            case 4 : setBridgeWEPass( flags, tileId, false ); break;   // [○][TT]        東西 = 通行
-            case 5 : ; break;   // [×][TT]
-            case 6 : setBridgeWEPass( flags, tileId, true ); break;   // [○][♢][TT]  東西 = 立体交差
-            case 7 : ; break;   // [×][♢][TT]
+            case 4 : setBridgeWEPass( flags, tileId, false ); break;   // [○][TT]
+            // case 5 : ; break;   // [×][TT]
+            case 6 : setBridgeWEPass( flags, tileId, true ); break;   // [○][♢][TT]
+            // case 7 : ; break;   // [×][♢][TT]
 
             // 上面
-            case 8 : ; break;   // [○]
-            case 9 : ; break;   // [×]
+            case 9 : if( !_IsA4UpperOpen ){ setEmptyLinePass( flags, tileId ); } break;   // [×]
             case 10 : setAutoUpperPass( flags, tileId, 47 ); break;   // [○][♢]
             case 11 : setA4UpperPass( flags, tileId ); break;               // [×][♢]
             case 12 : setA4UpperStarPass( flags, tileId ); break;       // [○][TT]
-            case 13 : ; break;   // [×][TT]             柵
-            case 14 : ; break;   // [○][♢][TT] 
+            // case 13 : ; break;   // [×][TT]
+            // case 14 : ; break;   // [○][♢][TT] 
             case 15 : setA4UpperOverPass( flags, tileId ); break;       // [×][♢][TT]
         }
     }
