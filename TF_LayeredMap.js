@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.11.1.0
+// Version :0.11.2.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -77,11 +77,14 @@
  * @default 3
  * @parent Overpass
  * 
- * @param UseTallSizeCharacter
- * @type boolean
- * @desc 2tile size : ON(true) | default 1 tile size : OFF(false)
- * Change collision of overpass for 2 tile size character.
- * @default false
+ * @param CharacterSize
+ * @type select
+ * @option 1tile size
+ * @value 1
+ * @option 2tile size
+ * @value 2
+ * @desc Collision of overpass for.
+ * @default 1
  * @parent Overpass
  * 
  * 
@@ -199,12 +202,16 @@
  * @default 3
  * @parent Overpass
  * 
- * @param UseTallSizeCharacter
- * @type boolean
- * @text 2タイルサイズのキャラ
- * @desc 2タイルサイズ : ON(true) | 標準1タイル : OFF(false)
- * 2タイルサイズのキャラ用に立体交差の衝突判定を変更
- * @default false
+ * @param CharacterSize
+ * @type select
+ * @option 1tile size
+ * @value 1
+ * @option 2tile size
+ * @value 2
+ * @desc Collision of overpass for.
+ * @text キャラのタイルサイズ
+ * @desc 立体交差の衝突判定用のキャラサイズ
+ * @default 1
  * @parent Overpass
  * 
  * 
@@ -325,7 +332,7 @@ const _IsA2FullCollision = getBooleanParam( 'IsA2FullCollision', false );
 const _IsA3UpperOpen = getBooleanParam( 'IsA3UpperOpen', false );
 const _IsA4UpperOpen = getBooleanParam( 'IsA4UpperOpen', false );
 const _OverpassTerrainTag = getNumberParam( 'OverpassTerrainTag', 3 );
-const _UseTallSizeCharacter = getBooleanParam( 'UseTallSizeCharacter', false );
+const _CharacterSize = getNumberParam( 'CharacterSize', 1 );
 
 
 /*---- Game_Interpreter ----*/
@@ -1081,103 +1088,64 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
                 !isOverpassTileAt( x + 1, y ) && checkOverpassCollision( x, y, 6 ) === false
             ) return false;
         }else if( d === 8 ){
-            if( _UseTallSizeCharacter ){
-                if( ( halfPos === 0 || halfPos === 1 ) &&
-                    !isOverpassTileAt( x, y - 2 ) && checkOverpassCollision( x, y - 1, 8 ) === false
-                ) return false;
-            }else{
-                if( ( halfPos === 2 || halfPos === 3 ) &&
-                    !isOverpassTileAt( x, y - 1 ) && checkOverpassCollision( x, y, 8 ) === false
-                ) return false;
+            if( halfPos === 2 || halfPos === 3 ) {
+                if( _CharacterSize === 2 ){
+                    if( !isOverpassTileAt( x, y - 2 ) && checkOverpassCollision( x, y - 1, 8 ) === false ) return false;
+                }else if( !isOverpassTileAt( x, y - 1 ) && checkOverpassCollision( x, y, 8 ) === false ) return false;
             }
         }
         return true;
     }
+
 
     // 東の境界
     if( isOverpassTileAt( x - 1, y ) ){
-        if( d === 2 ){
-            if( halfPos === 2 && isOverpassTileAt( x - 1, y ) &&
-                 !isOverpassTileAt( x - 1, y + 1 ) && checkOverpassCollision( x - 1, y, 2 ) === false ) return false;
-        }else if( d === 8 ){
-            if( _UseTallSizeCharacter ){
-                if( halfPos === 0 && isOverpassTileAt( x - 1, y ) &&
-                !isOverpassTileAt( x - 1, y - 2 ) && checkOverpassCollision( x - 1, y - 1, 8 ) === false ) return false;
-            }else if( halfPos === 2 && !isOverpassTileAt( x - 1, y - 1 ) && checkOverpassCollision( x - 1, y, 8 ) === false ) return false;
+        if( halfPos === 0 ) return true;
+        if( halfPos === 2 ){
+            if( d === 2 ){
+                if( !isOverpassTileAt( x - 1, y + 1 ) && checkOverpassCollision( x - 1, y, 2 ) === false ) return false;
+            }else if( d === 8 ){
+                if( _CharacterSize === 2 ){
+                    if( !isOverpassTileAt( x - 1, y - 2 ) && checkOverpassCollision( x - 1, y - 1, 8 ) === false ) return false;
+                }else if( !isOverpassTileAt( x - 1, y - 1 ) && checkOverpassCollision( x - 1, y, 8 ) === false ) return false;
+            }
+            return true;
         }
-        return true;
-    }
-
-    if( d === 2 && halfPos === 2 ){
-        // 東の角┐
-        if( checkOverpassCollision( x - 1, y + 1, 8 ) && checkOverpassCollision( x - 1, y + 1, 6 ) ) return true;
-        // 西の角┌
-        if( checkOverpassCollision( x, y + 1, 8 ) && checkOverpassCollision( x, y + 1, 4 ) ) return true; 
     }
 
     // 潜る
-    if( halfPos === 0 ){
-        if( d === 8 &&
-            checkOverpassCollision( x, y - 1, 2 ) &&
-            checkOverpassCollision( x - 1, y - 1, 2 )
-        ) return true;
-    }else if( halfPos === 1 ){
-        if( d === 4 ){
-            if( checkOverpassCollision( x - 1,  y, 6 ) ){
-                if( checkOverpassCollision( x - 1,  y, 8 ) ){
-                    return true;
-                }else{
-                    if( checkOverpassCollision( x - 1, y - 1, 6 ) ) return true;
-                }
+    if( d === 2 ){
+        if( halfPos === 2 ){
+            if( checkOverpassCollision( x - 1, y + 1, 8 ) && checkOverpassCollision( x - 1, y + 1, 6 ) ) return true;// 東の角┐
+            if( checkOverpassCollision( x, y + 1, 8 ) ){
+                if( checkOverpassCollision( x, y + 1, 4 ) ) return true; // 西の角┌
+                if( checkOverpassCollision( x - 1, y + 1, 8 ) ) return true;
             }
-            if( checkOverpassCollision(  x - 1, y, 6 ) &&
-                 checkOverpassCollision(  x - 1, y - 1, 6 )
-            ) return true;
-        }else if( d === 6 ){
-            if( checkOverpassCollision( x + 1,  y, 4 ) ){
-                if( checkOverpassCollision( x + 1,  y, 8 ) ){
-                    return true;
-                }else{
-                    if( checkOverpassCollision( x + 1, y - 1, 4 ) ) return true;
-                }
+        }else if( halfPos === 3 ){
+            if( checkOverpassCollision( x, y + 1, 8 ) ) return true;
+        }
+    }else if( d === 4 ){
+        if( checkOverpassCollision( x - 1,  y, 6 ) ){
+            if( checkOverpassCollision( x - 1, y - 1, 6 ) ){
+                if( halfPos === 3 ) return true;
+                if( halfPos === 1 && _CharacterSize === 1 || checkOverpassCollision( x - 1, y - 2, 6 ) ) return true;
             }
-        }else if( d === 8 ){
+            if( ( halfPos === 1 ||  halfPos === 3 ) && checkOverpassCollision( x - 1,  y, 8 ) ) return true;   // 東の角┐
+        }
+    }else if( d === 6 ){
+        if( checkOverpassCollision( x + 1,  y, 4 ) ){
+            if( checkOverpassCollision( x + 1, y - 1, 4 ) ){
+                if( halfPos === 3 ) return true;
+                if( halfPos === 1 && _CharacterSize === 1 || checkOverpassCollision( x + 1, y - 2, 4 ) ) return true;
+            }
+            if( ( halfPos === 1 ||  halfPos === 3 ) && checkOverpassCollision( x + 1,  y, 8 ) ) return true;   // 西の角┐
+        }
+    }else if( d === 8 ){
+        if( halfPos === 0 ){
+            if( checkOverpassCollision( x, y - 1, 2 ) && checkOverpassCollision( x - 1, y - 1, 2 ) ) return true;
+        }else if( halfPos === 1 ){
             if( checkOverpassCollision( x, y - 1, 2 ) ) return true;
         }
-    }else if( halfPos === 2 ){
-        if( d === 2 ){
-            if( checkOverpassCollision( x, y + 1, 8 ) &&
-                checkOverpassCollision( x - 1, y + 1, 8 )
-            ) return true;
-        }
-    }else if( halfPos === 3 ){
-        if( d === 2 ){
-            if( checkOverpassCollision( x, y + 1, 8 ) ) return true;
-        }else if( d === 4 ){
-            if( checkOverpassCollision( x - 1,  y, 6 ) ){
-                if( checkOverpassCollision( x - 1,  y, 8 ) ){
-                    return true;
-                }else{
-                    if( _UseTallSizeCharacter ){
-                                if( checkOverpassCollision( x - 1, y - 1, 6 ) ) return true;
-                    }else{
-                        return true;
-                    }
-                }
-            }
-        }else if( d === 6 ){
-            if( checkOverpassCollision( x + 1,  y, 4 ) ){
-                if( checkOverpassCollision( x + 1,  y, 8 ) ){
-                    return true;
-                }else{
-                    if( _UseTallSizeCharacter ){
-                                if( checkOverpassCollision( x + 1, y - 1, 4 ) ) return true;
-                    }else{
-                        return true;
-                    }
-                }
-            }
-        } 
     }
 
 
@@ -1212,7 +1180,7 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
     }
 
     // 境界の南の衝突判定
-    if( halfPos === 1 || ( _UseTallSizeCharacter && halfPos === 3 ) ){
+    if( halfPos === 1 || ( _CharacterSize === 2 && halfPos === 3 ) ){
         if( d === 4 ){
             if( !isOverpassTileAt( x - 1, y ) &&  !isOverpassTileAt( x - 1, y - 1 ) &&
             checkOverpassCollision( x, y - 1, 4 ) === false &&
@@ -1228,7 +1196,7 @@ Game_CharacterBase.prototype.isMapPassable = function( x, y, d ){
             checkOverpassCollision( x + 1, y - 1, 4 ) === false &&
             checkOverpassCollision( x + 1, y - 1, 2 ) ) return false;
         }
-    }else if( _UseTallSizeCharacter ){
+    }else if( _CharacterSize === 2 ){
         if( halfPos === 0 && d === 8 ){
             if( !isOverpassTileAt( x, y - 1 ) &&  !isOverpassTileAt( x - 1, y - 1 ) ){
                 if( !isOverpassTileAt( x - 1, y - 2 ) &&
