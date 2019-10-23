@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :1.8.3.1
+// Version :1.8.3.2
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -276,6 +276,9 @@ Game_CharacterBase.prototype.isMapPassable = function( halfX, halfY, d ){
     const x = Math.floor( halfX + 0.5 );
     const y = Math.floor( halfY + 0.5 );
     const halfPos = getHalfPos( halfX, halfY );
+    const dx = getDx( d );
+    const dy = getDy( d );
+    const rd = this.reverseDir( d );
 
     /**
      * 移動先の地形を調べて配置タイプを返す。
@@ -284,8 +287,8 @@ Game_CharacterBase.prototype.isMapPassable = function( halfX, halfY, d ){
      * @returns {Number} 配置の種類( LAYOUT_NORTH, LAYOUT_CENTER, LAYOUT_SOUTH, LAYOUT_SINGLE, LAYOUT_NONE )
      */
     const getTileLayout = ( undulation, d )=>{
-        const dx = (d - 1) % 3 -1;
-        const dy = 1 - Math.floor( ( d - 1 ) / 3 );
+        const dx = getDx( d );
+        const dy = getDy( d );
         if( undulation !== getUndulation( x + dx, y + dy ) ) return LAYOUT_NONE;
         if( isSamePitch( undulation, getUndulation( x + dx, y + dy - 1 ) ) ){
             return isSamePitch( undulation, getUndulation( x + dx, y + dy + 1 ) ) ? LAYOUT_CENTER : LAYOUT_SOUTH;
@@ -312,60 +315,32 @@ Game_CharacterBase.prototype.isMapPassable = function( halfX, halfY, d ){
             if( getUndulation( x, y ) === WSU ) return false;
         }
     }else if( halfPos === 0 ){
-        if( d === 2 ){
-            if( getUndulation( x, y ) === WSU ) return false;
-        }
+        if( d === 2 && getUndulation( x, y ) === WSU ) return false;
     }else if( halfPos === 2 ){
-        if( d === 8 ){
-            if( getUndulation( x, y ) === WSU ) return false;
-        }
+        if( d === 8 && getUndulation( x, y ) === WSU ) return false;
     }
 
     // ⤾ WSN
     if( halfPos === 0 ){
-        if( d === 8 ){
-            if( getUndulation( x, y - 1 ) === WSN ) return false;
-            if( getUndulation( x - 1, y - 1 ) === WSN ) return false;
-        }
+        if( d === 8 && ( getUndulation( x, y - 1 ) === WSN || getUndulation( x - 1, y - 1 ) === WSN ) ) return false;
     }else if( halfPos === 1 ){
-        if( d === 6 ){
-            if( getUndulation( x + 1, y ) === WSN ) return false;
-        }
+        if( d === 6 && getUndulation( x + 1, y ) === WSN ) return false;
     }else if( halfPos === 3 ){
-        if( d === 4 ){
-            if( getUndulation( x, y ) === WSN ) return false;
-            if( getUndulation( x - 1, y ) === WSN ) return false;
-        }else if( d === 6 ){
-            if( getUndulation( x, y ) === WSN ) return true;
-            if( getUndulation( x + 1, y ) === WSN ) return false;
-        }
+        if( ( d === 4 || d === 6 ) && ( getUndulation( x, y ) === WSN || getUndulation( x + dx, y ) === WSN ) ) return false;
     }
 
     // ⤾ WSS
     if( halfPos === 1 ){ 
-        if( d === 4 ){
-            if( getUndulation( x, y ) === WSS ) return false;
-            if( getUndulation( x - 1, y ) === WSS ) return false;
-        }else if( d === 6 ){
-            if( getUndulation( x, y ) === WSS ) return true;
-            if( getUndulation( x + 1, y ) === WSS ) return false;
-        }
+        if( ( d === 4 || d === 6 ) && ( getUndulation( x, y ) === WSS || getUndulation( x + dx, y ) === WSS ) ) return false;
     }else if( halfPos === 2 ){
-        if( d === 2 ){
-            if( getUndulation( x - 1, y + 1 ) === WSS ) return false;
-            if( getUndulation( x, y + 1 ) === WSS ) return false;
-        }
+        if( d === 2 && ( getUndulation( x - 1, y + 1 ) === WSS || getUndulation( x, y + 1 ) === WSS ) ) return false;
     }else if( halfPos === 3 ){
-        if( d === 6 ){
-            if( getUndulation( x + 1, y ) === WSS ) return false;
-        }
+        if( d === 6 && getUndulation( x + 1, y ) === WSS ) return false;
     }
 
     // ⤿ ESU
     if( halfPos === 0 ){
-        if( d === 2 ){
-            if( getUndulation( x - 1, y ) === ESU ) return false;
-        }
+        if( d === 2 && getUndulation( x - 1, y ) === ESU ) return false;
     }else if( halfPos === 1 | halfPos === 3 ){
         if( d === 4 ){
             if( getUndulation( x - 1, y ) === ESU ) return true;
@@ -373,9 +348,7 @@ Game_CharacterBase.prototype.isMapPassable = function( halfX, halfY, d ){
             if( getUndulation( x, y ) === ESU ) return true;
         }
     }else if( halfPos === 2 ){
-        if( d === 8 ){
-            if( getUndulation( x - 1, y ) === ESU ) return false;
-        }
+        if( d === 8 && getUndulation( x - 1, y ) === ESU ) return false;
     }
 
     // ⤿ ESN
@@ -445,7 +418,8 @@ Game_CharacterBase.prototype.isMapPassable = function( halfX, halfY, d ){
             if( isTileLayoutSouth( W27N, 4 ) ) return false;
         }else if( halfPos === 2 ){
             if( getTileLayout( W27N, 1 ) === LAYOUT_SOUTH ) return true;
-            if( isTileLayoutNorth( W27N, 1 ) || isTileLayoutNorth( W27N, 2 ) || isTileLayoutSouth( W27N, 2 ) || getTileLayout( W27N, 5 ) === LAYOUT_SINGLE ) return false;
+            if( isTileLayoutNorth( W27N, 1 ) || isTileLayoutNorth( W27N, 2 ) ||
+                isTileLayoutSouth( W27N, 2 ) || getTileLayout( W27N, 5 ) === LAYOUT_SINGLE ) return false;
         }else if( halfPos === 3 ){
             if( isTileLayoutNorth( W27N, 2 ) ) return false;
         }
@@ -456,9 +430,7 @@ Game_CharacterBase.prototype.isMapPassable = function( halfX, halfY, d ){
             if( isTileLayoutSouth( W27N, 4 ) ) return false;
         }
     }else if( d === 6 ){
-        if( halfPos === 1 || halfPos === 3 ){
-            if( getTileLayout( W27N, 6 ) === LAYOUT_SINGLE  ) return true;
-        }
+        if( ( halfPos === 1 || halfPos === 3 ) && getTileLayout( W27N, 6 ) === LAYOUT_SINGLE  ) return true;
     }else if( d === 8 ){
         if( halfPos === 0 ){
             if( isTileLayoutNorth( W27N, 5 ) || isTileLayoutSouth( W27N, 7 ) ) return false;
@@ -476,7 +448,8 @@ Game_CharacterBase.prototype.isMapPassable = function( halfX, halfY, d ){
         if( halfPos === 0 ){
             if( isTileLayoutSouth( E27S, 4 ) ) return false;
         }else if( halfPos === 2 ){
-            if( isTileLayoutNorth( E27S, 1 ) || isTileLayoutNorth( E27S, 2 ) || getTileLayout( E27S, 2 ) === LAYOUT_SINGLE ) return false;
+            if( isTileLayoutNorth( E27S, 1 ) || isTileLayoutNorth( E27S, 2 ) ||
+                getTileLayout( E27S, 2 ) === LAYOUT_SINGLE ) return false;
             if( isTileLayoutSouth( E27S, 1 ) ) return true;
         }else if( halfPos === 3 ){
             if( isTileLayoutNorth( E27S, 2 ) ) return false;
@@ -505,14 +478,13 @@ Game_CharacterBase.prototype.isMapPassable = function( halfX, halfY, d ){
         if( halfPos === 0 ){
             if( isTileLayoutSouth( E27N, 5 ) ) return false;
         }else if( halfPos === 2 ){
-            if( isTileLayoutNorth( E27N, 1 ) || isTileLayoutNorth( E27N, 2 ) || getTileLayout( E27N, 4 ) === LAYOUT_SINGLE ) return false;
+            if( isTileLayoutNorth( E27N, 1 ) || isTileLayoutNorth( E27N, 2 ) ||
+                getTileLayout( E27N, 4 ) === LAYOUT_SINGLE ) return false;
         }else if( halfPos === 3 ){
             if( isTileLayoutNorth( E27N, 2 ) ) return false;
         }
     }else if( d === 4 ){
-        if( halfPos === 1 || halfPos === 3 ){
-            if( getTileLayout( E27N, 4 ) === LAYOUT_SINGLE  ) return true;
-        }
+        if( ( halfPos === 1 || halfPos === 3 ) && getTileLayout( E27N, 4 ) === LAYOUT_SINGLE  ) return true;
     }else if( d === 6 ){
         if( halfPos === 1 ){
             if( isTileLayoutNorth( E27N, 6 ) ) return false;
@@ -925,15 +897,6 @@ function isSamePitch( undulationA, undulationB ){
     return normalizByPitch( undulationA ) === normalizByPitch( undulationB );
 };
 
-/**
- * タイル内の位置を返す( 0:左上, 1:上, 2:左下, 3:下 )
- * @param {Number} x x座標(タイル数)
- * @param {Number} y y座標(タイル数)
- */
-function getHalfPos( x, y ){
-    return ( ( ( x % 1 ) === 0 ) ? 1 : 0 ) + ( ( ( y % 1 ) === 0 ) ? 2 : 0 );
-}
-
 
  /**
   * 段差指定フラグに応じた段差を返す。
@@ -961,4 +924,26 @@ function isBump( x, y ){
     return false;
 }
 
+/**
+ * タイル内の位置を返す( 0:左上, 1:上, 2:左下, 3:下 )
+ * @param {Number} x x座標(タイル数)
+ * @param {Number} y y座標(タイル数)
+ */
+function getHalfPos( x, y ){
+    return ( ( ( x % 1 ) === 0 ) ? 1 : 0 ) + ( ( ( y % 1 ) === 0 ) ? 2 : 0 );
+}
+/**
+ * 指定方向のX要素を返す。
+ * @param {Number} d 方向(テンキー対応)
+ */
+function getDx( d ){
+    return ( d === 6 ) ? 1 : ( d === 4 ) ? -1 : 0;
+}
+/**
+ * 指定方向のY要素を返す。
+ * @param {Number} d 方向(テンキー対応)
+ */
+function getDy( d ){
+    return ( d === 2 ) ? 1 : ( d === 8 ) ? -1 : 0;
+}
 })();

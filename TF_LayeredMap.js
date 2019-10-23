@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.11.3.0
+// Version :0.11.3.1
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -996,6 +996,9 @@ Game_CharacterBase.prototype.isMapPassable = function( halfX, halfY, d ){
     const x = Math.floor( halfX + 0.5 );
     const y = Math.floor( halfY + 0.5 );
     const halfPos = getHalfPos( halfX, halfY );
+    const dx = getDx( d );
+    // const dy =getDy( d );
+    const rd = this.reverseDir( d );
     const flags = $gameMap.tilesetFlags();
 
     /**
@@ -1021,10 +1024,8 @@ Game_CharacterBase.prototype.isMapPassable = function( halfX, halfY, d ){
     }else if( d === 8 ){
         if( ( halfPos === 2 || halfPos === 3 ) && checkCollision( x,  y, FLOOR1_N_FULL ) ) return false;
         if( ( halfPos === 2 ) && checkCollision( x - 1,  y, FLOOR1_N_FULL ) ) return false;
-    }else if( d === 4 ){
-        if( halfPos === 1 && checkCollision( x - 1, y, FLOOR1_N_FULL ) ) return false;
-    }else if( d === 6 ){
-        if( halfPos === 1 && checkCollision( x + 1, y, FLOOR1_N_FULL ) ) return false;
+    }else if( d === 4 || d === 6 ){
+        if( halfPos === 1 && checkCollision( x + dx, y, FLOOR1_N_FULL ) ) return false;
      }
 
     //FLOOR1_S_FULL
@@ -1034,10 +1035,8 @@ Game_CharacterBase.prototype.isMapPassable = function( halfX, halfY, d ){
     }else if( d === 8 ){
         if( ( halfPos === 0 || halfPos === 1 ) && checkCollision( x,  y - 1, FLOOR1_S_FULL ) ) return false;
         if( halfPos === 0 && checkCollision( x - 1,  y - 1, FLOOR1_S_FULL ) ) return false;
-    }else if( d === 4 ){
-        if( halfPos === 3 && checkCollision( x - 1, y, FLOOR1_S_FULL ) ) return false;
-    }else if( d === 6 ){
-        if( halfPos === 3 && checkCollision( x + 1, y, FLOOR1_S_FULL ) ) return false;
+    }else if( d === 4 || d === 6 ){
+        if( halfPos === 3 && checkCollision( x + dx, y, FLOOR1_S_FULL ) ) return false;
      }
 
     // FLOOR1_N_HALF
@@ -1086,20 +1085,16 @@ Game_CharacterBase.prototype.isMapPassable = function( halfX, halfY, d ){
                 if( ( halfPos === 2 || halfPos === 3 ) &&
                     !isOverpassTileAt( x, y + 1 ) && checkOverpassCollision( x, y, 2 ) === false
                 ) return false;
-            }else if( d === 4 ){
-                if( ( halfPos === 1 || halfPos === 3 ) &&
-                    !isOverpassTileAt( x - 1, y ) && checkOverpassCollision( x, y, 4 ) === false
-                ) return false;
-            }else if( d === 6 ){
-                if( ( halfPos === 1 || halfPos === 3 ) &&
-                    !isOverpassTileAt( x + 1, y ) && checkOverpassCollision( x, y, 6 ) === false
-                ) return false;
             }else if( d === 8 ){
                 if( halfPos === 2 || halfPos === 3 ) {
                     if( _CharacterSize === 2 ){
                         if( !isOverpassTileAt( x, y - 2 ) && checkOverpassCollision( x, y - 1, 8 ) === false ) return false;
                     }else if( !isOverpassTileAt( x, y - 1 ) && checkOverpassCollision( x, y, 8 ) === false ) return false;
                 }
+            }else if( d === 4 || d === 6 ){
+                if( ( halfPos === 1 || halfPos === 3 ) &&
+                    !isOverpassTileAt( x + dx, y ) && checkOverpassCollision( x, y, d ) === false
+                ) return false;
             }
             return true;
         }
@@ -1131,103 +1126,76 @@ Game_CharacterBase.prototype.isMapPassable = function( halfX, halfY, d ){
             }else if( halfPos === 3 ){
                 if( checkOverpassCollision( x, y + 1, 8 ) ) return true;
             }
-        }else if( d === 4 ){
-            if( checkOverpassCollision( x - 1,  y, 6 ) ){
-                if( checkOverpassCollision( x - 1, y - 1, 6 ) ){
-                    if( halfPos === 3 ) return true;
-                    if( halfPos === 1 && _CharacterSize === 1 || checkOverpassCollision( x - 1, y - 2, 6 ) ) return true;
-                }
-                if( ( halfPos === 1 ||  halfPos === 3 ) && checkOverpassCollision( x - 1,  y, 8 ) ) return true;   // 東の角┐
-            }
-        }else if( d === 6 ){
-            if( checkOverpassCollision( x + 1,  y, 4 ) ){
-                if( checkOverpassCollision( x + 1, y - 1, 4 ) ){
-                    if( halfPos === 3 ) return true;
-                    if( halfPos === 1 && _CharacterSize === 1 || checkOverpassCollision( x + 1, y - 2, 4 ) ) return true;
-                }
-                if( ( halfPos === 1 ||  halfPos === 3 ) && checkOverpassCollision( x + 1,  y, 8 ) ) return true;   // 西の角┐
-            }
         }else if( d === 8 ){
             if( halfPos === 0 ){
                 if( checkOverpassCollision( x, y - 1, 2 ) && checkOverpassCollision( x - 1, y - 1, 2 ) ) return true;
             }else if( halfPos === 1 ){
                 if( checkOverpassCollision( x, y - 1, 2 ) ) return true;
             }
+        }else if( d === 4 || d === 6 ){
+            if( checkOverpassCollision( x + dx,  y, rd ) ){
+                if( checkOverpassCollision( x + dx, y - 1, rd ) ){
+                    if( halfPos === 3 ) return true;
+                    if( halfPos === 1 && _CharacterSize === 1 || checkOverpassCollision( x + dx, y - 2, rd ) ) return true;
+                }
+                if( ( halfPos === 1 ||  halfPos === 3 ) && checkOverpassCollision( x + dx,  y, 8 ) ) return true;   // ┌西東┐の角
+            }
         }
 
 
         // 境界の北の衝突判定
-        if( halfPos === 3 ){
-            if( d === 4 ){
-                if( !isOverpassTileAt( x - 1, y ) &&  !isOverpassTileAt( x - 1, y + 1 ) &&
-                checkOverpassCollision( x, y + 1, 4 ) === false &&
-                checkOverpassCollision( x, y + 1, 8 ) ) return false;
-                if( !isOverpassTileAt( x - 1, y ) &&  !isOverpassTileAt( x, y + 1 ) &&
-                checkOverpassCollision( x - 1, y + 1, 6 ) === false &&
-                checkOverpassCollision( x - 1, y + 1, 8 ) ) return false;
-            }else if( d === 6 ){
-                if( !isOverpassTileAt( x + 1, y ) &&  !isOverpassTileAt( x + 1, y + 1 ) &&
-                checkOverpassCollision( x, y + 1, 6 ) === false &&
-                checkOverpassCollision( x, y + 1, 8 ) ) return false;
-                if( !isOverpassTileAt( x + 1, y ) &&  !isOverpassTileAt( x, y + 1 ) &&
-                checkOverpassCollision( x + 1, y + 1, 4 ) === false &&
-                checkOverpassCollision( x + 1, y + 1, 8 ) ) return false;
-            }
-        }else{
-            if( halfPos === 0 && d === 2 ){
-                if( !isOverpassTileAt( x, y ) &&  !isOverpassTileAt( x - 1, y ) ){
-                    if( !isOverpassTileAt( x - 1, y + 1 ) &&
+        if( d === 2 ){
+            if( halfPos === 0 && !isOverpassTileAt( x, y ) &&  !isOverpassTileAt( x - 1, y ) ){
+                if( !isOverpassTileAt( x - 1, y + 1 ) &&
                     checkOverpassCollision( x, y + 1, 4 ) === false &&
                     checkOverpassCollision( x, y + 1, 2 ) ) return false;
-                    if( !isOverpassTileAt( x, y + 1 ) &&
+                if( !isOverpassTileAt( x, y + 1 ) &&
                     checkOverpassCollision( x - 1, y + 1, 6 ) === false &&
                     checkOverpassCollision( x - 1, y + 1, 2 ) ) return false;
-                }
+            }
+        }else if( d === 4 || d === 6 ){
+            if( halfPos === 3 && !isOverpassTileAt( x + dx, y ) ){
+                if( !isOverpassTileAt( x + dx, y + 1 ) &&
+                    checkOverpassCollision( x, y + 1, d ) === false &&
+                    checkOverpassCollision( x, y + 1, 8 ) ) return false;
+                if( !isOverpassTileAt( x, y + 1 ) &&
+                    checkOverpassCollision( x + dx, y + 1, rd ) === false &&
+                    checkOverpassCollision( x + dx, y + 1, 8 ) ) return false;
             }
         }
 
         // 境界の南の衝突判定
         if( halfPos === 1 || ( _CharacterSize === 2 && halfPos === 3 ) ){
-            if( d === 4 ){
-                if( !isOverpassTileAt( x - 1, y ) &&  !isOverpassTileAt( x - 1, y - 1 ) &&
-                checkOverpassCollision( x, y - 1, 4 ) === false &&
-                checkOverpassCollision( x, y - 1, 2 ) ) return false;
-                if( !isOverpassTileAt( x - 1, y ) &&  !isOverpassTileAt( x, y - 1 ) &&
-                checkOverpassCollision( x - 1, y - 1, 6 ) === false &&
-                checkOverpassCollision( x - 1, y - 1, 2 ) ) return false;
-            }else if( d === 6 ){
-                if( !isOverpassTileAt( x + 1, y ) &&  !isOverpassTileAt( x + 1, y - 1 ) &&
-                checkOverpassCollision( x, y - 1, 6 ) === false &&
-                checkOverpassCollision( x, y - 1, 2 ) ) return false;
-                if( !isOverpassTileAt( x + 1, y ) &&  !isOverpassTileAt( x, y - 1 ) &&
-                checkOverpassCollision( x + 1, y - 1, 4 ) === false &&
-                checkOverpassCollision( x + 1, y - 1, 2 ) ) return false;
+            if( ( d === 4 || d === 6 ) && !isOverpassTileAt( x + dx, y ) ){
+                if( !isOverpassTileAt( x + dx, y - 1 ) &&
+                    checkOverpassCollision( x, y - 1, d ) === false &&
+                    checkOverpassCollision( x, y - 1, 2 ) ) return false;
+                if( !isOverpassTileAt( x, y - 1 ) &&
+                    checkOverpassCollision( x + dx, y - 1, rd ) === false &&
+                    checkOverpassCollision( x + dx, y - 1, 2 ) ) return false;
             }
-        }else if( _CharacterSize === 2 ){
-            if( halfPos === 0 && d === 8 ){
-                if( !isOverpassTileAt( x, y - 1 ) &&  !isOverpassTileAt( x - 1, y - 1 ) ){
+        }else if( d === 8  ){
+            if( _CharacterSize === 2 ){
+                if( halfPos === 0 && !isOverpassTileAt( x, y - 1 ) &&  !isOverpassTileAt( x - 1, y - 1 ) ){
                     if( !isOverpassTileAt( x - 1, y - 2 ) &&
-                    checkOverpassCollision( x, y - 2, 4 ) === false &&
-                    checkOverpassCollision( x, y - 2, 2 ) ) return false;
+                        checkOverpassCollision( x, y - 2, 4 ) === false &&
+                        checkOverpassCollision( x, y - 2, 2 ) ) return false;
                     if( !isOverpassTileAt( x, y - 2 ) &&
-                    checkOverpassCollision( x - 1, y - 2, 6 ) === false &&
-                    checkOverpassCollision( x - 1, y - 2, 2 ) ) return false;
+                        checkOverpassCollision( x - 1, y - 2, 6 ) === false &&
+                        checkOverpassCollision( x - 1, y - 2, 2 ) ) return false;
                 }
-            }
-        }else{
-            if( halfPos === 2 && d === 8 ){
-                if( !isOverpassTileAt( x, y ) &&  !isOverpassTileAt( x - 1, y ) ){
-                    if( !isOverpassTileAt( x - 1, y - 1 ) &&
+            }else if( halfPos === 2  && !isOverpassTileAt( x, y ) &&  !isOverpassTileAt( x - 1, y ) ){
+                if( !isOverpassTileAt( x - 1, y - 1 ) &&
                     checkOverpassCollision( x, y - 1, 4 ) === false &&
                     checkOverpassCollision( x, y - 1, 2 ) ) return false;
-                    if( !isOverpassTileAt( x, y - 1 ) &&
+                if( !isOverpassTileAt( x, y - 1 ) &&
                     checkOverpassCollision( x - 1, y - 1, 6 ) === false &&
                     checkOverpassCollision( x - 1, y - 1, 2 ) ) return false;
-                }
             }
         }
         return null;
     }
+
     // 乗る
     const isGateway = isUp2Higher( x, y, d, halfPos );
     if( isGateway ) this._higherLevel = true;
@@ -1237,17 +1205,17 @@ Game_CharacterBase.prototype.isMapPassable = function( halfX, halfY, d ){
     if( isOPMapPassable === false ) return false;
 
     const checkUnderpassCollision = ( x, y, d )=>{
-        const x2 = $gameMap.roundX( x + ( ( d === 6 ) ? 1 : ( d === 4 ) ? -1 : 0 ) );
-        const y2 = $gameMap.roundY( y + ( ( d === 2 ) ? 1 : ( d === 8 ) ? -1 : 0 ) );
+        const x2 = $gameMap.roundX( x + getDx( d ) );
+        const y2 = $gameMap.roundY( y + getDy( d ) );
         if( isOverpassTileAt( x2, y2 ) ){
             if( isGateway ) return true;
             if( ( flags[ $gameMap.tileId( x, y, 0 ) ] |
                 flags[ $gameMap.tileId( x, y, 1 ) ]) &
-                ( ( 1 << ( d / 2 - 1 ) ) & MASK_ALL_DIR )
+                getFlag( d )
             ) return false;
             if( ( flags[ $gameMap.tileId( x2, y2, 0 ) ] |
                 flags[ $gameMap.tileId( x2, y2, 1 ) ]) &
-                ( ( 1 << ( this.reverseDir( d ) / 2 - 1 ) ) & MASK_ALL_DIR )
+                getFlag( rd )
             ) return false;
         }
         return true;
@@ -1334,15 +1302,6 @@ Game_Map.prototype.checkPassage = function( x, y, bit ){
 
 
 /**
- * タイル内の位置を返す( 0:左上, 1:上, 2:左下, 3:下 )
- * @param {Number} x x座標(タイル数)
- * @param {Number} y y座標(タイル数)
- */
-function getHalfPos( x, y ){
-    return ( ( ( x % 1 ) === 0 ) ? 1 : 0 ) + ( ( ( y % 1 ) === 0 ) ? 2 : 0 );
-}
-
-/**
  * 指定位置の立体交差地形タグを持つタイルの通行判定(4方向)チェック
  * @param {Number} ax タイル数
  * @param {Number} ay タイル数
@@ -1356,7 +1315,7 @@ function checkOverpassCollision( x, y, d ){
     for ( let i = 0; i < tiles.length; i++ ){
         const flag = flags[ tiles[ i ] ];
         if( flag >> 12  === _OverpassTerrainTag ){
-            return 0 < ( flag & ( 1 << ( d / 2 - 1 ) ) );
+            return 0 < ( flag & getFlag( d ) );
         }
     }
     return null;
@@ -1421,4 +1380,33 @@ function isDownFromUpperTile( x, y, d, halfPos ){
                   checkOverpassCollision( x, y - 2, 2 ) !== false;  // ふたつ北
 }
 
+/**
+ * タイル内の位置を返す( 0:左上, 1:上, 2:左下, 3:下 )
+ * @param {Number} x x座標(タイル数)
+ * @param {Number} y y座標(タイル数)
+ */
+function getHalfPos( x, y ){
+    return ( ( ( x % 1 ) === 0 ) ? 1 : 0 ) + ( ( ( y % 1 ) === 0 ) ? 2 : 0 );
+}
+/**
+ * 指定方向のX要素を返す。
+ * @param {Number} d 方向(テンキー対応)
+ */
+function getDx( d ){
+    return ( d === 6 ) ? 1 : ( d === 4 ) ? -1 : 0;
+}
+/**
+ * 指定方向のY要素を返す。
+ * @param {Number} d 方向(テンキー対応)
+ */
+function getDy( d ){
+    return ( d === 2 ) ? 1 : ( d === 8 ) ? -1 : 0;
+}
+/**
+ * 指定方向をflagに変換して返す。
+ * @param {Number} d 方向(テンキー対応)
+ */
+function getFlag( d ){
+    return 1 << ( d / 2 - 1 );
+}
 })();
