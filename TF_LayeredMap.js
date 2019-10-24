@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.11.3.1
+// Version :0.12.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -216,6 +216,10 @@
  * 
  * 
  * @help 
+ * 注意 : トリアコンタンさんの HalfMove.js を利用する場合は。
+ * TF_LayeredMap.js の前に HalfMove.js を配置するようにしてください。
+ * TF_Undulation.js と一緒の場合は、TF_LayeredMap.js が前です。
+ * 
  * RPGツクールMVで未使用の設定で、タイルの重なりが変化します。
  * 
  * 1. BCDEタイルに[☆]を指定したあと、通行設定(4方向)
@@ -450,8 +454,9 @@ ShaderTilemap.prototype._paintTiles = function( startX, startY, x, y ){
      */
     const drawTile = ( tileId )=>{
         if ( !this._isHigherTile( tileId )
-        || ( this.flags[ tileId ] & MASK_UPPER_DIR ) === FLOOR1_N_FULL
-        || ( this.flags[ tileId ] & MASK_UPPER_DIR ) === FLOOR1_N_HALF ){
+            || ( this.flags[ tileId ] & MASK_UPPER_DIR ) === FLOOR1_N_FULL
+            || ( this.flags[ tileId ] & MASK_UPPER_DIR ) === FLOOR1_N_HALF
+        ){
             // 高層タイルではない
             this._drawTile( lowerLayer, tileId, dx, dy );
             return;
@@ -651,7 +656,7 @@ function treatA3Tilesets( flags ){
             case 11 : setRoofUpperPass( flags, tileId ); break;   // [×][♢]
             case 12 : setBridgeSNPass( flags, tileId, false ); break;    // [○][TT]
             case 13 : setBridgeSNPass( flags, tileId, true ); break;   // [×][TT]
-            // case 14 : ; break;     // [○][♢][TT]
+            case 14 : setEmptySquarePass( flags, tileId ); break;     // [○][♢][TT]
             case 15 : setA3UpperOverPass( flags, tileId ); break;       // [×][♢][TT]
         }
     }
@@ -678,9 +683,9 @@ function treatA4Tilesets( flags ){
             case 9 : if( !_IsA4UpperOpen ){ setEmptyLinePass( flags, tileId ); } break;   // [×]
             case 10 : setAutoUpperPass( flags, tileId, 47 ); break;   // [○][♢]
             case 11 : setA4UpperPass( flags, tileId ); break;               // [×][♢]
-            case 12 : setA4UpperStarPass( flags, tileId ); break;       // [○][TT]
-            // case 13 : ; break;   // [×][TT]
-            // case 14 : ; break;   // [○][♢][TT] 
+            // case 12 : ; break;       // [○][TT]
+            case 13 : setA4UpperStarPass( flags, tileId ); break;   // [×][TT]
+            case 14 : setEmptyLinePass( flags, tileId ); break;   // [○][♢][TT] 
             case 15 : setA4UpperOverPass( flags, tileId ); break;       // [×][♢][TT]
         }
     }
@@ -720,6 +725,7 @@ function setCounterPass( flags, tileId ){
     replaceCollision( flags, tileId, MASK_WITHOUT_DIR_UPPER, COUNTER_PASS );
 }
 // [A2][×][IsA2FullCollision:OFF] □周囲=通行不可
+// [A4][○][♢][TT] □周囲=通行不可
 function setEmptyLinePass( flags, tileId ){
     const EMPTY_PASS = [
         0, 0, 0, 0, 0, 0, 0, 0,
@@ -729,22 +735,11 @@ function setEmptyLinePass( flags, tileId ){
         6, 9, 10, 10, 12, 12, 5, 5,
         3, 3, 14, 11, 7, 13, 15, 15
     ];
-    replaceCollision( flags, tileId, MASK_WITHOUT_DIR_UPPER, EMPTY_PASS );
-};
-// [A4][×][IsA2FullCollision:OFF] □周囲=通行不可
-function setEmptyLineCrossPass( flags, tileId ){
-    const EMPTY_PASS = [
-        0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0,
-        2, 2, 2, 2, 8, 8, 8, 8,
-        4, 4, 4, 4, 1, 1, 1, 1,
-        6, 9, 10, 10, 12, 12, 5, 5,
-        3, 3, 14, 11, 7, 13, 15, 15
-    ];
+    //if( isCrossPass ) EMPTY_PASS.map( v => OPTT + v );
     replaceCollision( flags, tileId, MASK_WITHOUT_DIR_UPPER, EMPTY_PASS );
 };
 // 屋根 : 北が立体交差、他は周囲通行不可
-// [A3 奇数列][×][カウンター][OverpassTerrainTag]
+// [A3 奇数列][×][♢][TT]
 function setA3UpperOverPass( flags, tileId ){
     const A3_UPPER_OVERPASS = _IsA3UpperOpen ? [
         0, 2, OPTT + 8, OPTT + 10,
@@ -854,18 +849,29 @@ function setWallSidePass( flags, tileId ){
 // 屋根 (地面) : 周囲通行不可
 // [A3 奇数列][×]
 function setRoofBottomPass( flags, tileId ){
-    const A3_BOTTOM_PASS =_IsA3UpperOpen ? [
+    if( _IsA3UpperOpen ){
+        setSquareOpenPass( flags, tileId );
+    }else{
+        setEmptySquarePass( flags, tileId );
+    }
+}
+function setSquareOpenPass( flags, tileId ){
+    const SQUARE_PASS = [
         0, 2, 8, 10, 
         4, 6, 12, 14, 
         0, 2, 8, 10, 
         4, 6, 12, 14, 
-    ] : [
+    ];
+    replaceCollision( flags, tileId, MASK_WITHOUT_DIR_UPPER, SQUARE_PASS );
+}
+function setEmptySquarePass( flags, tileId ){
+    const SQUARE_PASS =[
         0, 2, 8, 10, 
         4, 6, 12, 14, 
         1, 3, 9, 11, 
         5, 7, 13, 15, 
     ];
-    replaceCollision( flags, tileId, MASK_WITHOUT_DIR_UPPER, A3_BOTTOM_PASS );
+    replaceCollision( flags, tileId, MASK_WITHOUT_DIR_UPPER, SQUARE_PASS );
 }
 // 南北の橋
 function setBridgeSNPass( flags, tileId, isCrossPass ){
@@ -914,14 +920,18 @@ Scene_Map.prototype.onMapLoaded = function( ){
      * カウンター設定のA3・A4オートタイルの箇所に、低層の補完タイルを設定
      */
     function treatDataMap(){
+        const flags = $gameMap.tilesetFlags();
         for( let y = 0; y < $dataMap.height; y++ ){
             for( let x = 0; x < $dataMap.width; x++ ){
                 const tileId = getMapData( x, y, 0 );
                 if( !isA3A4Tile( tileId ) ) continue;
 
                 // タイルを補完
-                //setMapData( x, y, 1, tileId );
-                setMapData( x, y, 2, tileId ); // TODO : 立体交差地形タグ表示レイヤー変更
+                if( isOverpassTile( flags[ tileId ] ) ){
+                    setMapData( x, y, 2, tileId ); 
+                }else{
+                    setMapData( x, y, 1, tileId );
+                }
 
                 if( _FillWithNeighborTile ){
                     // 北タイルで補完ただし、一番南は南で補完
@@ -972,7 +982,6 @@ Scene_Map.prototype.onMapLoaded = function( ){
 }
 
 
-
 /*---- Game_CharacterBase ----*/
 /**
  * レイヤー位置を返す。
@@ -1017,68 +1026,71 @@ Game_CharacterBase.prototype.isMapPassable = function( halfX, halfY, d ){
         return false;
     }
 
-    // FLOOR1_N_FULL
-    if( d === 2 ){
-        if( ( halfPos === 2 || halfPos === 3 ) && checkCollision( x,  y + 1, FLOOR1_N_FULL ) ) return false;
-        if( halfPos === 2 && checkCollision( x - 1,  y + 1, FLOOR1_N_FULL ) ) return false;
-    }else if( d === 8 ){
-        if( ( halfPos === 2 || halfPos === 3 ) && checkCollision( x,  y, FLOOR1_N_FULL ) ) return false;
-        if( ( halfPos === 2 ) && checkCollision( x - 1,  y, FLOOR1_N_FULL ) ) return false;
-    }else if( d === 4 || d === 6 ){
-        if( halfPos === 1 && checkCollision( x + dx, y, FLOOR1_N_FULL ) ) return false;
-     }
-
-    //FLOOR1_S_FULL
-    if( d === 2 ){
-        if( ( halfPos === 0 || halfPos === 1 ) && checkCollision( x,  y, FLOOR1_S_FULL ) ) return false;
-        if( halfPos === 0 && checkCollision( x - 1,  y, FLOOR1_S_FULL ) ) return false;
-    }else if( d === 8 ){
-        if( ( halfPos === 0 || halfPos === 1 ) && checkCollision( x,  y - 1, FLOOR1_S_FULL ) ) return false;
-        if( halfPos === 0 && checkCollision( x - 1,  y - 1, FLOOR1_S_FULL ) ) return false;
-    }else if( d === 4 || d === 6 ){
-        if( halfPos === 3 && checkCollision( x + dx, y, FLOOR1_S_FULL ) ) return false;
-     }
-
-    // FLOOR1_N_HALF
-    if( d === 2 ){
-        if( halfPos === 3 && checkCollision( x, y + 1, FLOOR1_N_HALF ) ) return false;
-    }else if( d === 8 ){
-        if( halfPos === 3 && checkCollision( x, y, FLOOR1_N_HALF ) ) return false;
-    }else if( d === 4 ){
-        if( halfPos === 0 && checkCollision( x - 1, y, FLOOR1_N_HALF ) ) return false;
-    }else if( d === 6 ){
-        if( halfPos === 0 && checkCollision( x, y, FLOOR1_N_HALF ) ) return false;
-     }
-
-    // FLOOR1_S_HALF
-    if( d === 2 ){
-        if( halfPos === 1 && checkCollision( x, y, FLOOR1_S_HALF ) ) return false;
-    }else if( d === 8 ){
-        if( halfPos === 1 && checkCollision( x, y - 1, FLOOR1_S_HALF ) ) return false;
-    }else if( d === 4 ){
-        if( halfPos === 2 && checkCollision( x - 1, y, FLOOR1_S_HALF ) ) return false;
-    }else if( d === 6 ){
-        if( halfPos === 2 && checkCollision( x, y, FLOOR1_S_HALF ) ) return false;
-     }
-
-    // FLOOR1_S_FLAT
-    if( d === 2 ){
-        if( halfPos === 3 && checkCollision( x, y, FLOOR1_S_FLAT ) ) return false;
-    }else if( d === 8 ){
-        if( halfPos === 1 && checkCollision( x, y - 1, FLOOR1_S_FLAT ) ) return false;
-    }
-
-    
-    // Overpass 用のプログラム
-    const isMapPassable = _Game_CharacterBase_isMapPassable.apply( this, arguments );
-    if( _OverpassTerrainTag === 0 ) return isMapPassable;
-
-    const isOverpassMapPassable = ()=>{
-        if( this._higherLevel ){
-            if( isDownFromUpperTile( x, y, d, halfPos ) ) this._higherLevel = false;
-            return isMapPassable;
+    const isFurniturePassable = ()=>{
+        // FLOOR1_N_FULL
+        if( d === 2 ){
+            if( ( halfPos === 2 || halfPos === 3 ) && checkCollision( x,  y + 1, FLOOR1_N_FULL ) ) return false;
+            if( halfPos === 2 && checkCollision( x - 1,  y + 1, FLOOR1_N_FULL ) ) return false;
+        }else if( d === 8 ){
+            if( ( halfPos === 2 || halfPos === 3 ) && checkCollision( x,  y, FLOOR1_N_FULL ) ) return false;
+            if( ( halfPos === 2 ) && checkCollision( x - 1,  y, FLOOR1_N_FULL ) ) return false;
+        }else if( d === 4 || d === 6 ){
+            if( halfPos === 1 && checkCollision( x + dx, y, FLOOR1_N_FULL ) ) return false;
         }
 
+        //FLOOR1_S_FULL
+        if( d === 2 ){
+            if( ( halfPos === 0 || halfPos === 1 ) && checkCollision( x,  y, FLOOR1_S_FULL ) ) return false;
+            if( halfPos === 0 && checkCollision( x - 1,  y, FLOOR1_S_FULL ) ) return false;
+        }else if( d === 8 ){
+            if( ( halfPos === 0 || halfPos === 1 ) && checkCollision( x,  y - 1, FLOOR1_S_FULL ) ) return false;
+            if( halfPos === 0 && checkCollision( x - 1,  y - 1, FLOOR1_S_FULL ) ) return false;
+        }else if( d === 4 || d === 6 ){
+            if( halfPos === 3 && checkCollision( x + dx, y, FLOOR1_S_FULL ) ) return false;
+        }
+
+        // FLOOR1_N_HALF
+        if( d === 2 ){
+            if( halfPos === 3 && checkCollision( x, y + 1, FLOOR1_N_HALF ) ) return false;
+        }else if( d === 8 ){
+            if( halfPos === 3 && checkCollision( x, y, FLOOR1_N_HALF ) ) return false;
+        }else if( d === 4 ){
+            if( halfPos === 0 && checkCollision( x - 1, y, FLOOR1_N_HALF ) ) return false;
+        }else if( d === 6 ){
+            if( halfPos === 0 && checkCollision( x, y, FLOOR1_N_HALF ) ) return false;
+        }
+
+        // FLOOR1_S_HALF
+        if( d === 2 ){
+            if( halfPos === 1 && checkCollision( x, y, FLOOR1_S_HALF ) ) return false;
+        }else if( d === 8 ){
+            if( halfPos === 1 && checkCollision( x, y - 1, FLOOR1_S_HALF ) ) return false;
+        }else if( d === 4 ){
+            if( halfPos === 2 && checkCollision( x - 1, y, FLOOR1_S_HALF ) ) return false;
+        }else if( d === 6 ){
+            if( halfPos === 2 && checkCollision( x, y, FLOOR1_S_HALF ) ) return false;
+        }
+
+        // FLOOR1_S_FLAT
+        if( d === 2 ){
+            if( halfPos === 3 && checkCollision( x, y, FLOOR1_S_FLAT ) ) return false;
+        }else if( d === 8 ){
+            if( halfPos === 1 && checkCollision( x, y - 1, FLOOR1_S_FLAT ) ) return false;
+        }
+
+        return null;
+    }
+
+    // 立体交差の下では、家具の衝突判定は行わない
+    if( this._higherLevel || ( !this._higherLevel && !isOverpassTileAt( x, y ) ) ){
+        const isFPassable = isFurniturePassable();
+        if( isFPassable !== null ) return isFPassable;
+    }
+    
+    // Overpass 用のプログラム
+    if( _OverpassTerrainTag === 0 ) return isMap_Game_CharacterBase_isMapPassable.apply( this, arguments );
+
+    const isOverpassMapPassable = ()=>{
         if( isOverpassTileAt( x, y ) ){
             // 下を潜っている状態は端の通行判定を逆転
             if( d === 2 ){
@@ -1200,8 +1212,13 @@ Game_CharacterBase.prototype.isMapPassable = function( halfX, halfY, d ){
     const isGateway = isUp2Higher( x, y, d, halfPos );
     if( isGateway ) this._higherLevel = true;
 
+    if( this._higherLevel ){
+        if( isDownFromUpperTile( x, y, d, halfPos ) ) this._higherLevel = false;
+        return _Game_CharacterBase_isMapPassable.apply( this, arguments );
+    }
+
     const isOPMapPassable = isOverpassMapPassable();
-    if( isOPMapPassable === null ) return isMapPassable;
+    if( isOPMapPassable === null ) return _Game_CharacterBase_isMapPassable.apply( this, arguments );
     if( isOPMapPassable === false ) return false;
 
     const checkUnderpassCollision = ( x, y, d )=>{
@@ -1277,28 +1294,23 @@ Game_Follower.prototype.chaseCharacter = function( character ){
  * @param {Number} bit {@link RPG.Tileset}の flagsチェック用ビット
  * @returns {Boolean} 高層表示[☆]の4方向の通行設定については@helpを参照
  */
-const _Game_Map_checkPassage = Game_Map.prototype.checkPassage;
+//const _Game_Map_checkPassage = Game_Map.prototype.checkPassage;
 Game_Map.prototype.checkPassage = function( x, y, bit ){
     const flags = this.tilesetFlags();
     const tiles = this.allTiles( x, y );
-    for ( let i = 0; i < tiles.length; i++ ){
+    const lastIndex = tiles.length - ( $gamePlayer._higherLevel ? 2 : 0 );
+    for( let i = 0; i < lastIndex; i++ ){
         const tileId = tiles[ i ];
         const flag = flags[ tileId ];
 
-        // ここでは高層[☆]タイルのみ判定するので他は無視
-        if( !(flag & FLAG_UPPER ) ) continue;
-
-        // 上通行不可[・]は特殊設定用のビットに使う
-        // そのため通行判定として無視
-        if( flag & FLAG_NORTH_DIR ) continue;
-
-        // 高層[☆]の通行不可[・]設定は
-        // 他の重なったタイルによらず通行不可
-        if(  ( flag & bit ) === bit ) return false;
+        // [☆]かつ北通行不可タイルは特殊タイルなので無視
+        if( tileId === 0 || ( flag & FLAG_UPPER ) && ( flag & FLAG_NORTH_DIR ) ) continue;
+        if( ( flag & bit ) === 0 ) return true;
+        if( ( flag & bit ) === bit ) return false;
     }
-    return _Game_Map_checkPassage.apply( this, arguments );
+    return $gamePlayer._higherLevel;
+    //return _Game_Map_checkPassage.apply( this, arguments );
 };
-
 
 
 /**
