@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.12.1.0
+// Version :0.12.2.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -1325,7 +1325,8 @@ Game_Follower.prototype.chaseCharacter = function( character ){
 Game_Map.prototype.checkPassage = function( x, y, bit ){
     const flags = this.tilesetFlags();
     const tiles = this.allTiles( x, y );
-    const lastIndex = tiles.length - ( $gamePlayer._higherLevel ? 2 : 0 );
+    const isOverpass = isOverpassTileAt( x, y );
+    const lastIndex = tiles.length - ( ( $gamePlayer._higherLevel && isOverpass )? 2 : 0 );
     for( let i = 0; i < lastIndex; i++ ){
         const tileId = tiles[ i ];
         const flag = flags[ tileId ];
@@ -1335,7 +1336,7 @@ Game_Map.prototype.checkPassage = function( x, y, bit ){
         if( ( flag & bit ) === 0 ) return true;
         if( ( flag & bit ) === bit ) return false;
     }
-    return $gamePlayer._higherLevel;
+    return $gamePlayer._higherLevel && isOverpass;
     //return _Game_Map_checkPassage.apply( this, arguments );
 };
 
