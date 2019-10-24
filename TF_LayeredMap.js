@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.12.0.0
+// Version :0.12.1.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -113,14 +113,33 @@
  *      If you enter from blocke direction, you can move under the tile.
  *      If you enter from pass direction, you can move over the tile.
  * 
- * 3. Set following options for A3・A4 tile.
- *      [counter][○] : Behavior like[☆]   ※
- *      [counter][×] : Hide only north tiles.
- *      [TerrainTag:3][×] : Behavior like [☆] only north tiles.Other tiles can't enter.
- *      [counter][TerrainTag:3][○] : Overpass.
- *      [counter][TerrainTag:3][×] : Overpass only north tiles.
+ * 3. For the clif.
+ * 　First, set [counter].
+ *      A3・A4 odd line(roof・walltop)
+ *      　[○] All = upper[☆]
+ *      A3・A4 even line(wallside)
+ *      　[○] All = billboard, South=can't pass.(floor height set automaticaly)
+ *      Common to A3 and A4 
+ *      　[×] North = billboard, Perimeter = can't pass.
  * 
- * ※ A3, A4 wall tile floor height set automaticaly.
+ * 4.  For the bridge or the stairs.
+ * 　First, set [TerrainTag:3].
+ *      A3 odd line(roof)
+ *          [○] SouthNorth = can't pass, WestEast = pass.
+ *          [×] SouthNorth = pass under、WestEast = pass over.
+ *      A3・A4 even line(wallside)
+ *          [○] SouthNorth = pass, WestEast = can't pass.
+ *          [×] SouthNorth = pass over, WestEast = pass under.
+ * 
+ * 5.  For the overpass.
+ * 　First, set [counter][TerrainTag:3].
+ *      A3・A4 odd line(roof・walltop)
+ *          [○] All = overpass.
+ *          [×] North = overpass, Perimeter = can't pass.
+ * 
+ * 6.  For the wall that does not walk on.
+ *      A4 odd line(walltop)
+ *          [TerrainTag:3][×] North = upper[☆], All = can't enter.
  * 
  * Released under the MIT License.
  */
@@ -171,7 +190,7 @@
  * @type boolean
  * @text タイル全体を通行不可にするか
  * @desc 通行止め : ON(true) | 閉じて内側は通行可 : OFF(false)
- * 地面(A2)のタイル全体を通行不可にするか
+ * A2(地面)のタイル全体を通行不可にするか
  * @default false
  * @parent Autotile
  * 
@@ -179,15 +198,15 @@
  * @type boolean
  * @text 屋根南を開くか
  * @desc 開く : ON(true) | 閉じて内側は通行可 : OFF(false)
- * 屋根(A3)の南の衝突判定をなくすか
+ * A3(屋根)[周囲=通行不可]の場合に、南の衝突判定をなくすか
  * @default false
  * @parent Autotile
  * 
  * @param IsA4UpperOpen
  * @type boolean
- * @text 壁の上面南を開くか
+ * @text 壁上面南を開くか
  * @desc 開く : ON(true) | 閉じて内側は通行可 : OFF(false)
- * 壁の上(A4)の南の衝突判定をなくすか
+ * A4(壁上上面)[周囲=通行不可]の場合に、南の衝突判定をなくすか
  * @default false
  * @parent Autotile
  * 
@@ -241,27 +260,36 @@
  *      0xF ・・・・ : 0x1 と同じだが南の両脇が通行可 （杭などに）(HalfMove.js が必要)
  * 
  * 2. 地形タグを3(規定値)に設定
- *      通行設定で侵入可の方向から入ると上を、侵入不可の方向から入ると下を通るようになります。
+ *      通行設定で侵入可の方向から入ると上を通ります。
+ * 　侵入不可の方向から入ると下を通ります。
  * 
- * 3-1. A3・A4タイルに以下を設定
- *      [カウンター][○] 下を通れる(ほぼ[☆]の状態) ※1
- *      [カウンター][×] 北端タイルのみ後ろに回り込める
+ * 3. 崖など回り込み用
+ * 　[カウンター]設定
+ *      A3・A4の奇数列(屋根・壁上面)
+ *      　[○] 全体=高層[☆]
+ *      A3・A4の偶数列(壁)
+ *      　[○] 全体=回り込み、南方向は通行不可(壁の高さは自動調整)
+ *      A3・A4に共通
+ *      　[×] 北=回り込み、周囲=通行不可
  * 
- * ※1 壁の高さは自動で調整されます。
- * 
- * 3-2.  [地形タグ:3]をつけた上で以下の条件
- *      A3の奇数列(屋根)タイル
- *          [○]南北=通行、東西=通行不可
- *          [×]南北=上通行、東西=下通行
- *          [○][カウンター]全面=立体交差
- *          [×][カウンター]北=立体交差、周囲=通行不可
- *      A3・A4の偶数列(壁)タイル
+ * 4.  橋の立体交差や階段用
+ * 　[地形タグ:3]設定
+ *      A3の奇数列(屋根)
  *          [○]南北=通行不可、東西=通行
- *          [×]南北=下通行、東西=上通行
- *      A4の奇数列(壁上面)タイル
- *          [×] 北端タイルのみ[☆]で他は侵入不可
- *          [○][カウンター]全面=立体交差
- *          [×][カウンター]北=立体交差、周囲=通行不可
+ *          [×]南北=下通行、東西=上通行(立体交差)
+ *      A3・A4の偶数列(壁)
+ *          [○]南北=通行、東西=通行不可
+ *          [×]南北=上通行、東西=下通行(立体交差)
+ * 
+ * 5.  立体交差
+ * 　[カウンター] [地形タグ:3] 設定
+ *      A3・A4の奇数列(屋根・壁上面)
+ *          [○]全面立体交差
+ *          [×]北=立体交差、周囲=通行不可
+ * 
+ * 6.  上を歩かない壁用の設定
+ *      A4の奇数列(壁上面)
+ *          [地形タグ:3][×] 北=高層[☆]、全面通行不可
  * 
  * 利用規約 : MITライセンス
  */
@@ -347,7 +375,6 @@ const _Game_Interpreter_pluginCommand = Game_Interpreter.prototype.pluginCommand
 Game_Interpreter.prototype.pluginCommand = function ( command, args ){
     _Game_Interpreter_pluginCommand.apply( this, arguments );
 
-    // TODO: プラグインコマンドで何か挙動を変えるものがあれば
     //if( command.toUpperCase() !== PLUGIN_COMMAND ) return;
 
     //_SomeParameter = ( args[0].toLowerCase() === PLUGIN_PARAM_TRUE );
@@ -645,8 +672,8 @@ function treatA3Tilesets( flags ){
             // 側面
             case 2 : setWallSidePass( flags, tileId ); break;   // [○][♢]
             case 3 : setWallSideEdgePass( flags, tileId ); break;   // [×][♢]
-            case 4 : setBridgeWEPass( flags, tileId, false ); break;   // [○][TT]
-            case 5 : setBridgeWEPass( flags, tileId, true ); break;   // [×][TT]
+            case 4 : setBridgeSNPass( flags, tileId, false ); break;    // [○][TT]
+            case 5 : setBridgeSNPass( flags, tileId, true ); break;   // [×][TT]
             // case 6 : ; break;   // [○][♢][TT]
             // case 7 : ; break;   // [×][♢][TT]
 
@@ -654,8 +681,8 @@ function treatA3Tilesets( flags ){
             case 9 : setRoofBottomPass( flags, tileId ); break;   // [×]
             case 10 : setAutoUpperPass( flags, tileId, 16 ); break;   // [○][♢]
             case 11 : setRoofUpperPass( flags, tileId ); break;   // [×][♢]
-            case 12 : setBridgeSNPass( flags, tileId, false ); break;    // [○][TT]
-            case 13 : setBridgeSNPass( flags, tileId, true ); break;   // [×][TT]
+            case 12 : setBridgeWEPass( flags, tileId, false ); break;   // [○][TT]
+            case 13 : setBridgeWEPass( flags, tileId, true ); break;   // [×][TT]
             case 14 : setEmptySquarePass( flags, tileId ); break;     // [○][♢][TT]
             case 15 : setA3UpperOverPass( flags, tileId ); break;       // [×][♢][TT]
         }
@@ -674,8 +701,8 @@ function treatA4Tilesets( flags ){
             // 側面
             case 2 : setWallSidePass( flags, tileId ); break;                  // [○][♢]
             case 3 : setWallSideEdgePass( flags, tileId ); break;       // [×][♢]
-            case 4 : setBridgeWEPass( flags, tileId, false ); break;   // [○][TT]
-            case 5 : setBridgeWEPass( flags, tileId, true ); break;   // [×][TT]
+            case 4 : setBridgeSNPass( flags, tileId, false ); break;    // [○][TT]
+            case 5 : setBridgeSNPass( flags, tileId, true ); break;   // [×][TT]
             // case 6 : ; break;   // [○][♢][TT]
             // case 7 : ; break;   // [×][♢][TT]
 
