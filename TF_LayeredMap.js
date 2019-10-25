@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.13.0.0
+// Version :0.13.0.1
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -89,7 +89,18 @@
  * 
  * 
  * @help
- * Change tile behavior by use no effect option at default.
+ * Alert !!
+ * If you use HalfMove.js by Triacontane.Place HalfMove.js before TF_LayeredMap.js.
+ * And Place TF_LayeredMap.js before TF_Undulation.js.
+ * 
+ * This plug-in provides the following functions.
+ * 　1. [☆]+[4 direction pass] Billboard function for B〜E tile is added.
+ * 　2. [TerrainTag] Crosspass function for B〜E tile is added.
+ * 　3. [Counter] Billboard function for auto tile is added.
+ * 　4. [TerrainTag] Auto tile collision and overpass function for bridge is added.
+ * 　5. [Counter] [TerrainTag]  Upper auto tile overpass function is added.
+ * 　6. [TerrainTag] [×] The wall top that does not walk for A4 upper tile is added.
+ * 　7. <TF_zDef:Number>  Put this tag in the note in event and adjust the overlap.
  * 
  * 1. set [☆] to BCDE tile, and set 4 direction setting.
  *      0x0 ↑→←↓ : [☆]  Same as no plugin.
