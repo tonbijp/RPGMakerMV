@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.12.2.0
+// Version :0.13.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -239,9 +239,16 @@
  * TF_LayeredMap.js の前に HalfMove.js を配置するようにしてください。
  * TF_Undulation.js と一緒の場合は、TF_LayeredMap.js が前です。
  * 
- * RPGツクールMVで未使用の設定で、タイルの重なりが変化します。
+ * このプラグインは以下の機能を提供します。
+ * 　1. [☆]+[通行設定(4方向)]で、B〜Eタイルの重なり機能を追加。
+ * 　2. [地形タグ]で、B〜Eタイルの立体交差機能を追加。
+ * 　3. [カウンター]で、オートタイルに回り込み機能を追加。
+ * 　4. [地形タグ]で、オートタイルに橋の衝突判定と立体交差機能を追加。
+ * 　5. [カウンター] [地形タグ] で、オートタイル上面に立体交差機能を追加。
+ * 　6. [地形タグ] [×] で、A4上面タイルに上を歩かない壁用の設定。
+ * 　7. <TF_zDef:数値> をイベントのメモに記入して重なりの調整。
  * 
- * 1. BCDEタイルに[☆]を指定したあと、通行設定(4方向)
+ * 1. B〜Eタイルに[☆]を指定したあと、[通行設定(4方向)]
  *      0x0 ↑→←↓ : [☆] 設定、全方向に 通行可(プラグインなしと同じ)
  *      0x1 ↑→←・ : 書き割り、北　西東 通行可、1階 【基本、柵とか】
  *      0x2 ↑→・↓ : 書き割り、北南　東 通行可、1階 （柵の西側とか）┃
@@ -259,7 +266,7 @@
  *      0xE ・・・↓ : 0xC と同じだが南の両脇が通行可 （椅子とか）(HalfMove.js が必要)
  *      0xF ・・・・ : 0x1 と同じだが南の両脇が通行可 （杭などに）(HalfMove.js が必要)
  * 
- * 2. 地形タグを3(規定値)に設定
+ * 2. [地形タグ]を3(規定値)に設定
  *      通行設定で侵入可の方向から入ると上を通ります。
  * 　侵入不可の方向から入ると下を通ります。
  * 
@@ -290,6 +297,11 @@
  * 6.  上を歩かない壁用の設定
  *      A4の奇数列(壁上面)
  *          [地形タグ:3][×] 北=高層[☆]、全面通行不可
+ * 
+ * その他
+ * 　<TF_zDef:数値> をイベントのメモに入力することで、重ね合わせの順番を調節できる。
+ * 　数値はy位置に加えられて、仮想的にy位置をずらす。
+ * 　キャラ画像のイベントには、6(規定値)より大きな値を入れると手前に表示される。
  * 
  * 利用規約 : MITライセンス
  */
@@ -392,6 +404,23 @@ Tilemap.prototype._isOverpassPosition = function( x, y ) {
     return _Tilemap_isOverpassPosition.apply( this, arguments );
 };
 
+/**
+ * @method _compareChildOrder
+ * @param {Object} a
+ * @param {Object} b
+ * @private
+ */
+Tilemap.prototype._compareChildOrder = function( a, b ) {
+    if (a.z !== b.z) return a.z - b.z;
+    const zDefA = a._character ? a._character._TF_zDef : 0;
+    const zDefB = b._character ? b._character._TF_zDef : 0;
+    const ay = a.y + ( zDefA ? zDefA : 0 );
+    const by = b.y + ( zDefB ? zDefB : 0 )
+    if (ay !== by) {
+        return ay - by;
+    } 
+    return a.spriteId - b.spriteId;
+};
 
 /*---- ShaderTilemap ----*/
 /**
@@ -1312,6 +1341,31 @@ Game_Follower.prototype.chaseCharacter = function( character ){
 
     _Game_Follower_chaseCharacter.apply( this, arguments );
 }
+
+
+/*---- Game_Event ----*/
+var _Game_Event_initialize      = Game_Event.prototype.initialize;
+Game_Event.prototype.initialize = function( mapId, eventId ){
+    _Game_Event_initialize.apply(this, arguments);
+
+    const getMetaValue = ( object, name )=>{
+        const metaTagName = 'TF_' + ( name ? name : '' );
+        return object.meta.hasOwnProperty( metaTagName ) ? object.meta[ metaTagName ] : undefined;
+    };
+
+    const getMetaValues = ( object, names )=>{
+        if ( !Array.isArray( names ) ) return getMetaValue( object, names );
+        for( let i = 0; i < names.length; i++ ){
+            const value = getMetaValue( object, names[ i ] );
+            if( value !== undefined ) return value;
+        }
+        return undefined;
+    }
+
+    this._TF_zDef = parseFloat( getMetaValues( this.event(), [ 'zDef', 'Zずらし' ] ) );
+};
+
+
 
 /*---- Game_Map ----*/
 /**
