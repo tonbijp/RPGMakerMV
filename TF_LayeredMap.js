@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.14.2.1
+// Version :0.14.3.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -1409,7 +1409,7 @@ Game_Map.prototype.isCounter = function( x, y ){
     const result = _Game_Map_isCounter.apply( this, arguments );
     if( result ){
         // A5だったら無視
-        return Tilemap.isTileA5( this.tileId( x, y, 1 ) );
+        return !Tilemap.isTileA5( this.tileId( x, y, 1 ) );
     }
     return false;
 };
