@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.14.0.0
+// Version :0.14.0.1
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -28,8 +28,9 @@
  * 
  * @param FillWithNeighborTile
  * @type boolean
- * @desc ON(true) | DefaultLowerTile : OFF(false)
- * Fill with neighbor tile.It is function for A3 or A4 tile.
+ * @on Fill with neighbor tile
+ * @off Default lower tile
+ * @desc Fill with neighbor tile.It is function for A3 or A4 tile.
  * @default true
  * @parent Autotile
  * 
@@ -41,8 +42,9 @@
  * 
  * @param UseLayeredCounter
  * @type boolean
- * @desc ON(true) | Normal : OFF(false)
- * Counter becomes layered.
+ * @on Layered counter
+ * @off Normal
+ * @desc Counter becomes layered.
  * A2 counter tile can layered like billboard.
  *  (HalfMove.js is needed)
  * @default true
@@ -50,22 +52,25 @@
  * 
  * @param IsA2FullCollision
  * @type boolean
- * @desc Full collision : ON(true) | Closed and inside is accessible : OFF(false)
- * Entire tile on the ground(A2) collision to activate.
+ * @on Full collision
+ * @off Closed and inside is accessible
+ * @desc Entire tile on the ground(A2) collision to activate.
  * @default false
  * @parent Autotile
  * 
  * @param IsA3UpperOpen
  * @type boolean
- * @desc Open : ON(true) | Close : OFF(false)
- * Remove the south collision of the roof(A3)?
+ * @on Open
+ * @off Close
+ * @desc Remove the south collision of the roof(A3)?
  * @default false
  * @parent Autotile
  * 
  * @param IsA4UpperOpen
  * @type boolean
- * @desc Open : ON(true) | Close : OFF(false)
- * Remove the south collision of the wall top(A4)?
+ * @on Open
+ * @off Close
+ * @desc Remove the south collision of the wall top(A4)?
  * @default false
  * @parent Autotile
  * 
@@ -175,15 +180,16 @@
  * 
  * @param FillWithNeighborTile
  * @type boolean
+ * @on 周辺のタイル
+ * @off 補完用規定タイル
  * @text 周辺のタイルでの補完
- * @desc 周辺のタイル ON(true) | [補完用タイル番号] : OFF(false)
- * 低層(地面)を北(画面上では上)のタイルで補完するか
+ * @desc 低層(地面)を北(画面上では上)のタイルで補完するか
  * @default true
  * @parent Autotile
  * 
  * @param DefaultLowerTile
- * @text 補完用タイル番号
- * @desc [北のタイルでの補完]がOFFの場合に使うタイル
+ * @text 補完用規定タイル
+ * @desc [北のタイルでの補完]がOFFの場合に使う規定タイル
  * 番号はA5左上を0として右への順。規定値:16(草原)
  * @default 16
  * @parent Autotile
@@ -191,33 +197,37 @@
  * @param UseLayeredCounter
  * @type boolean
  * @text カウンター回り込み
- * @desc 回り込み : ON(true) | 通常 : OFF(false)
- * A2のカウンターの後ろに回り込めるようにするか
+ * @on 回り込み
+ * @off 通常
+ * @desc A2のカウンターの後ろに回り込めるようにするか
  * (HalfMove.js が必要)
  * @default true
  * @parent Autotile
  * 
  * @param IsA2FullCollision
  * @type boolean
+ * @on 通行止め
+ * @off 閉じて内側は通行可
  * @text タイル全体を通行不可にするか
- * @desc 通行止め : ON(true) | 閉じて内側は通行可 : OFF(false)
- * A2(地面)のタイル全体を通行不可にするか
+ * @desc A2(地面)のタイル全体を通行不可にするか
  * @default false
  * @parent Autotile
  * 
  * @param IsA3UpperOpen
  * @type boolean
+ * @on 南を開く
+ * @off 閉じて内側は通行可
  * @text 屋根南を開くか
- * @desc 開く : ON(true) | 閉じて内側は通行可 : OFF(false)
- * A3(屋根)[周囲=通行不可]の場合に、南の衝突判定をなくすか
+ * @desc A3(屋根)[周囲=通行不可]の場合に、南の衝突判定をなくすか
  * @default false
  * @parent Autotile
  * 
  * @param IsA4UpperOpen
  * @type boolean
+ * @on 南を開く
+ * @off 閉じて内側は通行可
  * @text 壁上面南を開くか
- * @desc 開く : ON(true) | 閉じて内側は通行可 : OFF(false)
- * A4(壁上上面)[周囲=通行不可]の場合に、南の衝突判定をなくすか
+ * @desc A4(壁上上面)[周囲=通行不可]の場合に、南の衝突判定をなくすか
  * @default false
  * @parent Autotile
  * 
@@ -253,9 +263,9 @@
  * このプラグインは以下の機能を提供します。
  * 　1. [☆]+[通行設定(4方向)]で、B〜Eタイルの重なり機能を追加。
  * 　2. [地形タグ]で、B〜Eタイルの立体交差機能を追加。
- * 　3. [カウンター]で、A3〜A4タイルに回り込み機能を追加。
- * 　4. [地形タグ]で、A3〜A4タイルに橋の衝突判定と立体交差機能を追加。
- * 　5. [カウンター] [地形タグ] で、A3〜A4タイル上面に立体交差機能を追加。
+ * 　3. [カウンター]で、A3・A4タイルに回り込み機能を追加。
+ * 　4. [地形タグ]で、A3・A4タイルに橋の衝突判定と立体交差機能を追加。
+ * 　5. [カウンター] [地形タグ] で、A3・A4タイル上面に立体交差機能を追加。
  * 　6. [地形タグ] [×] で、A4上面タイルに上を歩かない壁用の設定。
  * 　7. [カウンター]で、A5タイルをひとつ上のレイヤーに移動。
  * 　8. <TF_zDef:数値> をイベントのメモに記入して重なりの調整。
@@ -312,7 +322,7 @@
  * 
  * 7. ひとつ上のレイヤーに移動
  * 　A5タイルに[カウンター] で、背景を規定タイルで補完しA2右側レイヤーに移動。
- *      A3〜A4と同様に元々の[カウンター]は機能しないし、A2右側タイルがあれば消える。
+ *      A3・A4と同様に元々の[カウンター]は機能しないし、A2右側タイルがあれば消える。
  * 
  * 8. 重ね合わせの順番を調節
  * 　<TF_zDef:数値> をイベントのメモに入力。
