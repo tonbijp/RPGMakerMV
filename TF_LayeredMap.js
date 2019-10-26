@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.13.0.1
+// Version :0.14.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -253,11 +253,12 @@
  * このプラグインは以下の機能を提供します。
  * 　1. [☆]+[通行設定(4方向)]で、B〜Eタイルの重なり機能を追加。
  * 　2. [地形タグ]で、B〜Eタイルの立体交差機能を追加。
- * 　3. [カウンター]で、オートタイルに回り込み機能を追加。
- * 　4. [地形タグ]で、オートタイルに橋の衝突判定と立体交差機能を追加。
- * 　5. [カウンター] [地形タグ] で、オートタイル上面に立体交差機能を追加。
+ * 　3. [カウンター]で、A3〜A4タイルに回り込み機能を追加。
+ * 　4. [地形タグ]で、A3〜A4タイルに橋の衝突判定と立体交差機能を追加。
+ * 　5. [カウンター] [地形タグ] で、A3〜A4タイル上面に立体交差機能を追加。
  * 　6. [地形タグ] [×] で、A4上面タイルに上を歩かない壁用の設定。
- * 　7. <TF_zDef:数値> をイベントのメモに記入して重なりの調整。
+ * 　7. [カウンター]で、A5タイルをひとつ上のレイヤーに移動。
+ * 　8. <TF_zDef:数値> をイベントのメモに記入して重なりの調整。
  * 
  * 1. B〜Eタイルに[☆]を指定したあと、[通行設定(4方向)]
  *      0x0 ↑→←↓ : [☆] 設定、全方向に 通行可(プラグインなしと同じ)
@@ -309,8 +310,12 @@
  *      A4の奇数列(壁上面)
  *          [地形タグ:3][×] 北=高層[☆]、全面通行不可
  * 
- * その他
- * 　<TF_zDef:数値> をイベントのメモに入力することで、重ね合わせの順番を調節できる。
+ * 7. ひとつ上のレイヤーに移動
+ * 　A5タイルに[カウンター] で、背景を規定タイルで補完しA2右側レイヤーに移動。
+ *      A3〜A4と同様に元々の[カウンター]は機能しないし、A2右側タイルがあれば消える。
+ * 
+ * 8. 重ね合わせの順番を調節
+ * 　<TF_zDef:数値> をイベントのメモに入力。
  * 　数値はy位置に加えられて、仮想的にy位置をずらす。
  * 　キャラ画像のイベントには、6(規定値)より大きな値を入れると手前に表示される。
  * 
@@ -318,16 +323,16 @@
  */
 (function(){'use strict';
 // flag用定数
-const FLAG_NORTH_DIR = 0x08 // 北の通行設定
+const FLAG_NORTH_DIR = 0x8 // 北の通行設定
 const FLAG_UPPER = 0x10; // 高層[☆]
 const FLAG_COUNTER = 0x80; // カウンター
-const MASK_BRIDGE = 0xF60; // 方向と高層[☆]と地形タグとカウンターを除いたもの用マスク
-const MASK_CLIF = 0xFE0; // 方向と高層[☆]と地形タグを除いたもの用マスク
-const MASK_WITHOUT_DIR_UPPER = 0xFFE0; // 方向と高層[☆]を除いたもの用マスク
-const MASK_WITHOUT_TAG_DIR_UPPER = 0x0FE0; // 方向と高層[☆]を除いたもの用マスク
+// flagのマスク
+const MASK_WITHOUT_DIR_UPPER = 0xFF60; // 方向と高層[☆]とカウンターを除いたもの用マスク
+const MASK_WITHOUT_TAG_DIR_UPPER = 0xF60; // 方向と高層[☆]と地形タグとカウンターを除いたもの用マスク
+const MASK_ALL_DIR = 0xF; // 通行設定用マスク
+const MASK_WITHOUT_COUNTER = 0xFF7F; // カウンター削除用マスク
 
 // 書割り設定
-const MASK_ALL_DIR = 0xF; // 通行設定用マスク
 const FLOOR2_BOARD = 0x19; // 09 書き割り、全方向に 通行可、2階
 const FLOOR3_BOARD = 0x1A; // 10 書き割り、全方向に 通行可、3階
 
@@ -819,7 +824,7 @@ function setA3UpperOverPass( flags, tileId ){
         1, 3, OPTT + 9, OPTT + 11,
         5, 7, OPTT + 15, OPTT + 13,
     ];
-    replaceCollision( flags, tileId, MASK_CLIF, A3_UPPER_OVERPASS );
+    replaceCollision( flags, tileId, MASK_WITHOUT_TAG_DIR_UPPER, A3_UPPER_OVERPASS );
 }
 // 屋根  : 北が書き割り、他は周囲通行不可
 // [A3 奇数列][×][カウンター]
@@ -855,7 +860,7 @@ function setA4UpperOverPass( flags, tileId ){
         6, OPTT + 9, OPTT + 10, OPTT + 10, OPTT + 12, OPTT + 12, 5, 5,
         3, 3, OPTT + 14, OPTT + 11, 7, OPTT + 13, OPTT + 15, OPTT + 15,
     ];
-    replaceCollision( flags, tileId, MASK_CLIF, A4_UPPER_OVERPASS );
+    replaceCollision( flags, tileId, MASK_WITHOUT_TAG_DIR_UPPER, A4_UPPER_OVERPASS );
 }
 // 壁(上面) : 北が書き割り、他は周囲通行不可
 // [A4 奇数列][×][カウンター]
@@ -953,7 +958,7 @@ function setBridgeSNPass( flags, tileId, isCrossPass ){
         0, 2, 0, 2, 
         4, 6, 4, 6, 
     ];
-    replaceCollision( flags, tileId, MASK_BRIDGE, BRIDGE_SN_PASS );
+    replaceCollision( flags, tileId, MASK_WITHOUT_TAG_DIR_UPPER, BRIDGE_SN_PASS );
 }
 // 東西の橋
 function setBridgeWEPass( flags, tileId, isCrossPass ){
@@ -968,7 +973,7 @@ function setBridgeWEPass( flags, tileId, isCrossPass ){
         1, 1, 9, 9, 
         1, 1, 9, 9, 
     ];
-    replaceCollision( flags, tileId, MASK_BRIDGE, BRIDGE_WE_PASS );
+    replaceCollision( flags, tileId, MASK_WITHOUT_TAG_DIR_UPPER, BRIDGE_WE_PASS );
 }
 
 
@@ -980,8 +985,22 @@ function setBridgeWEPass( flags, tileId, isCrossPass ){
 const _Scene_Map_onMapLoaded = Scene_Map.prototype.onMapLoaded;
 Scene_Map.prototype.onMapLoaded = function( ){
     treatDataMap();
+    removeCounterFlagFromA5();
     _Scene_Map_onMapLoaded.call( this );
     // end: onMapLoaded
+
+    /**
+     * A5から[カウンター]設定を削除
+     */
+    function removeCounterFlagFromA5(){
+        const flags = $gameMap.tilesetFlags();
+        const lastIndex = Tilemap.TILE_ID_A5 + 128;
+        for( let tileId = Tilemap.TILE_ID_A5; tileId < lastIndex; tileId++ ){
+            if( isCounterTile( flags[ tileId ] ) ){
+                flags[ tileId ] = flags[ tileId ] & MASK_WITHOUT_COUNTER;
+            }
+        }
+    }
 
     /**
      * カウンター設定のA3・A4オートタイルの箇所に、低層の補完タイルを設定
@@ -991,7 +1010,12 @@ Scene_Map.prototype.onMapLoaded = function( ){
         for( let y = 0; y < $dataMap.height; y++ ){
             for( let x = 0; x < $dataMap.width; x++ ){
                 const tileId = getMapData( x, y, 0 );
-                if( !isA3A4Tile( tileId ) ) continue;
+
+                if( Tilemap.isTileA5( tileId ) && isCounterTile( flags[ tileId ] ) ){
+                    setMapData( x, y, 1, tileId );
+                    setMapData( x, y, 0, _DefaultLowerTileId );
+                    continue;
+                }else if( !isA3A4Tile( tileId ) ) continue;
 
                 // タイルを補完
                 if( isOverpassTile( flags[ tileId ] ) ){
