@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.14.3.0
+// Version :0.14.4.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -105,7 +105,8 @@
  * 　4. [TerrainTag] Auto tile collision and overpass function for bridge is added.
  * 　5. [Counter] [TerrainTag]  Upper auto tile overpass function is added.
  * 　6. [TerrainTag] [×] The wall top that does not walk for A4 upper tile is added.
- * 　7. <TF_zDef:Number>  Put this tag in the note in event and adjust the overlap.
+ * 　7. [地形タグ]で、A5タイルをひとつ上のレイヤーに移動。
+ * 　8. <TF_zDef:Number>  Put this tag in the note in event and adjust the overlap.
  * 
  * 1. set [☆] to BCDE tile, and set 4 direction setting.
  *      0x0 ↑→←↓ : [☆]  Same as no plugin.
@@ -157,12 +158,20 @@
  *      A4 odd line(walltop)
  *          [TerrainTag:3][×] North = upper[☆], All = can't enter.
  * 
+ * 7. Move up one layer.
+ * 　Add [TerrainTag:3] to A5 tile, Set the default tile at base layer and target tile up one layer.
+ *      The overpass will not work. If the right side of A2 is on the target tile, it will gone.
+ * 
+ * 8. adjust the overlap
+ * 　<TF_zDef:Number>  Put this tag in the note in event.
+ *      Add a number to the y position and set a virtual y position.
+ * 　Enter a number greater than 6 (default) to bring the character to the front.
+ * 
  * Released under the MIT License.
  */
 /*:ja
  * @plugindesc 高層[☆]タイルを書き割り風に配置する
  * @author とんび@鳶嶋工房
- * 
  * 
  * @param BillboardPriority
  * @type select
@@ -267,7 +276,7 @@
  * 　4. [地形タグ]で、A3・A4タイルに橋の衝突判定と立体交差機能を追加。
  * 　5. [カウンター] [地形タグ] で、A3・A4タイル上面に立体交差機能を追加。
  * 　6. [地形タグ] [×] で、A4上面タイルに上を歩かない壁用の設定。
- * 　7. [カウンター]で、A5タイルをひとつ上のレイヤーに移動。
+ * 　7. [地形タグ]で、A5タイルをひとつ上のレイヤーに移動。
  * 　8. <TF_zDef:数値> をイベントのメモに記入して重なりの調整。
  * 
  * 1. B〜Eタイルに[☆]を指定したあと、[通行設定(4方向)]
@@ -321,8 +330,8 @@
  *          [地形タグ:3][×] 北=高層[☆]、全面通行不可
  * 
  * 7. ひとつ上のレイヤーに移動
- * 　A5タイルに[カウンター] で、背景を規定タイルで補完しA2右側レイヤーに移動。
- *      A3・A4と同様に元々の[カウンター]は機能しないし、A2右側タイルがあれば消える。
+ * 　A5タイルに[地形タグ:3] で、背景を規定タイルで補完しA2右側レイヤーに移動。
+ *      立体交差は機能しないし、A2右側タイルがあれば消える。
  * 
  * 8. 重ね合わせの順番を調節
  * 　<TF_zDef:数値> をイベントのメモに入力。
@@ -1007,7 +1016,7 @@ Scene_Map.prototype.onMapLoaded = function( ){
             for( let x = 0; x < $dataMap.width; x++ ){
                 const tileId = getMapData( x, y, 0 );
 
-                if( Tilemap.isTileA5( tileId ) && isCounterTile( flags[ tileId ] ) ){
+                if( Tilemap.isTileA5( tileId ) && isOverpassTile( flags[ tileId ] ) ){
                     setMapData( x, y, 1, tileId );
                     setMapData( x, y, 0, _DefaultLowerTileId );
                     continue;
@@ -1168,14 +1177,14 @@ Game_CharacterBase.prototype.isMapPassable = function( halfX, halfY, d ){
         return null;
     }
 
+    // Overpass 用のプログラム
+    if( _OverpassTerrainTag === 0 ) return isMap_Game_CharacterBase_isMapPassable.apply( this, arguments );
+
     // 立体交差の下では、家具の衝突判定は行わない
     if( this._higherLevel || ( !this._higherLevel && !isOverpassTileAt( x, y ) ) ){
         const isFPassable = isFurniturePassable();
         if( isFPassable !== null ) return isFPassable;
     }
-    
-    // Overpass 用のプログラム
-    if( _OverpassTerrainTag === 0 ) return isMap_Game_CharacterBase_isMapPassable.apply( this, arguments );
 
     const isOverpassMapPassable = ()=>{
         if( isOverpassTileAt( x, y ) ){
@@ -1399,22 +1408,6 @@ Game_Event.prototype.initialize = function( mapId, eventId ){
 
 /*---- Game_Map ----*/
 /**
- * 指定位置のタイルがカウンターか
- * @param {Number} x タイル数
- * @param {Number} y タイル数
- * @returns {Boolean}
- */
-const _Game_Map_isCounter = Game_Map.prototype.isCounter;
-Game_Map.prototype.isCounter = function( x, y ){
-    const result = _Game_Map_isCounter.apply( this, arguments );
-    if( result ){
-        // A5だったら無視
-        return !Tilemap.isTileA5( this.tileId( x, y, 1 ) );
-    }
-    return false;
-};
-
-/**
  * 指定位置の指定フラグビットが通行可か。
  * @param {Number} x タイル数
  * @param {Number} y タイル数
@@ -1468,7 +1461,14 @@ function checkOverpassCollision( x, y, d ){
  * @returns {Boolean} 立体交差タイルでない場合nullを返す
  */
 function isOverpassTileAt( x, y ){
-    return $gameMap.terrainTag( $gameMap.roundX( x ), $gameMap.roundY( y ) ) === _OverpassTerrainTag;
+    const flags = $gameMap.tilesetFlags();
+    const tiles = $gameMap.layeredTiles( $gameMap.roundX( x ), $gameMap.roundY( y ) );
+    for( let i = 0; i < tiles.length; i++ ){
+        if( flags[ tiles[ i ] ] >> 12  === _OverpassTerrainTag && !Tilemap.isTileA5( tiles[ i ] ) ){
+            return true;
+        }
+    }
+    return false;
 }
 
 
