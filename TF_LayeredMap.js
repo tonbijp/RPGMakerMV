@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.14.0.1
+// Version :0.14.1.1
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -995,22 +995,8 @@ function setBridgeWEPass( flags, tileId, isCrossPass ){
 const _Scene_Map_onMapLoaded = Scene_Map.prototype.onMapLoaded;
 Scene_Map.prototype.onMapLoaded = function( ){
     treatDataMap();
-    removeCounterFlagFromA5();
     _Scene_Map_onMapLoaded.call( this );
     // end: onMapLoaded
-
-    /**
-     * A5から[カウンター]設定を削除
-     */
-    function removeCounterFlagFromA5(){
-        const flags = $gameMap.tilesetFlags();
-        const lastIndex = Tilemap.TILE_ID_A5 + 128;
-        for( let tileId = Tilemap.TILE_ID_A5; tileId < lastIndex; tileId++ ){
-            if( isCounterTile( flags[ tileId ] ) ){
-                flags[ tileId ] = flags[ tileId ] & MASK_WITHOUT_COUNTER;
-            }
-        }
-    }
 
     /**
      * カウンター設定のA3・A4オートタイルの箇所に、低層の補完タイルを設定
@@ -1391,7 +1377,7 @@ Game_Follower.prototype.chaseCharacter = function( character ){
 /*---- Game_Event ----*/
 var _Game_Event_initialize      = Game_Event.prototype.initialize;
 Game_Event.prototype.initialize = function( mapId, eventId ){
-    _Game_Event_initialize.apply(this, arguments);
+    _Game_Event_initialize.apply( this, arguments );
 
     const getMetaValue = ( object, name )=>{
         const metaTagName = 'TF_' + ( name ? name : '' );
@@ -1411,8 +1397,23 @@ Game_Event.prototype.initialize = function( mapId, eventId ){
 };
 
 
-
 /*---- Game_Map ----*/
+/**
+ * 指定位置のタイルがカウンターか
+ * @param {Number} x タイル数
+ * @param {Number} y タイル数
+ * @returns {Boolean}
+ */
+const _Game_Map_isCounter = Game_Map.prototype.isCounter;
+Game_Map.prototype.isCounter = function( x, y ){
+    const result = _Game_Map_isCounter.apply( this, arguments );
+    if( result ){
+        // A5だったら無視
+        return Tilemap.isTileA5( this.tileId( x, y, 1 ) );
+    }
+    return false;
+};
+
 /**
  * 指定位置の指定フラグビットが通行可か。
  * @param {Number} x タイル数
