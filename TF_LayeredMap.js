@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.14.1.1
+// Version :0.14.2.1
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -994,9 +994,9 @@ function setBridgeWEPass( flags, tileId, isCrossPass ){
  */
 const _Scene_Map_onMapLoaded = Scene_Map.prototype.onMapLoaded;
 Scene_Map.prototype.onMapLoaded = function( ){
+    if ( this._transfer ) $gamePlayer.performTransfer();    // シーン遷移時のマップデータ置き換え処理
     treatDataMap();
     _Scene_Map_onMapLoaded.call( this );
-    // end: onMapLoaded
 
     /**
      * カウンター設定のA3・A4オートタイルの箇所に、低層の補完タイルを設定
