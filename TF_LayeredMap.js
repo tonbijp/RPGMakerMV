@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.14.6.0
+// Version :0.14.7.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -105,7 +105,7 @@
  * 　4. [TerrainTag] Auto tile collision and overpass function for bridge is added.
  * 　5. [Counter] [TerrainTag]  Upper auto tile overpass function is added.
  * 　6. [TerrainTag] [×] The wall top that does not walk for A4 upper tile is added.
- * 　7. [地形タグ]で、A5タイルをひとつ上のレイヤーに移動。
+ * 　7. [TerrainTag] A5 tile up one layer.
  * 　8. <TF_zDef:Number>  Put this tag in the note in event and adjust the overlap.
  * 
  * 1. set [☆] to BCDE tile, and set 4 direction setting.
@@ -159,7 +159,7 @@
  *          [TerrainTag:3][×] North = upper[☆], All = can't enter.
  * 
  * 7. Move up one layer.
- * 　Add [TerrainTag:3] to A5 tile, Set the default tile at base layer and target tile up one layer.
+ * 　Add [TerrainTag:3] to A5 tile, Set the tile at base layer and target tile up one layer.
  *      The overpass will not work. If the right side of A2 is on the target tile, it will gone.
  * 
  * 8. adjust the overlap
@@ -330,7 +330,7 @@
  *          [地形タグ:3][×] 北=高層[☆]、全面通行不可
  * 
  * 7. ひとつ上のレイヤーに移動
- * 　A5タイルに[地形タグ:3] で、背景を規定タイルで補完しA2右側レイヤーに移動。
+ * 　A5タイルに[地形タグ:3] で、背景を補完しA2右側レイヤーに移動。
  *      立体交差は機能しないし、A2右側タイルがあれば消える。
  * 
  * 8. 重ね合わせの順番を調節
@@ -1447,7 +1447,7 @@ function checkOverpassCollision( x, y, d ){
 
     for ( let i = 0; i < tiles.length; i++ ){
         const flag = flags[ tiles[ i ] ];
-        if( flag >> 12  === _OverpassTerrainTag ){
+        if( flag >> 12  === _OverpassTerrainTag && !Tilemap.isTileA5( tiles[ i ] ) ){
             return 0 < ( flag & getFlag( d ) );
         }
     }
