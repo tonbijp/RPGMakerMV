@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.14.4.0
+// Version :0.14.5.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -1016,23 +1016,23 @@ Scene_Map.prototype.onMapLoaded = function( ){
             for( let x = 0; x < $dataMap.width; x++ ){
                 const tileId = getMapData( x, y, 0 );
 
+                // 対象タイルを上層へ
                 if( Tilemap.isTileA5( tileId ) && isOverpassTile( flags[ tileId ] ) ){
                     setMapData( x, y, 1, tileId );
-                    setMapData( x, y, 0, _DefaultLowerTileId );
+                }else if( !isA3A4Tile( tileId ) ){
                     continue;
-                }else if( !isA3A4Tile( tileId ) ) continue;
-
-                // タイルを補完
-                if( isOverpassTile( flags[ tileId ] ) ){
-                    setMapData( x, y, 2, tileId ); 
                 }else{
-                    setMapData( x, y, 1, tileId );
+                    if( isOverpassTile( flags[ tileId ] ) ){
+                        setMapData( x, y, 2, tileId ); 
+                    }else{
+                        setMapData( x, y, 1, tileId );
+                    }
                 }
 
                 if( _FillWithNeighborTile ){
                     // 北タイルで補完ただし、一番南は南で補完
                     const southTileId = getMapData( x, $gameMap.roundY( y + 1 ) , 0 );
-                    if( isA3A4Tile( southTileId ) ){
+                    if( isA3A4Tile( southTileId ) || Tilemap.isTileA5( southTileId ) && isOverpassTile( flags[ southTileId ] )){
                         const northTileId = getMapData( x, $gameMap.roundY( y - 1 ), 0 );
                         setMapData( x, y, 0, northTileId ? northTileId : _DefaultLowerTileId );
                     }else{
