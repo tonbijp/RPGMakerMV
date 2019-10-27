@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.14.7.0
+// Version :0.14.8.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -341,6 +341,10 @@
  * 利用規約 : MITライセンス
  */
 (function(){'use strict';
+const TF_HIGHER_LEVEL = 'TF_HIGHER_LEVEL';
+const PARAM_TRUE = 'true';
+const PARAM_FALSE = 'false';
+
 // flag用定数
 const FLAG_NORTH_DIR = 0x8 // 北の通行設定
 const FLAG_UPPER = 0x10; // 高層[☆]
@@ -349,7 +353,6 @@ const FLAG_COUNTER = 0x80; // カウンター
 const MASK_WITHOUT_DIR_UPPER = 0xFF60; // 方向と高層[☆]とカウンターを除いたもの用マスク
 const MASK_WITHOUT_TAG_DIR_UPPER = 0xF60; // 方向と高層[☆]と地形タグとカウンターを除いたもの用マスク
 const MASK_ALL_DIR = 0xF; // 通行設定用マスク
-const MASK_WITHOUT_COUNTER = 0xFF7F; // カウンター削除用マスク
 
 // 書割り設定
 const FLOOR2_BOARD = 0x19; // 09 書き割り、全方向に 通行可、2階
@@ -422,10 +425,12 @@ const _Game_Interpreter_pluginCommand = Game_Interpreter.prototype.pluginCommand
 Game_Interpreter.prototype.pluginCommand = function ( command, args ){
     _Game_Interpreter_pluginCommand.apply( this, arguments );
 
-    //if( command.toUpperCase() !== PLUGIN_COMMAND ) return;
+    // _higherLevel のON/OFF
+    // TODO:Follower にも適用する
+    if( command.toUpperCase() !== TF_HIGHER_LEVEL ) return;
 
-    //_SomeParameter = ( args[0].toLowerCase() === PLUGIN_PARAM_TRUE );
-    // TODO: _higherLevel のON/OFFができるコマンドあると良い
+    const _higherLevel = ( args[0].toLowerCase() === PARAM_TRUE );
+    $gamePlayer._higherLevel = _higherLevel;
 };
 
  
