@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.14.8.0
+// Version :0.14.9.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -278,6 +278,7 @@
  * 　6. [地形タグ] [×] で、A4上面タイルに上を歩かない壁用の設定。
  * 　7. [地形タグ]で、A5タイルをひとつ上のレイヤーに移動。
  * 　8. <TF_zDef:数値> をイベントのメモに記入して重なりの調整。
+ * 　9. <TF_higherLevel:真偽値> をイベントのメモに記入して立体交差の奥手前の指定。
  * 
  * 1. B〜Eタイルに[☆]を指定したあと、[通行設定(4方向)]
  *      0x0 ↑→←↓ : [☆] 設定、全方向に 通行可(プラグインなしと同じ)
@@ -336,7 +337,12 @@
  * 8. 重ね合わせの順番を調節
  * 　<TF_zDef:数値> をイベントのメモに入力。
  * 　数値はy位置に加えられて、仮想的にy位置をずらす。
- * 　キャラ画像のイベントには、6(規定値)より大きな値を入れると手前に表示される。
+ * 　キャラ画像は標準環境でy方向に-6ずれているので、例えば8を入れると手前に表示される。
+ * 
+ * 9. 立体交差の奥手前の指定
+ * 　<TF_higherLevel:真偽値> をイベントのメモに入力
+ * 　trueだと立体交差の手前(上)、falseだと奥(下)に配置される。
+ * 　規定値はfalse。
  * 
  * 利用規約 : MITライセンス
  */
@@ -445,10 +451,7 @@ Tilemap.prototype._isOverpassPosition = function( x, y ) {
 };
 
 /**
- * @method _compareChildOrder
- * @param {Object} a
- * @param {Object} b
- * @private
+ * イベントの重なりのソート用関数
  */
 Tilemap.prototype._compareChildOrder = function( a, b ) {
     if (a.z !== b.z) return a.z - b.z;
@@ -1407,7 +1410,11 @@ Game_Event.prototype.initialize = function( mapId, eventId ){
         return undefined;
     }
 
-    this._TF_zDef = parseFloat( getMetaValues( this.event(), [ 'zDef', 'Zずらし' ] ) );
+    const zDef = getMetaValues( this.event(), [ 'zDef', 'Zずらし' ] );
+    if( zDef !== undefined ) this._TF_zDef = parseFloat( zDef );
+
+    const higherLevel = getMetaValues( this.event(), [ 'higherLevel', '高位置' ] );
+    if( higherLevel !== undefined ) this._higherLevel = ( higherLevel.toLowerCase() === PARAM_TRUE );
 };
 
 
