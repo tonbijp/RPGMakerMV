@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.14.9.0
+// Version :0.15.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -1097,6 +1097,19 @@ Game_CharacterBase.prototype.screenZ = function() {
 };
 
 /**
+ * @param {Number} x タイル数
+ * @param {Number} y タイル数
+ * @returns {Boolean} イベントで塞がれているか
+ */
+//const _Game_CharacterBase_isCollidedWithEvents = Game_CharacterBase.prototype.isCollidedWithEvents;
+Game_CharacterBase.prototype.isCollidedWithEvents = function( x, y ){
+    const events = $gameMap.eventsXyNt( x, y );
+    return events.some( event =>{
+        return Boolean( this._higherLevel ) === Boolean( event._higherLevel ) && event.isNormalPriority();
+    } );
+};
+
+/**
  * 指定方向への移動が可能か
  * キャラクタ半分の位置が関係するものは、ここで判定。
  * @param {Number} halfX タイル数(0.5刻み)
@@ -1401,19 +1414,10 @@ Game_Event.prototype.initialize = function( mapId, eventId ){
         return object.meta.hasOwnProperty( metaTagName ) ? object.meta[ metaTagName ] : undefined;
     };
 
-    const getMetaValues = ( object, names )=>{
-        if ( !Array.isArray( names ) ) return getMetaValue( object, names );
-        for( let i = 0; i < names.length; i++ ){
-            const value = getMetaValue( object, names[ i ] );
-            if( value !== undefined ) return value;
-        }
-        return undefined;
-    }
-
-    const zDef = getMetaValues( this.event(), [ 'zDef', 'Zずらし' ] );
+    const zDef = getMetaValue( this.event(), 'zDef' );
     if( zDef !== undefined ) this._TF_zDef = parseFloat( zDef );
 
-    const higherLevel = getMetaValues( this.event(), [ 'higherLevel', '高位置' ] );
+    const higherLevel = getMetaValue( this.event(), 'higherLevel' );
     if( higherLevel !== undefined ) this._higherLevel = ( higherLevel.toLowerCase() === PARAM_TRUE );
 };
 
