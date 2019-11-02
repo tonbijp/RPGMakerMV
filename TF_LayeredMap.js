@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.15.0.0
+// Version :0.16.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -106,7 +106,8 @@
  * 　5. [Counter] [TerrainTag]  Upper auto tile overpass function is added.
  * 　6. [TerrainTag] [×] The wall top that does not walk for A4 upper tile is added.
  * 　7. [TerrainTag] A5 tile up one layer.
- * 　8. <TF_zDef:Number>  Put this tag in the note in event and adjust the overlap.
+ * 　8. <TF_zDef:Number> Put this tag in the note in event and adjust the overlap.
+ * 　9. <TF_higherLevel:Boolean> Put this tag in the note in event and set overpass higher level.
  * 
  * 1. set [☆] to BCDE tile, and set 4 direction setting.
  *      0x0 ↑→←↓ : [☆]  Same as no plugin.
@@ -163,9 +164,14 @@
  *      The overpass will not work. If the right side of A2 is on the target tile, it will gone.
  * 
  * 8. adjust the overlap
- * 　<TF_zDef:Number>  Put this tag in the note in event.
+ * 　<TF_zDef:Number> Put this tag in the note in event.
  *      Add a number to the y position and set a virtual y position.
  * 　Enter a number greater than 6 (default) to bring the character to the front.
+ * 
+ * 9. set overpass higher level.
+ * 　 <TF_higherLevel:Boolean> Put this tag in the note in event.
+ * 　true:front(upper)、false:back(lower)
+ * 　default:false
  * 
  * Released under the MIT License.
  */
@@ -279,6 +285,7 @@
  * 　7. [地形タグ]で、A5タイルをひとつ上のレイヤーに移動。
  * 　8. <TF_zDef:数値> をイベントのメモに記入して重なりの調整。
  * 　9. <TF_higherLevel:真偽値> をイベントのメモに記入して立体交差の奥手前の指定。
+ *   10. TF_HIGHER_LEVEL コマンドで立体交差の奥手前の指定。
  * 
  * 1. B〜Eタイルに[☆]を指定したあと、[通行設定(4方向)]
  *      0x0 ↑→←↓ : [☆] 設定、全方向に 通行可(プラグインなしと同じ)
@@ -344,12 +351,15 @@
  * 　trueだと立体交差の手前(上)、falseだと奥(下)に配置される。
  * 　規定値はfalse。
  * 
+ * 10. プラグインコマンドで立体交差の奥手前の指定。
+ * 　TF_HIGHER_LEVEL 真偽値 対象(省略可)
+ * 　対象は -2~-4:隊列キャラ、-1:プレイヤーキャラ、0:イベント自身(規定値)、1以降:イベントID
+ * 
  * 利用規約 : MITライセンス
  */
 (function(){'use strict';
 const TF_HIGHER_LEVEL = 'TF_HIGHER_LEVEL';
 const PARAM_TRUE = 'true';
-const PARAM_FALSE = 'false';
 
 // flag用定数
 const FLAG_NORTH_DIR = 0x8 // 北の通行設定
@@ -432,11 +442,15 @@ Game_Interpreter.prototype.pluginCommand = function ( command, args ){
     _Game_Interpreter_pluginCommand.apply( this, arguments );
 
     // _higherLevel のON/OFF
-    // TODO:Follower にも適用する
     if( command.toUpperCase() !== TF_HIGHER_LEVEL ) return;
 
-    const _higherLevel = ( args[0].toLowerCase() === PARAM_TRUE );
-    $gamePlayer._higherLevel = _higherLevel;
+    const targetCharacter = ( ( id )=>{
+        const targetId = id ? parseInt( id, 10 ) : 0;
+        if( targetId === -1 ) return $gamePlayer;
+        if( targetId < -1 ) return $gamePlayer.followers().follower( -targetId - 2 );
+        return this.character( targetId );
+    } )( args[ 1 ] );
+    targetCharacter._higherLevel = ( args[ 0 ].toLowerCase() === PARAM_TRUE );
 };
 
  
