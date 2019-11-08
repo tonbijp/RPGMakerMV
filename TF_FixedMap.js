@@ -1,6 +1,6 @@
 //========================================
 // TF_FixedMap.js
-// Version :0.0.0.0
+// Version :0.0.0.1
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -24,6 +24,7 @@
  *
 */
 (function(){'use strict';
+const PLUGIN_NAME = 'TF_fixedMap';
 let _isMapFixed, _FixedX, _FixedY;
 
 /*---- Game_Player ----*/
@@ -47,24 +48,33 @@ Scene_Map.prototype.onMapLoaded = function(){
 
     // マップメモ固定座標の指定メタタグの処理
     // 例: <TF_fixedMap:0.84 0.2>
-    _isMapFixed = false;
     const fixedMapArgs = getMetaValue( $dataMap, 'fixedMap' );
-    if( fixedMapArgs === undefined ) return;
+    if( fixedMapArgs === undefined ){
+        _isMapFixed = false;
+    }else{
+        [ _FixedX, _FixedY ] = string2pos( fixedMapArgs );
+        _isMapFixed = true;
+    }
+}
 
-    const resultList = fixedMapArgs.match( /([0-9.]+)[ ,]([0-9.]+)/ );
-    if( resultList === null || resultList.length !== 3 ) throw 'TF_fixedMap: no option';
-    _FixedX = parseFloat( resultList[1] );
-    _FixedY = parseFloat( resultList[2] );
-    if( isNaN( _FixedX ) || isNaN( _FixedY ) ) throw 'TF_fixedMap: NaN';
-
-    _isMapFixed = true;
+/**
+ * 文字列の座標を数値配列にして返す。
+ * @param {String} str スペース区切りの座標
+ * @returns {Array<Number>} 座標 x, y の配列
+ */
+function string2pos( str ){
+    const args = str.split( ' ' );
+    if( args.length !== 2 ) throw PLUGIN_NAME + ': no option';
+    const x = parseFloat( args[ 0 ] );
+    const y = parseFloat( args[ 1 ] );
+    if( isNaN( x ) || isNaN( y ) ) throw PLUGIN_NAME + ': NaN';
+    return [ x, y ];
 }
 
 const _Scene_Map_start = Scene_Map.prototype.start;
 Scene_Map.prototype.start = function() {
     _Scene_Map_start.call( this );
     if( _isMapFixed ){
-        console.log(`${_FixedX}:${_FixedY}`);
         $gameMap.setDisplayPos( _FixedX, _FixedY );
     }
 }
