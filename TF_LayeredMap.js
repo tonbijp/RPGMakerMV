@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.16.2.0
+// Version :0.16.2.1
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -35,7 +35,10 @@
  * @parent Autotile
  * 
  * @param DefaultLowerTile
- * @desc If FillWithNorthTile option is OFF, fill with this tile.
+ * @type number
+ * @min 0
+ * @max 127
+ * @desc If FillWithNeighborTile option is OFF, fill with this tile.
  * Start with 0 at upper left A5 to right.
  * @default 16
  * @parent Autotile
@@ -78,6 +81,9 @@
  * @param Overpass
  * 
  * @param OverpassTerrainTag
+ * @type number
+ * @min 0
+ * @max 7
  * @desc Terraing tag for overpass tile.
  * @default 3
  * @parent Overpass
@@ -198,13 +204,16 @@
  * @on 周辺のタイル
  * @off 補完用規定タイル
  * @text 周辺のタイルでの補完
- * @desc 低層(地面)を北(画面上では上)のタイルで補完するか
+ * @desc 低層(地面)を北(最南端は南)のタイルで補完するか
  * @default true
  * @parent Autotile
  * 
  * @param DefaultLowerTile
+ * @type number
+ * @min 0
+ * @max 127
  * @text 補完用規定タイル
- * @desc [北のタイルでの補完]がOFFの場合に使う規定タイル
+ * @desc [周辺のタイルでの補完]がOFFの場合に使う規定タイル
  * 番号はA5左上を0として右への順。規定値:16(草原)
  * @default 16
  * @parent Autotile
@@ -251,6 +260,9 @@
  * @text 立体交差
  * 
  * @param OverpassTerrainTag
+ * @type number
+ * @min 0
+ * @max 7
  * @text 立体交差の地形タグ
  * @desc 立体交差不使用 : 0
  * 立体交差をさせたいタイルに指定する地形タグ
