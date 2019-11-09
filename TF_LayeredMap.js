@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.16.1.0
+// Version :0.16.2.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -1212,8 +1212,15 @@ Game_CharacterBase.prototype.isMapPassable = function( halfX, halfY, d ){
         return null;
     }
 
-    // Overpass 用のプログラム
-    if( _OverpassTerrainTag === 0 ) return _Game_CharacterBase_isMapPassable.apply( this, arguments );
+    // Overpass タグが設定されていない
+    if( _OverpassTerrainTag === 0 ){
+        const isFPassable = isFurniturePassable();
+        if( isFPassable !== null ) return isFPassable;
+        return _Game_CharacterBase_isMapPassable.apply( this, arguments );
+    }
+
+
+    /*---- Overpass 用のプログラム ----*/
 
     // 立体交差の下では、家具の衝突判定は行わない
     if( this._higherLevel || ( !this._higherLevel && !isOverpassTileAt( x, y ) ) ){
