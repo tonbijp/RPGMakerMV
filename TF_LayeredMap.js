@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.16.0.0
+// Version :0.16.1.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -1111,16 +1111,16 @@ Game_CharacterBase.prototype.screenZ = function() {
 };
 
 /**
+ * 指定座標がイベントで塞がれているか。
+ * ※コンフリクトの可能性あり
  * @param {Number} x タイル数
  * @param {Number} y タイル数
- * @returns {Boolean} イベントで塞がれているか
+ * @returns {Boolean} 
  */
 //const _Game_CharacterBase_isCollidedWithEvents = Game_CharacterBase.prototype.isCollidedWithEvents;
 Game_CharacterBase.prototype.isCollidedWithEvents = function( x, y ){
     const events = $gameMap.eventsXyNt( x, y );
-    return events.some( event =>{
-        return Boolean( this._higherLevel ) === Boolean( event._higherLevel ) && event.isNormalPriority();
-    } );
+    return events.some( event => Boolean( this._higherLevel ) === Boolean( event._higherLevel ) && event.isNormalPriority() );
 };
 
 /**
@@ -1256,14 +1256,14 @@ Game_CharacterBase.prototype.isMapPassable = function( halfX, halfY, d ){
                 }
                 return true;
             }
-        }
+        }else if( d === 8 && halfPos === 0 && checkOverpassCollisionBit( x - 1, y -1, 5 ) ) return true; // 東の角┘
 
         // 潜る
         if( d === 2 ){
             if( halfPos === 2 ){
-                if( checkOverpassCollision( x - 1, y + 1, 8 ) && checkOverpassCollision( x - 1, y + 1, 6 ) ) return true;// 東の角┐
+                if( checkOverpassCollisionBit( x - 1, y + 1, 12 ) ) return true; // 東の角┐
+                if( checkOverpassCollisionBit( x, y + 1, 9 ) ) return true; // 西の角┌
                 if( checkOverpassCollision( x, y + 1, 8 ) ){
-                    if( checkOverpassCollision( x, y + 1, 4 ) ) return true; // 西の角┌
                     if( checkOverpassCollision( x - 1, y + 1, 8 ) ) return true;
                 }
             }else if( halfPos === 3 ){
@@ -1271,6 +1271,7 @@ Game_CharacterBase.prototype.isMapPassable = function( halfX, halfY, d ){
             }
         }else if( d === 8 ){
             if( halfPos === 0 ){
+                if( checkOverpassCollisionBit( x, y -1, 3 ) ) return true; // 西の角└
                 if( checkOverpassCollision( x, y - 1, 2 ) && checkOverpassCollision( x - 1, y - 1, 2 ) ) return true;
             }else if( halfPos === 1 ){
                 if( checkOverpassCollision( x, y - 1, 2 ) ) return true;
@@ -1419,12 +1420,12 @@ Game_Follower.prototype.chaseCharacter = function( character ){
 
 
 /*---- Game_Event ----*/
-var _Game_Event_initialize      = Game_Event.prototype.initialize;
+var _Game_Event_initialize = Game_Event.prototype.initialize;
 Game_Event.prototype.initialize = function( mapId, eventId ){
     _Game_Event_initialize.apply( this, arguments );
 
     const getMetaValue = ( object, name )=>{
-        const metaTagName = 'TF_' + ( name ? name : '' );
+        const metaTagName = 'TF_' + name;
         return object.meta.hasOwnProperty( metaTagName ) ? object.meta[ metaTagName ] : undefined;
     };
 
@@ -1449,7 +1450,7 @@ Game_Map.prototype.checkPassage = function( x, y, bit ){
     const flags = this.tilesetFlags();
     const tiles = this.allTiles( x, y );
     const isOverpass = isOverpassTileAt( x, y );
-    const lastIndex = tiles.length - ( ( $gamePlayer._higherLevel && isOverpass )? 2 : 0 );
+    const lastIndex = tiles.length - ( ( $gamePlayer._higherLevel && isOverpass ) ? 2 : 0 );
     for( let i = 0; i < lastIndex; i++ ){
         const tileId = tiles[ i ];
         const flag = flags[ tileId ];
@@ -1472,13 +1473,24 @@ Game_Map.prototype.checkPassage = function( x, y, bit ){
  * @returns {Boolean} 立体交差タイルでない場合nullを返す
  */
 function checkOverpassCollision( x, y, d ){
+    return checkOverpassCollisionBit( x, y, getFlag( d ) );
+}
+
+/**
+ * 指定位置の立体交差地形タグを持つタイルの通行判定(ビットフラグ)チェック
+ * @param {Number} ax タイル数
+ * @param {Number} ay タイル数
+ * @param {Number} bit 通行設定(ビットフラグ)
+ * @returns {Boolean} 立体交差タイルでない場合nullを返す
+ */
+function checkOverpassCollisionBit( x, y, bit ){
     const flags = $gameMap.tilesetFlags();
     const tiles = $gameMap.allTiles( Math.floor( $gameMap.roundX( x ) ), Math.floor( $gameMap.roundY( y ) ) );
 
     for ( let i = 0; i < tiles.length; i++ ){
         const flag = flags[ tiles[ i ] ];
         if( flag >> 12  === _OverpassTerrainTag && !Tilemap.isTileA5( tiles[ i ] ) ){
-            return 0 < ( flag & getFlag( d ) );
+            return 0 < ( flag & bit );
         }
     }
     return null;
