@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.16.2.1
+// Version :0.16.3.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -1509,7 +1509,7 @@ function checkOverpassCollisionBit( x, y, bit ){
     for ( let i = 0; i < tiles.length; i++ ){
         const flag = flags[ tiles[ i ] ];
         if( flag >> 12  === _OverpassTerrainTag && !Tilemap.isTileA5( tiles[ i ] ) ){
-            return 0 < ( flag & bit );
+            return ( flag & bit ) === bit;
         }
     }
     return null;
