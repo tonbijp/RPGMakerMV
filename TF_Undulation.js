@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :1.8.3.2
+// Version :1.8.4.2
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -326,12 +326,14 @@ Game_CharacterBase.prototype.isMapPassable = function( halfX, halfY, d ){
     }else if( halfPos === 1 ){
         if( d === 6 && getUndulation( x + 1, y ) === WSN ) return false;
     }else if( halfPos === 3 ){
-        if( ( d === 4 || d === 6 ) && ( getUndulation( x, y ) === WSN || getUndulation( x + dx, y ) === WSN ) ) return false;
+        if( d === 4 && ( getUndulation( x, y ) === WSN || getUndulation( x - 1, y ) === WSN ) ) return false;
+        if( d === 6 && getUndulation( x  + 1, y ) === WSN ) return false;
     }
 
     // ⤾ WSS
     if( halfPos === 1 ){ 
-        if( ( d === 4 || d === 6 ) && ( getUndulation( x, y ) === WSS || getUndulation( x + dx, y ) === WSS ) ) return false;
+        if( d === 4 && ( getUndulation( x, y ) === WSS || getUndulation( x - 1, y ) === WSS ) ) return false;
+        if( d === 6 && getUndulation( x  + 1, y ) === WSS ) return false;
     }else if( halfPos === 2 ){
         if( d === 2 && ( getUndulation( x - 1, y + 1 ) === WSS || getUndulation( x, y + 1 ) === WSS ) ) return false;
     }else if( halfPos === 3 ){
