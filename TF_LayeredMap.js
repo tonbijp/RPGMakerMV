@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.16.3.0
+// Version :0.16.5.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2019
@@ -1123,17 +1123,17 @@ Game_CharacterBase.prototype.screenZ = function() {
 };
 
 /**
- * 指定座標がイベントで塞がれているか。
- * ※コンフリクトの可能性あり
+ * 指定座標がイベントで塞がれているか。高さレベルを考慮する。
+ * TODO : HalfMove.js とコンフリクトするので、回避方法を探る
  * @param {Number} x タイル数
  * @param {Number} y タイル数
  * @returns {Boolean} 
  */
 //const _Game_CharacterBase_isCollidedWithEvents = Game_CharacterBase.prototype.isCollidedWithEvents;
-Game_CharacterBase.prototype.isCollidedWithEvents = function( x, y ){
-    const events = $gameMap.eventsXyNt( x, y );
-    return events.some( event => Boolean( this._higherLevel ) === Boolean( event._higherLevel ) && event.isNormalPriority() );
-};
+// Game_CharacterBase.prototype.isCollidedWithEvents = function( x, y ){
+//     const events = $gameMap.eventsXyNt( x, y );
+//     return events.some( event => Boolean( this._higherLevel ) === Boolean( event._higherLevel ) );
+// };
 
 /**
  * 指定方向への移動が可能か
@@ -1260,7 +1260,6 @@ Game_CharacterBase.prototype.isMapPassable = function( halfX, halfY, d ){
             }
             return true;
         }
-
 
         // 東の境界
         if( isOverpassTileAt( x - 1, y ) ){
