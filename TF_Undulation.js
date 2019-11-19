@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :1.8.4.2
+// Version :1.8.5.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -939,13 +939,23 @@ function getHalfPos( x, y ){
  * @param {Number} d 方向(テンキー対応)
  */
 function getDx( d ){
-    return ( d === 6 ) ? 1 : ( d === 4 ) ? -1 : 0;
+    if( d === 1 || d === 4 || d === 7 ){
+        return -1;
+    }else if( d === 3 || d === 6 || d=== 9 ){
+        return 1;
+    }
+    return 0;
 }
 /**
  * 指定方向のY要素を返す。
  * @param {Number} d 方向(テンキー対応)
  */
 function getDy( d ){
-    return ( d === 2 ) ? 1 : ( d === 8 ) ? -1 : 0;
+    if( d === 7 || d === 8 || d === 9 ){
+        return -1;
+    }else if( d === 1 || d === 2 || d=== 3 ){
+        return 1;
+    }
+    return 0;
 }
 })();
