@@ -225,12 +225,12 @@ const FLAG2RATIO_W = { // 西(左)向き ↖ , ↙
     [ ESS ] : [ resistA, -resistA ], [ ESN ] : [ resistA, resistA ],
 };
 const FLAG2RATIO_E = { // 東(右)向き ↘ , ↗
-    [ W45 ] : [ -resistA, -resistA ], [ E45 ] : [ -resistA, resistA ],
-    [ W63 ] : [ -resistB, -resistA ], [ E63 ] : [ -resistB, resistA ],
-    [ W27N ] : [ -resistC, -resistD ], [ E27N ] : [ -resistC, resistD ],
-    [ W27S ] : [ -resistC, -resistD ], [ E27S ] : [ -resistC, resistD ],
-    [ WSS ] : [ -resistA, -resistA ], [ WSN ] : [ -resistA, resistA ],
-    [ ESS ] : [ -resistA, resistA ], [ ESN ] : [ -resistA, -resistA ],
+    [ W45 ]: [ -resistA, -resistA ], [ E45 ]: [ -resistA, resistA ],
+    [ W63 ]: [ -resistB, -resistA ], [ E63 ]: [ -resistB, resistA ],
+    [ W27N ]: [ -resistC, -resistD ], [ E27N ]: [ -resistC, resistD ],
+    [ W27S ]: [ -resistC, -resistD ], [ E27S ]: [ -resistC, resistD ],
+    [ WSS ]: [ -resistA, -resistA ], [ WSN ]: [ -resistA, resistA ],
+    [ ESS ]: [ -resistA, resistA ], [ ESN ]: [ -resistA, -resistA ],
 };
 
 // フラグから階段(坂)の到達点の位置を得る
@@ -523,6 +523,8 @@ Game_CharacterBase.prototype.isMapPassable = function( halfX, halfY, d ){
         }else if( halfPos === 3 ){
             if( isTileLayoutNorth( W45, 4 ) ) return false;
         }
+    } else if ( d === 6 ) {
+        if ( halfPos === 3 && isTileLayoutNorth( W45, 5 ) ) return true;
     }else if( d === 8 ){
         if( halfPos === 0 ){
             if( isTileLayoutNorth( W45, 5 ) || isTileLayoutNorth( W45, 7 ) ) return false;
@@ -545,6 +547,8 @@ Game_CharacterBase.prototype.isMapPassable = function( halfX, halfY, d ){
             if( isTileLayoutNorth( E45, 2 ) ) return false;
             if( isTileLayoutSouth( E45, 2 ) ) return true;
         }
+    } else if ( d === 4 ) {
+        if ( halfPos === 3 && isTileLayoutNorth( E45, 5 ) ) return true;
     }else if( d === 6 ){
         if( halfPos === 1 ){
             if( isTileLayoutNorth( E45, 6 ) ) return false;
