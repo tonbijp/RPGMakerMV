@@ -1,9 +1,9 @@
 //========================================
 // TF_LayeredMap.js
-// Version :0.16.5.0
+// Version :1.0.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
-// Copyright : Tobishima-Factory 2018 - 2019
+// Copyright : Tobishima-Factory 2018 - 2020
 // Website : http://tonbi.jp
 //
 // This software is released under the MIT License.
@@ -847,7 +847,7 @@ function setCounterPass( flags, tileId ){
         15, 28, 28, 28, 28, 28, 15, 15, 
         15, 15, 28, 28, 15, 28, 28, 28, 
     ];
-    replaceCollision( flags, tileId, MASK_WITHOUT_DIR_UPPER, COUNTER_PASS );
+    replaceCollision( flags, tileId, MASK_WITHOUT_DIR_UPPER | FLAG_COUNTER, COUNTER_PASS );
 }
 // [A2][×][IsA2FullCollision:OFF] □周囲=通行不可
 // [A4][○][♢][TT] □周囲=通行不可
