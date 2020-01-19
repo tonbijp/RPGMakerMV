@@ -3,6 +3,8 @@
 [RPGツクールMV リファレンスプロジェクト](https://github.com/katai5plate/RPGMV-CoreScript-Reference/)の編集もしてます。
 
 
+プラグイン名(TF_Xxx.js)のリンクから最新版のプラグインがダウンロードできます。
+
 |プラグイン|説明|状況|解説(explanation)|#ツクプラ|
 |---|---|---|---|---|
 |[TF_DashControl.js](https://raw.githubusercontent.com/tonbijp/RPGMakerMV/master/TF_DashControl.js)|ダッシュの可・不可を制御|リリース済||[●](https://rpgfun.tk/archives/2395)|
