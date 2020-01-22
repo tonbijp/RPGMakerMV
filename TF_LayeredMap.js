@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :1.0.0.0
+// Version :1.0.1.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2020
@@ -1472,9 +1472,13 @@ Game_Map.prototype.checkPassage = function( x, y, bit ){
     for( let i = 0; i < lastIndex; i++ ){
         const tileId = tiles[ i ];
         const flag = flags[ tileId ];
-
-        // [☆]かつ北通行不可タイルは特殊タイルなので無視
-        if( tileId === 0 || ( flag & FLAG_UPPER ) && ( flag & FLAG_NORTH_DIR ) ) continue;
+       
+        if( tileId === 0  ||    // Bタイルの左上は無視
+            ( flag & FLAG_UPPER ) && (          // [☆]かつ
+                (flag & FLAG_NORTH_DIR) ||  // ・北通行不可タイルは無視
+                !( flag & MASK_ALL_DIR )        // ・全通行可タイルは無視
+            )
+        ) continue;
         if( ( flag & bit ) === 0 ) return true;
         if( ( flag & bit ) === bit ) return false;
     }
