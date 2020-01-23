@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :1.8.6.1
+// Version :1.8.7.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -149,10 +149,10 @@
  * 
  * 利用規約 : MITライセンス
  */
-( function () {
+( function() {
     'use strict';
     // HalfMove.js の確認
-    if ( !PluginManager._scripts.contains( 'HalfMove' ) ) {
+    if( !PluginManager._scripts.contains( 'HalfMove' ) ) {
         throw new Error( 'HalfMove.js is required to use TF_Undulation.js.' );
     }
 
@@ -273,7 +273,7 @@
      * @returns {Boolean} 移動可能か
      */
     const _Game_CharacterBase_isMapPassable = Game_CharacterBase.prototype.isMapPassable;
-    Game_CharacterBase.prototype.isMapPassable = function ( halfX, halfY, d ) {
+    Game_CharacterBase.prototype.isMapPassable = function( halfX, halfY, d ) {
         const x = Math.floor( halfX + 0.5 );
         const y = Math.floor( halfY + 0.5 );
         const halfPos = getHalfPos( halfX, halfY );
@@ -290,8 +290,8 @@
         const getTileLayout = ( undulation, d ) => {
             const dx = getDx( d );
             const dy = getDy( d );
-            if ( undulation !== getUndulation( x + dx, y + dy ) ) return LAYOUT_NONE;
-            if ( isSamePitch( undulation, getUndulation( x + dx, y + dy - 1 ) ) ) {
+            if( undulation !== getUndulation( x + dx, y + dy ) ) return LAYOUT_NONE;
+            if( isSamePitch( undulation, getUndulation( x + dx, y + dy - 1 ) ) ) {
                 return isSamePitch( undulation, getUndulation( x + dx, y + dy + 1 ) ) ? LAYOUT_CENTER : LAYOUT_SOUTH;
             } else {
                 return isSamePitch( undulation, getUndulation( x + dx, y + dy + 1 ) ) ? LAYOUT_NORTH : LAYOUT_SINGLE;
@@ -307,323 +307,348 @@
             return layout === LAYOUT_SOUTH || layout === LAYOUT_SINGLE;
         };
 
+        const thisUndulation = getUndulation( x, y );
+        const isThisUndulation = undulation => thisUndulation === undulation;
+        let isItPassable = null;
 
-        // ⤾ WSU
-        if ( halfPos === 1 || halfPos === 3 ) {
-            if ( d === 4 ) {
-                if ( getUndulation( x - 1, y ) === WSU ) return false;
-            } else if ( d === 6 ) {
-                if ( getUndulation( x, y ) === WSU ) return false;
+        const isWSPassable = () => {
+            // ⤾ WSU
+            if( halfPos === 1 || halfPos === 3 ) {
+                if( d === 4 ) {
+                    if( getUndulation( x - 1, y ) === WSU ) return false;
+                } else if( d === 6 ) {
+                    if( thisUndulation === WSU ) return false;
+                }
+            } else if( halfPos === 0 ) {
+                if( d === 2 && isThisUndulation( WSU ) ) return false;
+            } else if( halfPos === 2 ) {
+                if( d === 8 && isThisUndulation( WSU ) ) return false;
             }
-        } else if ( halfPos === 0 ) {
-            if ( d === 2 && getUndulation( x, y ) === WSU ) return false;
-        } else if ( halfPos === 2 ) {
-            if ( d === 8 && getUndulation( x, y ) === WSU ) return false;
-        }
 
-        // ⤾ WSN
-        if ( halfPos === 0 ) {
-            if ( d === 8 && ( getUndulation( x, y - 1 ) === WSN || getUndulation( x - 1, y - 1 ) === WSN ) ) return false;
-        } else if ( halfPos === 1 ) {
-            if ( d === 6 && getUndulation( x + 1, y ) === WSN ) return false;
-        } else if ( halfPos === 3 ) {
-            if ( d === 4 && ( getUndulation( x, y ) === WSN || getUndulation( x - 1, y ) === WSN ) ) return false;
-            if ( d === 6 && getUndulation( x + 1, y ) === WSN ) return false;
-        }
-
-        // ⤾ WSS
-        if ( halfPos === 1 ) {
-            if ( d === 4 && ( getUndulation( x, y ) === WSS || getUndulation( x - 1, y ) === WSS ) ) return false;
-            if ( d === 6 && getUndulation( x + 1, y ) === WSS ) return false;
-        } else if ( halfPos === 2 ) {
-            if ( d === 2 && ( getUndulation( x - 1, y + 1 ) === WSS || getUndulation( x, y + 1 ) === WSS ) ) return false;
-        } else if ( halfPos === 3 ) {
-            if ( d === 6 && getUndulation( x + 1, y ) === WSS ) return false;
-        }
-
-        // ⤿ ESU
-        if ( halfPos === 0 ) {
-            if ( d === 2 && getUndulation( x - 1, y ) === ESU ) return false;
-        } else if ( halfPos === 1 | halfPos === 3 ) {
-            if ( d === 4 ) {
-                if ( getUndulation( x - 1, y ) === ESU ) return true;
-            } else if ( d === 6 ) {
-                if ( getUndulation( x, y ) === ESU ) return true;
+            // ⤾ WSN
+            if( halfPos === 0 ) {
+                if( d === 8 && ( getUndulation( x, y - 1 ) === WSN || getUndulation( x - 1, y - 1 ) === WSN ) ) return false;
+            } else if( halfPos === 1 ) {
+                if( d === 6 && getUndulation( x + 1, y ) === WSN ) return false;
+            } else if( halfPos === 3 ) {
+                if( d === 4 && ( isThisUndulation( WSN ) || getUndulation( x - 1, y ) === WSN ) ) return false;
+                if( d === 6 ) {
+                    if( isThisUndulation( WSN ) ) return true;
+                    if( getUndulation( x + 1, y ) === WSN ) return false;
+                }
             }
-        } else if ( halfPos === 2 ) {
-            if ( d === 8 && getUndulation( x - 1, y ) === ESU ) return false;
-        }
 
-        // ⤿ ESN
-        if ( halfPos === 1 ) {
-            if ( d === 6 && getUndulation( x + 1, y ) === ESN ) return true;
-        } else if ( halfPos === 3 ) {
-            if ( d === 4 && getUndulation( x, y ) === ESN ) return true;
-        }
+            // ⤾ WSS
+            if( halfPos === 1 ) {
+                if( d === 4 && ( isThisUndulation( WSS ) || getUndulation( x - 1, y ) === WSS ) ) return false;
+                if( d === 6 ) {
+                    if( isThisUndulation( WSS ) ) return true;
+                    if( getUndulation( x + 1, y ) === WSS ) return false;
+                }
+            } else if( halfPos === 2 ) {
+                if( d === 2 && ( getUndulation( x - 1, y + 1 ) === WSS || getUndulation( x, y + 1 ) === WSS ) ) return false;
+            } else if( halfPos === 3 ) {
+                if( d === 6 && getUndulation( x + 1, y ) === WSS ) return false;
+            }
 
-        // ⤿ ESS
-        if ( halfPos === 1 ) {
-            if ( d === 4 && getUndulation( x, y ) === ESS ) return true;
-        } else if ( halfPos === 3 ) {
-            if ( d === 6 && getUndulation( x + 1, y ) === ESS ) return true;
-        }
+            return null;
+        };
 
+
+        const isESPassable = () => {
+            // ⤿ ESU
+            if( halfPos === 0 ) {
+                if( d === 2 && getUndulation( x - 1, y ) === ESU ) return false;
+            } else if( halfPos === 1 | halfPos === 3 ) {
+                if( d === 4 ) {
+                    if( getUndulation( x - 1, y ) === ESU ) return true;
+                } else if( d === 6 ) {
+                    if( isThisUndulation( ESU ) ) return true;
+                }
+            } else if( halfPos === 2 ) {
+                if( d === 8 && getUndulation( x - 1, y ) === ESU ) return false;
+            }
+
+            // ⤿ ESN
+            if( halfPos === 1 ) {
+                if( d === 6 && getUndulation( x + 1, y ) === ESN ) return true;
+            } else if( halfPos === 3 ) {
+                if( d === 4 && isThisUndulation( ESN ) ) return true;
+            }
+
+            // ⤿ ESS
+            if( halfPos === 1 ) {
+                if( d === 4 && isThisUndulation( ESS ) ) return true;
+            } else if( halfPos === 3 ) {
+                if( d === 6 && getUndulation( x + 1, y ) === ESS ) return true;
+            }
+
+            return null;
+        };
+
+        // ⤾ WS
+        isItPassable = isWSPassable();
+        if( isItPassable !== null ) return isItPassable;
+
+        // ⤿ ES
+        isItPassable = isESPassable();
+        if( isItPassable !== null ) return isItPassable;
 
         // CENTER_LINE
-        if ( halfPos === 0 || halfPos === 2 ) {
-            if ( d === 4 ) {
-                if ( getUndulation( x - 1, y ) === CENTER_LINE ) return false;
-            } else if ( d === 6 ) {
-                if ( getUndulation( x, y ) === CENTER_LINE ) return false;
+        if( halfPos === 0 || halfPos === 2 ) {
+            if( d === 4 ) {
+                if( getUndulation( x - 1, y ) === CENTER_LINE ) return false;
+            } else if( d === 6 ) {
+                if( isThisUndulation( CENTER_LINE ) ) return false;
             }
-        } else if ( halfPos === 1 ) {
-            if ( d === 8 && getUndulation( x, y - 1 ) === CENTER_LINE ) return false;
-        } else if ( halfPos === 3 ) {
-            if ( d === 2 && getUndulation( x, y + 1 ) === CENTER_LINE ) return false;
+        } else if( halfPos === 1 ) {
+            if( d === 8 && getUndulation( x, y - 1 ) === CENTER_LINE ) return false;
+        } else if( halfPos === 3 ) {
+            if( d === 2 && getUndulation( x, y + 1 ) === CENTER_LINE ) return false;
         }
 
 
         // ＼ W27S
-        if ( d === 2 ) {
-            if ( halfPos === 0 ) {
-                if ( isTileLayoutSouth( W27S, 5 ) ) return false;
-            } else if ( halfPos === 2 ) {
-                if ( isTileLayoutNorth( W27S, 1 ) || isTileLayoutNorth( W27S, 2 ) || isTileLayoutSouth( W27S, 4 ) ) return false;
-                if ( isTileLayoutSouth( W27S, 2 ) ) return true;
-            } else if ( halfPos === 3 ) {
-                if ( isTileLayoutNorth( W27S, 2 ) ) return false;
+        if( d === 2 ) {
+            if( halfPos === 0 ) {
+                if( isTileLayoutSouth( W27S, 5 ) ) return false;
+            } else if( halfPos === 2 ) {
+                if( isTileLayoutNorth( W27S, 1 ) || isTileLayoutNorth( W27S, 2 ) || isTileLayoutSouth( W27S, 4 ) ) return false;
+                if( isTileLayoutSouth( W27S, 2 ) ) return true;
+            } else if( halfPos === 3 ) {
+                if( isTileLayoutNorth( W27S, 2 ) ) return false;
             }
-        } else if ( d === 4 ) {
-            if ( halfPos === 1 ) {
-                if ( isTileLayoutNorth( W27S, 4 ) ) return false;
-            } else if ( halfPos === 3 ) {
-                if ( getTileLayout( W27S, 4 ) === LAYOUT_NORTH ) return false;
+        } else if( d === 4 ) {
+            if( halfPos === 1 ) {
+                if( isTileLayoutNorth( W27S, 4 ) ) return false;
+            } else if( halfPos === 3 ) {
+                if( getTileLayout( W27S, 4 ) === LAYOUT_NORTH ) return false;
             }
-        } else if ( d === 6 ) {
-            if ( halfPos === 1 ) {
-                if ( getTileLayout( W27S, 6 ) === LAYOUT_NORTH ) return false;
-                if ( isTileLayoutSouth( W27S, 6 ) ) return true;
+        } else if( d === 6 ) {
+            if( halfPos === 1 ) {
+                if( getTileLayout( W27S, 6 ) === LAYOUT_NORTH ) return false;
+                if( isTileLayoutSouth( W27S, 6 ) ) return true;
             }
-        } else if ( d === 8 ) {
-            if ( halfPos === 0 ) {
-                if ( isTileLayoutNorth( W27S, 7 ) || getTileLayout( W27S, 5 ) === LAYOUT_SINGLE ) return false;
-                if ( isTileLayoutSouth( W27S, 4 ) ) return true;
-            } else if ( halfPos === 1 ) {
-                if ( isTileLayoutSouth( W27S, 8 ) ) return false;
-            } else if ( halfPos === 2 ) {
-                if ( isTileLayoutNorth( W27S, 5 ) || getTileLayout( W27S, 4 ) === LAYOUT_SINGLE ) return false;
+        } else if( d === 8 ) {
+            if( halfPos === 0 ) {
+                if( isTileLayoutNorth( W27S, 7 ) || getTileLayout( W27S, 5 ) === LAYOUT_SINGLE ) return false;
+                if( isTileLayoutSouth( W27S, 4 ) ) return true;
+            } else if( halfPos === 1 ) {
+                if( isTileLayoutSouth( W27S, 8 ) ) return false;
+            } else if( halfPos === 2 ) {
+                if( isTileLayoutNorth( W27S, 5 ) || getTileLayout( W27S, 4 ) === LAYOUT_SINGLE ) return false;
             }
         }
 
         // ＼ W27N
-        if ( d === 2 ) {
-            if ( halfPos === 0 ) {
-                if ( isTileLayoutSouth( W27N, 4 ) ) return false;
-            } else if ( halfPos === 2 ) {
-                if ( getTileLayout( W27N, 1 ) === LAYOUT_SOUTH ) return true;
-                if ( isTileLayoutNorth( W27N, 1 ) || isTileLayoutNorth( W27N, 2 ) ||
+        if( d === 2 ) {
+            if( halfPos === 0 ) {
+                if( isTileLayoutSouth( W27N, 4 ) ) return false;
+            } else if( halfPos === 2 ) {
+                if( getTileLayout( W27N, 1 ) === LAYOUT_SOUTH ) return true;
+                if( isTileLayoutNorth( W27N, 1 ) || isTileLayoutNorth( W27N, 2 ) ||
                     isTileLayoutSouth( W27N, 2 ) || getTileLayout( W27N, 5 ) === LAYOUT_SINGLE ) return false;
-            } else if ( halfPos === 3 ) {
-                if ( isTileLayoutNorth( W27N, 2 ) ) return false;
+            } else if( halfPos === 3 ) {
+                if( isTileLayoutNorth( W27N, 2 ) ) return false;
             }
-        } else if ( d === 4 ) {
-            if ( halfPos === 1 ) {
-                if ( isTileLayoutNorth( W27N, 4 ) ) return false;
-            } else if ( halfPos === 3 ) {
-                if ( isTileLayoutSouth( W27N, 4 ) ) return false;
+        } else if( d === 4 ) {
+            if( halfPos === 1 ) {
+                if( isTileLayoutNorth( W27N, 4 ) ) return false;
+            } else if( halfPos === 3 ) {
+                if( isTileLayoutSouth( W27N, 4 ) ) return false;
             }
-        } else if ( d === 6 ) {
-            if ( ( halfPos === 1 || halfPos === 3 ) && getTileLayout( W27N, 6 ) === LAYOUT_SINGLE ) return true;
-        } else if ( d === 8 ) {
-            if ( halfPos === 0 ) {
-                if ( isTileLayoutNorth( W27N, 5 ) || isTileLayoutSouth( W27N, 7 ) ) return false;
-                if ( isTileLayoutSouth( W27N, 4 ) ) return true;
-            } else if ( halfPos === 1 ) {
-                if ( isTileLayoutSouth( W27N, 8 ) ) return false;
-            } else if ( halfPos === 2 ) {
-                if ( isTileLayoutNorth( W27N, 4 ) ) return false;
+        } else if( d === 6 ) {
+            if( ( halfPos === 1 || halfPos === 3 ) && getTileLayout( W27N, 6 ) === LAYOUT_SINGLE ) return true;
+        } else if( d === 8 ) {
+            if( halfPos === 0 ) {
+                if( isTileLayoutNorth( W27N, 5 ) || isTileLayoutSouth( W27N, 7 ) ) return false;
+                if( isTileLayoutSouth( W27N, 4 ) ) return true;
+            } else if( halfPos === 1 ) {
+                if( isTileLayoutSouth( W27N, 8 ) ) return false;
+            } else if( halfPos === 2 ) {
+                if( isTileLayoutNorth( W27N, 4 ) ) return false;
             }
         }
 
 
         // ／ E27S
-        if ( d === 2 ) {
-            if ( halfPos === 0 ) {
-                if ( isTileLayoutSouth( E27S, 4 ) ) return false;
-            } else if ( halfPos === 2 ) {
-                if ( isTileLayoutNorth( E27S, 1 ) || isTileLayoutNorth( E27S, 2 ) ||
+        if( d === 2 ) {
+            if( halfPos === 0 ) {
+                if( isTileLayoutSouth( E27S, 4 ) ) return false;
+            } else if( halfPos === 2 ) {
+                if( isTileLayoutNorth( E27S, 1 ) || isTileLayoutNorth( E27S, 2 ) ||
                     getTileLayout( E27S, 2 ) === LAYOUT_SINGLE ) return false;
-                if ( isTileLayoutSouth( E27S, 1 ) ) return true;
-            } else if ( halfPos === 3 ) {
-                if ( isTileLayoutNorth( E27S, 2 ) ) return false;
+                if( isTileLayoutSouth( E27S, 1 ) ) return true;
+            } else if( halfPos === 3 ) {
+                if( isTileLayoutNorth( E27S, 2 ) ) return false;
             }
-        } else if ( d === 4 ) {
-            if ( halfPos === 1 ) {
-                if ( getTileLayout( E27S, 4 ) === LAYOUT_NORTH ) return false;
-                if ( isTileLayoutSouth( E27S, 4 ) ) return true;
+        } else if( d === 4 ) {
+            if( halfPos === 1 ) {
+                if( getTileLayout( E27S, 4 ) === LAYOUT_NORTH ) return false;
+                if( isTileLayoutSouth( E27S, 4 ) ) return true;
             }
-        } else if ( d === 6 ) {
-            if ( halfPos === 1 ) {
-                if ( isTileLayoutNorth( E27S, 6 ) ) return false;
-            } else if ( halfPos === 3 ) {
-                if ( getTileLayout( E27S, 6 ) === LAYOUT_NORTH ) return false;
+        } else if( d === 6 ) {
+            if( halfPos === 1 ) {
+                if( isTileLayoutNorth( E27S, 6 ) ) return false;
+            } else if( halfPos === 3 ) {
+                if( getTileLayout( E27S, 6 ) === LAYOUT_NORTH ) return false;
             }
-        } else if ( d === 8 ) {
-            if ( halfPos === 0 ) {
-                if ( isTileLayoutNorth( E27S, 8 ) || getTileLayout( E27S, 4 ) === LAYOUT_SINGLE ) return false;
-            } else if ( halfPos === 2 ) {
-                if ( isTileLayoutNorth( E27S, 4 ) || getTileLayout( E27S, 5 ) === LAYOUT_SINGLE ) return false;
+        } else if( d === 8 ) {
+            if( halfPos === 0 ) {
+                if( isTileLayoutNorth( E27S, 8 ) || getTileLayout( E27S, 4 ) === LAYOUT_SINGLE ) return false;
+            } else if( halfPos === 2 ) {
+                if( isTileLayoutNorth( E27S, 4 ) || getTileLayout( E27S, 5 ) === LAYOUT_SINGLE ) return false;
             }
         }
 
         // ／ E27N
-        if ( d === 2 ) {
-            if ( halfPos === 0 ) {
-                if ( isTileLayoutSouth( E27N, 5 ) ) return false;
-            } else if ( halfPos === 2 ) {
-                if ( isTileLayoutNorth( E27N, 1 ) || isTileLayoutNorth( E27N, 2 ) ||
+        if( d === 2 ) {
+            if( halfPos === 0 ) {
+                if( isTileLayoutSouth( E27N, 5 ) ) return false;
+            } else if( halfPos === 2 ) {
+                if( isTileLayoutNorth( E27N, 1 ) || isTileLayoutNorth( E27N, 2 ) ||
                     getTileLayout( E27N, 4 ) === LAYOUT_SINGLE ) return false;
-            } else if ( halfPos === 3 ) {
-                if ( isTileLayoutNorth( E27N, 2 ) ) return false;
+            } else if( halfPos === 3 ) {
+                if( isTileLayoutNorth( E27N, 2 ) ) return false;
             }
-        } else if ( d === 4 ) {
-            if ( ( halfPos === 1 || halfPos === 3 ) && getTileLayout( E27N, 4 ) === LAYOUT_SINGLE ) return true;
-        } else if ( d === 6 ) {
-            if ( halfPos === 1 ) {
-                if ( isTileLayoutNorth( E27N, 6 ) ) return false;
-            } else if ( halfPos === 3 ) {
-                if ( isTileLayoutSouth( E27N, 6 ) ) return false;
+        } else if( d === 4 ) {
+            if( ( halfPos === 1 || halfPos === 3 ) && getTileLayout( E27N, 4 ) === LAYOUT_SINGLE ) return true;
+        } else if( d === 6 ) {
+            if( halfPos === 1 ) {
+                if( isTileLayoutNorth( E27N, 6 ) ) return false;
+            } else if( halfPos === 3 ) {
+                if( isTileLayoutSouth( E27N, 6 ) ) return false;
             }
-        } else if ( d === 8 ) {
-            if ( halfPos === 0 ) {
-                if ( isTileLayoutNorth( E27N, 4 ) || isTileLayoutSouth( E27N, 8 ) ) return false;
-                if ( isTileLayoutSouth( E27N, 5 ) ) return true;
-            } else if ( halfPos === 1 ) {
-                if ( isTileLayoutSouth( E27N, 8 ) ) return false;
-            } else if ( halfPos === 2 ) {
-                if ( isTileLayoutNorth( E27N, 5 ) ) return false;
+        } else if( d === 8 ) {
+            if( halfPos === 0 ) {
+                if( isTileLayoutNorth( E27N, 4 ) || isTileLayoutSouth( E27N, 8 ) ) return false;
+                if( isTileLayoutSouth( E27N, 5 ) ) return true;
+            } else if( halfPos === 1 ) {
+                if( isTileLayoutSouth( E27N, 8 ) ) return false;
+            } else if( halfPos === 2 ) {
+                if( isTileLayoutNorth( E27N, 5 ) ) return false;
             }
         }
 
 
         // ＼ W45
-        if ( d === 2 ) {
-            if ( halfPos === 1 ) {
-                if ( isTileLayoutSouth( W45, 5 ) ) return false;
-            } else if ( halfPos === 2 ) {
-                if ( isTileLayoutNorth( W45, 1 ) || isTileLayoutNorth( W45, 2 ) ) return false;
-                if ( isTileLayoutSouth( W45, 1 ) ) return true;
-            } else if ( halfPos === 3 ) {
-                if ( isTileLayoutNorth( W45, 2 ) ) return false;
-                if ( isTileLayoutSouth( W45, 2 ) ) return true;
+        if( d === 2 ) {
+            if( halfPos === 1 ) {
+                if( isTileLayoutSouth( W45, 5 ) ) return false;
+            } else if( halfPos === 2 ) {
+                if( isTileLayoutNorth( W45, 1 ) || isTileLayoutNorth( W45, 2 ) ) return false;
+                if( isTileLayoutSouth( W45, 1 ) ) return true;
+            } else if( halfPos === 3 ) {
+                if( isTileLayoutNorth( W45, 2 ) ) return false;
+                if( isTileLayoutSouth( W45, 2 ) ) return true;
             }
-        } else if ( d === 4 ) {
-            if ( halfPos === 1 ) {
-                if ( isTileLayoutNorth( W45, 4 ) ) return false;
-                if ( isTileLayoutSouth( W45, 5 ) ) return true;
-            } else if ( halfPos === 3 ) {
-                if ( isTileLayoutNorth( W45, 4 ) ) return false;
+        } else if( d === 4 ) {
+            if( halfPos === 1 ) {
+                if( isTileLayoutNorth( W45, 4 ) ) return false;
+                if( isTileLayoutSouth( W45, 5 ) ) return true;
+            } else if( halfPos === 3 ) {
+                if( isTileLayoutNorth( W45, 4 ) ) return false;
             }
-        } else if ( d === 6 ) {
-            if ( halfPos === 3 && isTileLayoutNorth( W45, 5 ) ) return true;
-        } else if ( d === 8 ) {
-            if ( halfPos === 0 ) {
-                if ( isTileLayoutNorth( W45, 5 ) || isTileLayoutNorth( W45, 7 ) ) return false;
-                if ( isTileLayoutSouth( W45, 4 ) ) return true;
-            } else if ( halfPos === 1 ) {
-                if ( isTileLayoutSouth( W45, 5 ) ) return true;
-            } else if ( halfPos === 3 ) {
-                if ( isTileLayoutNorth( W45, 5 ) ) return false;
+        } else if( d === 6 ) {
+            if( halfPos === 3 && isTileLayoutNorth( W45, 5 ) ) return true;
+        } else if( d === 8 ) {
+            if( halfPos === 0 ) {
+                if( isTileLayoutNorth( W45, 5 ) || isTileLayoutNorth( W45, 7 ) ) return false;
+                if( isTileLayoutSouth( W45, 4 ) ) return true;
+            } else if( halfPos === 1 ) {
+                if( isTileLayoutSouth( W45, 5 ) ) return true;
+            } else if( halfPos === 3 ) {
+                if( isTileLayoutNorth( W45, 5 ) ) return false;
             }
         }
 
         // ／ E45
-        if ( d === 2 ) {
-            if ( halfPos === 1 ) {
-                if ( isTileLayoutSouth( E45, 5 ) ) return false;
-            } else if ( halfPos === 2 ) {
-                if ( isTileLayoutNorth( E45, 1 ) || isTileLayoutNorth( E45, 2 ) ) return false;
-                if ( isTileLayoutSouth( E45, 2 ) ) return true;
-            } else if ( halfPos === 3 ) {
-                if ( isTileLayoutNorth( E45, 2 ) ) return false;
-                if ( isTileLayoutSouth( E45, 2 ) ) return true;
+        if( d === 2 ) {
+            if( halfPos === 1 ) {
+                if( isTileLayoutSouth( E45, 5 ) ) return false;
+            } else if( halfPos === 2 ) {
+                if( isTileLayoutNorth( E45, 1 ) || isTileLayoutNorth( E45, 2 ) ) return false;
+                if( isTileLayoutSouth( E45, 2 ) ) return true;
+            } else if( halfPos === 3 ) {
+                if( isTileLayoutNorth( E45, 2 ) ) return false;
+                if( isTileLayoutSouth( E45, 2 ) ) return true;
             }
-        } else if ( d === 4 ) {
-            if ( halfPos === 3 && isTileLayoutNorth( E45, 5 ) ) return true;
-        } else if ( d === 6 ) {
-            if ( halfPos === 1 ) {
-                if ( isTileLayoutNorth( E45, 6 ) ) return false;
-                if ( isTileLayoutSouth( E45, 5 ) ) return true;
-            } else if ( halfPos === 3 ) {
-                if ( isTileLayoutNorth( E45, 6 ) ) return false;
+        } else if( d === 4 ) {
+            if( halfPos === 3 && isTileLayoutNorth( E45, 5 ) ) return true;
+        } else if( d === 6 ) {
+            if( halfPos === 1 ) {
+                if( isTileLayoutNorth( E45, 6 ) ) return false;
+                if( isTileLayoutSouth( E45, 5 ) ) return true;
+            } else if( halfPos === 3 ) {
+                if( isTileLayoutNorth( E45, 6 ) ) return false;
             }
-        } else if ( d === 8 ) {
-            if ( halfPos === 0 ) {
-                if ( isTileLayoutNorth( E45, 4 ) || isTileLayoutNorth( E45, 8 ) ) return false;
-                if ( isTileLayoutSouth( E45, 5 ) ) return true;
-            } else if ( halfPos === 1 ) {
-                if ( isTileLayoutSouth( E45, 5 ) ) return true;
-            } else if ( halfPos === 3 ) {
-                if ( isTileLayoutNorth( E45, 5 ) ) return false;
+        } else if( d === 8 ) {
+            if( halfPos === 0 ) {
+                if( isTileLayoutNorth( E45, 4 ) || isTileLayoutNorth( E45, 8 ) ) return false;
+                if( isTileLayoutSouth( E45, 5 ) ) return true;
+            } else if( halfPos === 1 ) {
+                if( isTileLayoutSouth( E45, 5 ) ) return true;
+            } else if( halfPos === 3 ) {
+                if( isTileLayoutNorth( E45, 5 ) ) return false;
             }
         }
 
 
         // \  W63
-        if ( d === 2 ) {
-            if ( halfPos === 1 ) {
-                if ( isTileLayoutNorth( W63, 5 ) ) return false;
-            } else if ( halfPos === 2 ) {
-                if ( isTileLayoutNorth( W63, 2 ) ) return false;
-            } else if ( halfPos === 3 ) {
-                if ( isTileLayoutNorth( W63, 2 ) ) return false;
-                if ( isTileLayoutSouth( W63, 5 ) ) return false;
+        if( d === 2 ) {
+            if( halfPos === 1 ) {
+                if( isTileLayoutNorth( W63, 5 ) ) return false;
+            } else if( halfPos === 2 ) {
+                if( isTileLayoutNorth( W63, 2 ) ) return false;
+            } else if( halfPos === 3 ) {
+                if( isTileLayoutNorth( W63, 2 ) ) return false;
+                if( isTileLayoutSouth( W63, 5 ) ) return false;
             }
-        } else if ( d === 4 ) {
-            if ( halfPos === 0 ) {
-                if ( isTileLayoutNorth( W63, 4 ) ) return false;
-            } else if ( halfPos === 1 ) {
-                if ( isTileLayoutNorth( W63, 5 ) ) return false;
-                if ( isTileLayoutSouth( W63, 5 ) ) return true;
-            } else if ( halfPos === 2 ) {
-                if ( isTileLayoutNorth( W63, 4 ) ) return false;
-            } else if ( halfPos === 3 ) {
-                if ( isTileLayoutSouth( W63, 5 ) ) return true;
+        } else if( d === 4 ) {
+            if( halfPos === 0 ) {
+                if( isTileLayoutNorth( W63, 4 ) ) return false;
+            } else if( halfPos === 1 ) {
+                if( isTileLayoutNorth( W63, 5 ) ) return false;
+                if( isTileLayoutSouth( W63, 5 ) ) return true;
+            } else if( halfPos === 2 ) {
+                if( isTileLayoutNorth( W63, 4 ) ) return false;
+            } else if( halfPos === 3 ) {
+                if( isTileLayoutSouth( W63, 5 ) ) return true;
             }
-        } else if ( d === 8 ) {
-            if ( halfPos === 0 ) {
-                if ( isTileLayoutNorth( W63, 5 ) || isTileLayoutSouth( W63, 8 ) ) return false;
-            } else if ( halfPos === 1 ) {
-                if ( isTileLayoutNorth( W63, 8 ) || isTileLayoutSouth( W63, 8 ) ) return false;
+        } else if( d === 8 ) {
+            if( halfPos === 0 ) {
+                if( isTileLayoutNorth( W63, 5 ) || isTileLayoutSouth( W63, 8 ) ) return false;
+            } else if( halfPos === 1 ) {
+                if( isTileLayoutNorth( W63, 8 ) || isTileLayoutSouth( W63, 8 ) ) return false;
             }
         }
 
         //  / E63
-        if ( d === 2 ) {
-            if ( halfPos === 1 ) {
-                if ( isTileLayoutNorth( E63, 5 ) ) return false;
-            } else if ( halfPos === 2 ) {
-                if ( isTileLayoutNorth( E63, 1 ) ) return false;
-            } else if ( halfPos === 3 ) {
-                if ( isTileLayoutNorth( E63, 2 ) ) return false;
-                if ( isTileLayoutSouth( E63, 5 ) ) return false;
+        if( d === 2 ) {
+            if( halfPos === 1 ) {
+                if( isTileLayoutNorth( E63, 5 ) ) return false;
+            } else if( halfPos === 2 ) {
+                if( isTileLayoutNorth( E63, 1 ) ) return false;
+            } else if( halfPos === 3 ) {
+                if( isTileLayoutNorth( E63, 2 ) ) return false;
+                if( isTileLayoutSouth( E63, 5 ) ) return false;
             }
-        } else if ( d === 6 ) {
-            if ( halfPos === 0 ) {
-                if ( isTileLayoutNorth( E63, 5 ) ) return false;
-            } else if ( halfPos === 1 ) {
-                if ( isTileLayoutNorth( E63, 5 ) ) return false;
-                if ( isTileLayoutSouth( E63, 5 ) ) return true;
-            } else if ( halfPos === 2 ) {
-                if ( isTileLayoutNorth( E63, 5 ) ) return false;
-            } else if ( halfPos === 3 ) {
-                if ( isTileLayoutSouth( E63, 5 ) ) return true;
+        } else if( d === 6 ) {
+            if( halfPos === 0 ) {
+                if( isTileLayoutNorth( E63, 5 ) ) return false;
+            } else if( halfPos === 1 ) {
+                if( isTileLayoutNorth( E63, 5 ) ) return false;
+                if( isTileLayoutSouth( E63, 5 ) ) return true;
+            } else if( halfPos === 2 ) {
+                if( isTileLayoutNorth( E63, 5 ) ) return false;
+            } else if( halfPos === 3 ) {
+                if( isTileLayoutSouth( E63, 5 ) ) return true;
             }
-        } else if ( d === 8 ) {
-            if ( halfPos === 0 ) {
-                if ( isTileLayoutNorth( E63, 4 ) ) return false;
-            } else if ( halfPos === 1 ) {
-                if ( isTileLayoutNorth( E63, 8 ) || isTileLayoutSouth( E63, 8 ) ) return false;
+        } else if( d === 8 ) {
+            if( halfPos === 0 ) {
+                if( isTileLayoutNorth( E63, 4 ) ) return false;
+            } else if( halfPos === 1 ) {
+                if( isTileLayoutNorth( E63, 8 ) || isTileLayoutSouth( E63, 8 ) ) return false;
             }
         }
 
@@ -634,8 +659,8 @@
      * 移動から停止・停止から移動に切り替わったタイミングを調べる。
      */
     const _Game_CharacterBase_updateMove = Game_CharacterBase.prototype.updateMove;
-    Game_CharacterBase.prototype.updateMove = function () {
-        if ( this instanceof Game_Follower ) {
+    Game_CharacterBase.prototype.updateMove = function() {
+        if( this instanceof Game_Follower ) {
             // TODO: followerをスムースに動かすための処理を入れる。
         }
 
@@ -643,14 +668,14 @@
         const tileX = ( preRealX + 0.5 ) % 1;
         const isW = this.x < preRealX;
         let undulation = getUndulation( Math.floor( this._realX + 0.5 ), Math.floor( this._realY + 0.5 ) );
-        if ( undulation === -2 || undulation === WSU || undulation === ESU ) {
+        if( undulation === -2 || undulation === WSU || undulation === ESU ) {
             // 縦方向の階段(U字型螺旋)
-            if ( this._realY != this.y ) this._realY += this.distancePerFrame() * ( ( this.y < this._realY ) ? resistA : -resistA );
-        } else if ( ( undulation === 0 || undulation & MASK_UNDULATION ) && this._realX != this.x ) {
+            if( this._realY != this.y ) this._realY += this.distancePerFrame() * ( ( this.y < this._realY ) ? resistA : -resistA );
+        } else if( ( undulation === 0 || undulation & MASK_UNDULATION ) && this._realX != this.x ) {
             // 横方向の階段
             _isStairMove = true;
             const ratioXY = isW ? FLAG2RATIO_W[ undulation ] : FLAG2RATIO_E[ undulation ];
-            if ( ratioXY && !( ( undulation === W63 && 0.5 < tileX ) || ( undulation === E63 && tileX < 0.5 ) ) ) {
+            if( ratioXY && !( ( undulation === W63 && 0.5 < tileX ) || ( undulation === E63 && tileX < 0.5 ) ) ) {
                 this._realX += this.distancePerFrame() * ratioXY[ 0 ];
                 this._realY += this.distancePerFrame() * ratioXY[ 1 ];
             }
@@ -659,26 +684,26 @@
         _Game_CharacterBase_updateMove.call( this );
         _isStairMove = false;
 
-        if ( preRealX === this.x || this._realX === this.x ) return;
+        if( preRealX === this.x || this._realX === this.x ) return;
 
         undulation = getUndulation( Math.floor( this._realX + 0.5 ), Math.floor( this._realY + 0.5 ) );
-        if ( undulation < 0 || undulation & MASK_BUMP || ( preRealX * 2 ) !== Math.floor( preRealX * 2 ) ) return;
+        if( undulation < 0 || undulation & MASK_BUMP || ( preRealX * 2 ) !== Math.floor( preRealX * 2 ) ) return;
 
         const targetPos = isW ? FLAG2POS_W[ undulation ] : FLAG2POS_E[ undulation ];
-        if ( targetPos === undefined ) return;
+        if( targetPos === undefined ) return;
 
         // 角度63の坂は半分だけ動かす
-        if ( undulation === W63 ) {
-            if ( isW ) {
-                if ( tileX === 0 ) return;
+        if( undulation === W63 ) {
+            if( isW ) {
+                if( tileX === 0 ) return;
             } else {
-                if ( tileX === 0.5 ) return;
+                if( tileX === 0.5 ) return;
             }
-        } else if ( undulation === E63 ) {
-            if ( isW ) {
-                if ( tileX === 0.5 ) return;
+        } else if( undulation === E63 ) {
+            if( isW ) {
+                if( tileX === 0.5 ) return;
             } else {
-                if ( tileX === 0 ) return;
+                if( tileX === 0 ) return;
             }
         }
 
@@ -694,14 +719,14 @@
      * @returns {Number} 
      */
     const _Game_CharacterBase_shiftY = Game_CharacterBase.prototype.shiftY;
-    Game_CharacterBase.prototype.shiftY = function () {
+    Game_CharacterBase.prototype.shiftY = function() {
         const shiftY = _Game_CharacterBase_shiftY.call( this );
         let tileX = ( this._realX + 0.5 ) % 1;
         const x = Math.floor( this._realX + 0.5 );
         const y = Math.floor( this._realY + 0.5 );
         const undulationL = ( tileX === 0 ) ? getUndulation( x - 1, y ) : -1;
         const undulationR = getUndulation( x, y );
-        if ( undulationL & MASK_BUMP || undulationR & MASK_BUMP ) {
+        if( undulationL & MASK_BUMP || undulationR & MASK_BUMP ) {
             const dYL = getBump( undulationL );
             const dYR = getBump( undulationR );
             return shiftY + Math.max( dYL, dYR );
@@ -715,7 +740,7 @@
      */
     let _isStairMove = false;
     const _Game_CharacterBase_isMovingDiagonal = Game_CharacterBase.prototype.isMovingDiagonal;
-    Game_CharacterBase.prototype.isMovingDiagonal = function () {
+    Game_CharacterBase.prototype.isMovingDiagonal = function() {
         return _isStairMove ? false : _Game_CharacterBase_isMovingDiagonal.apply( this, arguments );
     };
 
@@ -726,9 +751,9 @@
      * @param {Number} d 向き(テンキー対応)
      */
     const _Game_Player_executeMove = Game_Player.prototype.executeMove;
-    Game_Player.prototype.executeMove = function ( d ) {
+    Game_Player.prototype.executeMove = function( d ) {
         const tmpD = checkAloundUndulationFlag( this.x, this.y, d );
-        if ( tmpD === -1 ) {
+        if( tmpD === -1 ) {
             _Game_Player_executeMove.apply( this, arguments );
         } else {
             this.moveStraight( tmpD );
@@ -744,13 +769,13 @@
      * @returns {Boolean} 
      */
     const _Game_Map_isPassable = Game_Map.prototype.isPassable;
-    Game_Map.prototype.isPassable = function ( x, y, d ) {
-        if ( this.terrainTag( x, y ) !== _TerrainTag ) return _Game_Map_isPassable.apply( this, arguments );
+    Game_Map.prototype.isPassable = function( x, y, d ) {
+        if( this.terrainTag( x, y ) !== _TerrainTag ) return _Game_Map_isPassable.apply( this, arguments );
 
         const undulation = getUndulation( x, y );
 
         // 横向き階段の南が同じタイルで繋がっている場合は通行可
-        if ( TYPE_SIDE_STAIRS.includes( undulation ) && isSamePitch( undulation, getUndulation( x, y + 1 ) ) ) return true;
+        if( TYPE_SIDE_STAIRS.includes( undulation ) && isSamePitch( undulation, getUndulation( x, y + 1 ) ) ) return true;
 
         return _Game_Map_isPassable.apply( this, arguments );
     };
@@ -758,14 +783,14 @@
 
     // 地形タグ0設定されていれば処理を無視
     const _Game_Map_isLadder = Game_Map.prototype.isLadder;
-    Game_Map.prototype.isLadder = function ( x, y ) {
-        if ( isBump( x, y ) ) return false;
+    Game_Map.prototype.isLadder = function( x, y ) {
+        if( isBump( x, y ) ) return false;
         return _Game_Map_isLadder.apply( this, arguments );
     };
 
     const _Game_Map_isDamageFloor = Game_Map.prototype.isDamageFloor;
-    Game_Map.prototype.isDamageFloor = function ( x, y ) {
-        if ( isBump( x, y ) ) return false;
+    Game_Map.prototype.isDamageFloor = function( x, y ) {
+        if( isBump( x, y ) ) return false;
         return _Game_Map_isDamageFloor.apply( this, arguments );
     };
 
@@ -777,14 +802,14 @@
      * @param {Game_Character} character 追いかけるキャラ
      */
     const _Game_Follower_chaseCharacter = Game_Follower.prototype.chaseCharacter;
-    Game_Follower.prototype.chaseCharacter = function ( character ) {
+    Game_Follower.prototype.chaseCharacter = function( character ) {
         const d = Math.sign( this.deltaYFrom( character.y ) ) * 3 - Math.sign( this.deltaXFrom( character.x ) ) + 5;
         const tmpD = checkAloundUndulationFlag( this.x, this.y, d );
-        if ( tmpD === -1 ) {
+        if( tmpD === -1 ) {
             _Game_Follower_chaseCharacter.apply( this, arguments );
             return;
         }
-        if ( tmpD !== 5 ) this.moveStraight( tmpD );
+        if( tmpD !== 5 ) this.moveStraight( tmpD );
         this.setMoveSpeed( $gamePlayer.realMoveSpeed() );
     };
 
@@ -803,15 +828,15 @@
         const flags = $gameMap.tilesetFlags();
         const tiles = $gameMap.allTiles( x, y );
 
-        for ( let i = 0; i < tiles.length; i++ ) {
+        for( let i = 0; i < tiles.length; i++ ) {
             const flag = flags[ tiles[ i ] ];
             const terrainTag = flag >> 12;
-            if ( terrainTag === 0 ) continue;
-            if ( terrainTag === _TerrainTag ) {
+            if( terrainTag === 0 ) continue;
+            if( terrainTag === _TerrainTag ) {
                 const bump = ( flag & MASK_BUMP );
-                if ( bump ) return bump;
+                if( bump ) return bump;
                 return flag & MASK_UNDULATION;
-            } else if ( terrainTag === _TerrainTagSN ) {
+            } else if( terrainTag === _TerrainTagSN ) {
                 return -2;
             }
         }
@@ -835,11 +860,11 @@
         // 足元が高低差タイル
         const undulation = ( () => {
             const undulation = getUndulation( x, y );
-            if ( FLAG2RATIO_W[ undulation ] ) return undulation;
+            if( FLAG2RATIO_W[ undulation ] ) return undulation;
 
-            if ( halfPos === 0 || halfPos === 2 ) {
+            if( halfPos === 0 || halfPos === 2 ) {
                 const undulation = getUndulation( x - 1, y );
-                if ( FLAG2RATIO_W[ undulation ] ) {
+                if( FLAG2RATIO_W[ undulation ] ) {
                     halfPos += 4;
                     return undulation;
                 }
@@ -848,38 +873,38 @@
         } )();
 
         // 周辺が高低差タイル
-        if ( undulation === -1 ) {
-            if ( halfPos === 0 ) {
-                if ( FLAG2RATIO_W[ getUndulation( x, y - 1 ) ] ) return tmpD;
-                if ( FLAG2RATIO_W[ getUndulation( x - 1, y - 1 ) ] ) return tmpD;
-            } else if ( halfPos === 1 ) {
-                if ( FLAG2RATIO_W[ getUndulation( x - 1, y ) ] ) return tmpD;
-                if ( FLAG2RATIO_W[ getUndulation( x + 1, y ) ] ) return tmpD;
-                if ( FLAG2RATIO_W[ getUndulation( x, y - 1 ) ] ) return tmpD;
-            } else if ( halfPos === 2 ) {
-                if ( FLAG2RATIO_W[ getUndulation( x, y + 1 ) ] ) return tmpD;
-            } else if ( halfPos === 3 ) {
-                if ( FLAG2RATIO_W[ getUndulation( x - 1, y ) ] ) return tmpD;
-                if ( FLAG2RATIO_W[ getUndulation( x + 1, y ) ] ) return tmpD;
-                if ( FLAG2RATIO_W[ getUndulation( x, y + 1 ) ] ) return tmpD;
-                if ( FLAG2RATIO_W[ getUndulation( x - 1, y + 1 ) ] ) return tmpD;
+        if( undulation === -1 ) {
+            if( halfPos === 0 ) {
+                if( FLAG2RATIO_W[ getUndulation( x, y - 1 ) ] ) return tmpD;
+                if( FLAG2RATIO_W[ getUndulation( x - 1, y - 1 ) ] ) return tmpD;
+            } else if( halfPos === 1 ) {
+                if( FLAG2RATIO_W[ getUndulation( x - 1, y ) ] ) return tmpD;
+                if( FLAG2RATIO_W[ getUndulation( x + 1, y ) ] ) return tmpD;
+                if( FLAG2RATIO_W[ getUndulation( x, y - 1 ) ] ) return tmpD;
+            } else if( halfPos === 2 ) {
+                if( FLAG2RATIO_W[ getUndulation( x, y + 1 ) ] ) return tmpD;
+            } else if( halfPos === 3 ) {
+                if( FLAG2RATIO_W[ getUndulation( x - 1, y ) ] ) return tmpD;
+                if( FLAG2RATIO_W[ getUndulation( x + 1, y ) ] ) return tmpD;
+                if( FLAG2RATIO_W[ getUndulation( x, y + 1 ) ] ) return tmpD;
+                if( FLAG2RATIO_W[ getUndulation( x - 1, y + 1 ) ] ) return tmpD;
             }
             return -1;
         }
 
         // 螺旋階段
-        if ( undulation === WSN ) {
-            if ( halfPos === 4 && tmpD === 2 ) return 4;
-            if ( halfPos === 3 && tmpD === 8 ) return 6;
-        } else if ( undulation === WSS ) {
-            if ( halfPos === 1 && tmpD === 2 ) return 6;
-            if ( halfPos === 6 && tmpD === 8 ) return 4;
-        } else if ( undulation === ESN ) {
-            if ( halfPos === 0 && tmpD === 2 ) return 6;
-            if ( halfPos === 3 && tmpD === 8 ) return 4;
-        } else if ( undulation === ESS ) {
-            if ( halfPos === 1 && tmpD === 2 ) return 4;
-            if ( halfPos === 2 && tmpD === 8 ) return 6;
+        if( undulation === WSN ) {
+            if( halfPos === 4 && tmpD === 2 ) return 4;
+            if( halfPos === 3 && tmpD === 8 ) return 6;
+        } else if( undulation === WSS ) {
+            if( halfPos === 1 && tmpD === 2 ) return 6;
+            if( halfPos === 6 && tmpD === 8 ) return 4;
+        } else if( undulation === ESN ) {
+            if( halfPos === 0 && tmpD === 2 ) return 6;
+            if( halfPos === 3 && tmpD === 8 ) return 4;
+        } else if( undulation === ESS ) {
+            if( halfPos === 1 && tmpD === 2 ) return 4;
+            if( halfPos === 2 && tmpD === 8 ) return 6;
         }
         return tmpD;
     }
@@ -889,8 +914,8 @@
      * @param {Nubmer} undulation 高低差タイプ
      */
     function normalizByPitch( undulation ) {
-        if ( undulation === W27S ) return W27N;
-        if ( undulation === E27S ) return E27N;
+        if( undulation === W27S ) return W27N;
+        if( undulation === E27S ) return E27N;
         return undulation;
     }
 
@@ -922,12 +947,12 @@
      * @returns {Boolean} 
      */
     function isBump( x, y ) {
-        if ( getUndulation( x, y ) !== -1 ) return true;
+        if( getUndulation( x, y ) !== -1 ) return true;
         const isHalfX = ( x % 1 ) !== 0;
-        if ( isHalfX && getUndulation( x + 1, y ) !== -1 ) return true;
+        if( isHalfX && getUndulation( x + 1, y ) !== -1 ) return true;
         const isHalfY = ( y % 1 ) !== 0;
-        if ( isHalfY && getUndulation( x, y + 1 ) !== -1 ) return true;
-        if ( isHalfX && isHalfY && getUndulation( x + 1, y + 1 ) !== -1 ) return true;
+        if( isHalfY && getUndulation( x, y + 1 ) !== -1 ) return true;
+        if( isHalfX && isHalfY && getUndulation( x + 1, y + 1 ) !== -1 ) return true;
         return false;
     }
 
@@ -944,9 +969,9 @@
      * @param {Number} d 方向(テンキー対応)
      */
     function getDx( d ) {
-        if ( d === 1 || d === 4 || d === 7 ) {
+        if( d === 1 || d === 4 || d === 7 ) {
             return -1;
-        } else if ( d === 3 || d === 6 || d === 9 ) {
+        } else if( d === 3 || d === 6 || d === 9 ) {
             return 1;
         }
         return 0;
@@ -956,9 +981,9 @@
      * @param {Number} d 方向(テンキー対応)
      */
     function getDy( d ) {
-        if ( d === 7 || d === 8 || d === 9 ) {
+        if( d === 7 || d === 8 || d === 9 ) {
             return -1;
-        } else if ( d === 1 || d === 2 || d === 3 ) {
+        } else if( d === 1 || d === 2 || d === 3 ) {
             return 1;
         }
         return 0;
