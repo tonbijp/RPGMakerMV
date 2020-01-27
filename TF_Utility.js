@@ -1,6 +1,6 @@
 //========================================
 // TF_Utility.js
-// Version :0.2.0.0
+// Version :0.3.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -18,7 +18,7 @@
 * TkoolMV_PluginCommandBook.js 必須。
 */
 
-( function () {
+( function() {
 	'use strict';
 	const PLUGIN_NAME = 'TF_Utility';
 
@@ -39,7 +39,7 @@
 	 */
 	function parseIntStrict( value, errorMessage ) {
 		const result = parseInt( value, 10 );
-		if ( isNaN( result ) ) throw Error( '指定した値[' + value + ']が数値ではありません。' + errorMessage );
+		if( isNaN( result ) ) throw Error( '指定した値[' + value + ']が数値ではありません。' + errorMessage );
 		return result;
 	};
 
@@ -69,19 +69,19 @@
 		let targetEvent;
 		// キャラクタオブジェクト(Game_Character)
 		id = ( id === undefined ) ? 0 : parseIntStrict( id );
-		if ( id < -1 ) {
+		if( id < -1 ) {
 			targetEvent = $gamePlayer.followers().follower( -id );			// 隊列メンバー
 		} else {
 			targetEvent = this.character( id );			// プレイヤーキャラおよびイベント
 		}
 
 		// 画像ファイル
-		if ( fileName === undefined ) {
+		if( fileName === undefined ) {
 			fileName = targetEvent.characterName();
 		}
 
 		// キャラ番号
-		if ( charaNo === undefined ) {
+		if( charaNo === undefined ) {
 			charaNo = targetEvent.characterIndex();
 		} else {
 			charaNo = parseIntStrict( charaNo );
@@ -90,15 +90,15 @@
 		targetEvent.setImage( fileName, charaNo );
 
 		// パターン番号
-		if ( patternNo !== undefined ) {
+		if( patternNo !== undefined ) {
 			patternNo = parseIntStrict( patternNo );
 			targetEvent.setPattern( patternNo );
 			targetEvent._originalPattern = patternNo;
 		}
 
-		if ( d !== undefined ) {
+		if( d !== undefined ) {
 			// 向きを設定
-			const tmp = isDirectionFixed();
+			const tmp = targetEvent.isDirectionFixed();
 			targetEvent.setDirectionFix( false );
 			targetEvent.setDirection( parseIntStrict( d ) );
 			targetEvent.setDirectionFix( tmp );
@@ -107,22 +107,30 @@
 		return { id: id, object: targetEvent };
 	}
 
-	/** ---- コマンド本体 ---- **/
+
+	/* ---------------- コマンド本体 ---------------- */
+	/**
+	 * イベントID　　 : -4〜-2 隊列メンバ、 -1:プレイヤーキャラ、0:このイベント、1〜:イベントID
+	 * 画像ファイル名 : .pngを含まない img/characters/以下のファイル名
+	 * キャラ番号　　 : 0〜7 の番号(開始左上から右へ進み、下の段へ左から右へ)
+	 * パターン番号　 : 0〜2 の番号(0:左列 1:中央列 2:右列)
+	 * 向き　　　　　 : テンキー対応(2:下 4:左 6:右 8:上)
+	*/
+
 	/**
 	 * TF_setCharPattern 対象イベントID 画像ファイル名 キャラ番号 パターン番号 向き
 	 * TF_setCharPattern 2 !Door2 2 0
 	 * すべて省略可。省略したパラメータは現在設定されているものが使われる。
 	 */
-	Game_Interpreter.prototype.pluginCommandBook_TF_setCharPattern = function ( args ) {
-		setCharPattern( ...args );
+	Game_Interpreter.prototype.pluginCommandBook_TF_setCharPattern = function( args ) {
+		setCharPattern.apply( this, args );
 	};
-	/** ---- コマンド本体 ---- **/
 	/**
 	 * TF_verticalAnime 対象イベントID 画像ファイル名 キャラ番号 パターン番号 
 	 * TF_verticalAnime 2 !Door2 2 0
 	 * すべて省略可。省略したパラメータは現在設定されているものが使われる。
 	 */
-	Game_Interpreter.prototype.pluginCommandBook_TF_verticalAnime = function ( args ) {
+	Game_Interpreter.prototype.pluginCommandBook_TF_verticalAnime = function( args ) {
 		const result = setCharPattern.apply( this, args );
 		result.object.setDirectionFix( false );
 		this._params = [ result.id, {
@@ -143,7 +151,7 @@
 	 * TF_moveBefore マップID x座標 y座標 向き
 	 * 向きは省略可能で、規定値は現在の向き( 0 )が設定される。
 	 */
-	Game_Interpreter.prototype.pluginCommandBook_TF_moveBefore = function ( args ) {
+	Game_Interpreter.prototype.pluginCommandBook_TF_moveBefore = function( args ) {
 		const l = args.length;
 		const mapId = parseIntStrict( args[ 0 ] );
 		const x = parseIntStrict( args[ 1 ] );
@@ -173,11 +181,11 @@
 	/**
 	 * TF_moveAfter
 	 */
-	Game_Interpreter.prototype.pluginCommandBook_TF_moveAfter = function () {
+	Game_Interpreter.prototype.pluginCommandBook_TF_moveAfter = function() {
 		// TODO: 下向きの際は、-0.5座標を移動する
 		const targetEvent = this.character( PLAYER_CHARACTER );
 		const d = targetEvent.direction();
-		if ( d === 2 ) {
+		if( d === 2 ) {
 			targetEvent._realY = targetEvent._y -= 0.5;
 		}
 
@@ -188,10 +196,11 @@
 				indent: 0, code: SET_MOVEMENT_ROUTE, parameters: [ PLAYER_CHARACTER,
 					{
 						repeat: false, skippable: true, wait: true, list: [
-							{ code: gc.ROUTE_THROUGH_OFF },
+							{ code: gc.ROUTE_THROUGH_ON },
 							{ code: gc.ROUTE_DIR_FIX_OFF },
 							{ code: gc.ROUTE_MOVE_FORWARD },
 							{ code: gc.ROUTE_MOVE_FORWARD },
+							{ code: gc.ROUTE_THROUGH_OFF },
 							{ code: gc.ROUTE_END }
 						]
 					}
@@ -205,7 +214,7 @@
 
 
 	// Show Picture
-	Game_Interpreter.prototype.pluginCommandBook_TF_pict = function ( args ) {
+	Game_Interpreter.prototype.pluginCommandBook_TF_pict = function( args ) {
 		const x = args[ 0 ];
 		const y = args[ 1 ];
 		// 
@@ -218,7 +227,7 @@
 	/**
 	 * 
 	 */
-	Game_Interpreter.prototype.pluginCommandBook_TF_self = function () {
+	Game_Interpreter.prototype.pluginCommandBook_TF_self = function() {
 		return this.eventId();
 	};
 
@@ -226,14 +235,14 @@
 	 * 変数を名前の文字列で指定して値を ID1 の変数に代入
 	 * args[ 0 ] | String | 変数名
 	 */
-	Game_Interpreter.prototype.pluginCommandBook_TF_variable = function () {
+	Game_Interpreter.prototype.pluginCommandBook_TF_variable = function() {
 		$gameVariables.setValue( 1, $gameVariables.getValueByName( args[ 0 ] ) );
 	};
 	/**
 	 * スイッチを名前の文字列で指定して値を ID1 のスイッチに代入
 	 * args[ 0 ] | String | 変数名
 	 */
-	Game_Interpreter.prototype.pluginCommandBook_TF_switch = function () {
+	Game_Interpreter.prototype.pluginCommandBook_TF_switch = function() {
 		$gameSwitches.setValue( 1, $gameSwitches.getValueByName( args[ 0 ] ) );
 	};
 
@@ -242,19 +251,19 @@
 	 * [セルフスイッチ] を設定します
 	 * @param {String} type A・B・C・D いずれかの文字
 	 */
-	Game_Interpreter.prototype.pluginCommandBook_TF_setSelfSw = function ( args ) {
+	Game_Interpreter.prototype.pluginCommandBook_TF_setSelfSw = function( args ) {
 		const type = args[ 0 ];
 		const isOn = args[ 1 ];
 		$gameSelfSwitches.setValue( [ $gameMap.mapId(), this.eventId(), type ], isOn );
 		return this;
 	};
-	Game_Interpreter.prototype.pluginCommandBook_TF_getSelfSw = function () {
+	Game_Interpreter.prototype.pluginCommandBook_TF_getSelfSw = function() {
 		$gameSelfSwitches.setValue( [ $gameMap.mapId(), this.eventId(), "A" ], true );
 		return this;
 	};
 
 	// 出現条件(アイテム)
-	Game_Interpreter.prototype.pluginCommandBook_TF_conditionItem = function () {
+	Game_Interpreter.prototype.pluginCommandBook_TF_conditionItem = function() {
 		return $dataItems[ this.character( this.eventId() ).page().conditions.itemId ];
 	};
 
@@ -262,9 +271,9 @@
 	/**
 	 * 変数を文字列で指定して返す
 	 */
-	Game_Variables.prototype.getValueByName = function ( name ) {
+	Game_Variables.prototype.getValueByName = function( name ) {
 		const i = $dataSystem.variables.findIndex( i => i === name );
-		if ( i === -1 ) throw new Error( `I can't find the variable '${name}'` );
+		if( i === -1 ) throw new Error( `I can't find the variable '${name}'` );
 		return this.value( i );
 	};
 
@@ -272,18 +281,78 @@
 	/**
 	 * スイッチを文字列で指定して返す
 	 */
-	Game_Switches.prototype.getValueByName = function ( name ) {
-		const i = $dataSystem.switches.findIndex( i => i === name );
-		if ( i === -1 ) throw new Error( `I can't find the switch '${name}'` );
+	Game_Switches.prototype.getValueByName = function( name ) {
+		const i = $dataSystem.switches.findIndex( value => value === name );
+		if( i === -1 ) throw new Error( `I can't find the switch '${name}'` );
 		return this.value( i );
 	};
 
 	/*--- Window_Options ---*/
 	/**
-	 * オプション: 音量の最小変更数を5に
+	 * オプション: 音量の最小変更数を5に。
 	 */
-	Window_Options.prototype.volumeOffset = function () {
+	Window_Options.prototype.volumeOffset = function() {
 		return 5;
+	};
+
+	/*--- Window_Message ---*/
+	/**
+	 * ウィンドウ幅:1000px
+	 */
+	Window_Message.prototype.windowWidth = function() {
+		return 1000;
+	};
+	/**
+	 * フォントサイズ:40px
+	 */
+	Window_Message.prototype.standardFontSize = function() {
+		return 40;
+	};
+	/**
+	 * 行数:3行
+	 */
+	Window_Message.prototype.numVisibleRows = function() {
+		return 3;
+	};
+	/**
+	 * 行高さ:+8px
+	 */
+	Window_Message.prototype.calcTextHeight = function( textState, all ) {
+		return Window_Base.prototype.calcTextHeight.apply( this, arguments ) + 8;
+	}
+	Window_Message.prototype.lineHeight = function() {
+		return 56;
+	};
+
+	/**
+	 * 顔画像に名前を追加。
+	 */
+	const _Window_Message_drawMessageFace = Window_Message.prototype.drawMessageFace;
+	Window_Message.prototype.drawMessageFace = function() {
+		_Window_Message_drawMessageFace.call( this );
+
+		const getActorName = () => {
+			const faceName = $gameMessage.faceName();
+			// $dataActors[ 0 ] は null なので、1から検索
+			const actorList = $dataActors.slice( 1 );
+			const resultIndex = actorList.findIndex( e => e.faceName === faceName );
+			if( resultIndex === -1 ) {
+				return '';
+			} else {
+				return $dataActors[ resultIndex + 1 ].name;
+			}
+		};
+		const tempFontSize = this.contents.fontSize;
+		this.contents.fontSize = 24;
+		this.drawText( getActorName(), 0, this.contentsHeight() - 40, 144, 'center' );
+		this.contents.fontSize = tempFontSize;
+	}
+
+	/**
+	 * 顔グラに用意する画面幅を大きめに設定。
+	 */
+	Window_Message.prototype.newLineX = function() {
+		return $gameMessage.faceName() === '' ? 0 : ( 168 + 40 );
 	};
 
 
