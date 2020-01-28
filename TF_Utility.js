@@ -1,6 +1,6 @@
 //========================================
 // TF_Utility.js
-// Version :0.4.0.0
+// Version :0.5.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -16,6 +16,10 @@
 * @help
 * イベントコマンドの[スクリプト]から使いやすいようにラッピング。
 * TkoolMV_PluginCommandBook.js 必須。
+* 
+* TF_setCharPattern 対象イベントID 画像ファイル名 キャラ番号 パターン番号 向き
+*
+* TF_anime 対象イベントID x移動(ピクセル) y移動(ピクセル) ウエイト(フレーム) キャラ番号 パターン
 */
 
 ( function() {
@@ -39,6 +43,7 @@
 	 * @return {Number} 数値に変換した結果
 	 */
 	function parseIntStrict( value, errorMessage ) {
+		if( value === undefined ) return 0;
 		const result = parseInt( value, 10 );
 		if( isNaN( result ) ) throw Error( '指定した値[' + value + ']が数値ではありません。' + errorMessage );
 		return result;
@@ -51,20 +56,24 @@
 	const CHANGE_PLAYER_FOLLOWERS = 216;
 	const FADEOUT_SCREEN = 221;
 	const FADEIN_SCREEN = 222;
+	const WAIT_FOR = 230;
 	const PLAY_SE = 250;
+	const TF_PATTERN = 'TF_pattern';
 
 	const PLAYER_CHARACTER = -1;
 	const gc = Game_Character;
 
 	/**
-	 * character を拡張。
-	 * @param {Number} id イベントID 
+	 * character を拡張して隊列メンバーも指定できるようにしたもの。
+	 * @param {Game_Interpreter} interpreter インタプリタ
+	 * @param {Number} id 拡張イベントID
+	 * @returns {Game_CharacterBase}
 	 */
-	function getEventById( id ) {
+	function getEventById( interpreter, id ) {
 		if( id < -1 ) {
 			return $gamePlayer.followers().follower( -id );			// 隊列メンバー
 		} else {
-			return this.character( id );			// プレイヤーキャラおよびイベント
+			return interpreter.character( id );			// プレイヤーキャラおよびイベント
 		}
 	}
 
@@ -80,8 +89,8 @@
 	 */
 	function setCharPattern( id, fileName, charaNo, patternNo, d ) {
 		// キャラクタオブジェクト(Game_Character)
-		id = ( id === undefined ) ? 0 : parseIntStrict( id );
-		const targetEvent = getEventById.call( this, id );
+		id = parseIntStrict( id );
+		const targetEvent = getEventById( this, id );
 
 		// 画像ファイル
 		if( fileName === undefined ) {
@@ -127,12 +136,64 @@
 
 	/**
 	 * TF_setCharPattern 対象イベントID 画像ファイル名 キャラ番号 パターン番号 向き
-	 * TF_setCharPattern 2 !Door2 2 0
+	 * TF_setCharPattern 2 !Door2 2 0 2
 	 * すべて省略可。省略したパラメータは現在設定されているものが使われる。
 	 */
 	Game_Interpreter.prototype.pluginCommandBook_TF_setCharPattern = function( args ) {
 		setCharPattern.apply( this, args );
 	};
+	/**
+	 *  コマンドリストから呼ばれた場合。
+	 * @example { indent: 0, code: TF_PATTERN, parameters: [ 2, '!Door2', 2, 0, 2 ] },
+	 */
+	Game_Interpreter.prototype.commandTF_pattern = function() {
+		setCharPattern.apply( this, this._params );
+	}
+
+
+	/**
+	 * アニメーション開始・停止の指示。
+	 * isMoving() の判定を変えて、通常の移動をさせない。
+	 */
+	Game_Interpreter.prototype.pluginCommandBook_TF_startAnime = function( args ) {
+		const targetEvent = getEventById( this, parseIntStrict( args[ 0 ] ) );
+		targetEvent.setThrough( true );
+		targetEvent.isAnimating = true;
+	};
+	Game_Interpreter.prototype.pluginCommandBook_TF_endAnime = function( args ) {
+		const targetEvent = getEventById( this, parseIntStrict( args[ 0 ] ) );
+		targetEvent.setThrough( false );
+		targetEvent.isAnimating = false;
+	};
+	const _Game_CharacterBase_isMoving = Game_CharacterBase.prototype.isMoving;
+	Game_CharacterBase.prototype.isMoving = function() {
+		if( this.isAnimating ) return false;
+		return _Game_CharacterBase_isMoving.call( this );
+	}
+
+	/**
+	 * TF_anime
+	 * TF_anime 対象イベントID x移動(ピクセル) y移動(ピクセル) ウエイト(フレーム) キャラ番号 パターン番号
+	 * ここでのパターン番号は左上0から始まり11までの以下の番号
+	 * 0, 1, 2		<= 下向き(テンキー2)
+	 * 3, 4, 5		<= 左向き(テンキー4)
+	 * 6, 7, 8		<= 右向き(テンキー6)
+	 * 9, 10, 11 <= 下向き(テンキー8)
+	 */
+	Game_Interpreter.prototype.pluginCommandBook_TF_anime = function( args ) {
+		const patternNo = parseIntStrict( args[ 5 ] );
+		const p = patternNo % 3;
+		const d = 2 + 2 * ( patternNo - p ) / 3;
+		const result = setCharPattern.apply( this, [ args[ 0 ], , args[ 4 ], p, d ] );
+		result.object._realX += parseIntStrict( args[ 1 ] ) / $gameMap.tileWidth();
+		result.object._realY += parseIntStrict( args[ 2 ] ) / $gameMap.tileHeight();
+		const commandList = [
+			{ indent: 0, code: WAIT_FOR, parameters: [ parseIntStrict( args[ 3 ] ) ] },
+			{ indent: 0, code: COMMAND_END }
+		];
+		this.setupChild( commandList, result.id );
+	};
+
 	/**
 	 * TF_verticalAnime 対象イベントID 画像ファイル名 キャラ番号 パターン番号 
 	 * TF_verticalAnime 2 !Door2 2 0
@@ -191,8 +252,7 @@
 	 */
 	Game_Interpreter.prototype.pluginCommandBook_TF_moveAfter = function() {
 		const targetEvent = this.character( PLAYER_CHARACTER );
-		const d = targetEvent.direction();
-		if( d === 2 ) {
+		if( targetEvent.direction() === 2 ) {
 			// 下向きの際は、-0.5座標を移動する
 			targetEvent._realY = targetEvent._y -= 0.5;
 		}
@@ -218,7 +278,6 @@
 		];
 		this.setupChild( commandList, this._eventId );
 	};
-
 
 
 	// Show Picture
@@ -274,22 +333,6 @@
 	Game_Interpreter.prototype.pluginCommandBook_TF_conditionItem = function() {
 		return $dataItems[ this.character( this.eventId() ).page().conditions.itemId ];
 	};
-
-	/**
-	 * アニメーション開始・停止の指示。
-	 * isMoving() の判定を変えて、通常の移動をさせない。
-	 */
-	Game_Interpreter.prototype.pluginCommandBook_TF_animating = function( args ) {
-		const id = ( args[ 0 ] === undefined ) ? 0 : parseIntStrict( args[ 0 ] );
-		const targetEvent = getEventById.call( this, id );
-		targetEvent.isAnimating = args[ 1 ] ? ( args[ 1 ].toLowerCase() === PARAM_TRUE ) : true;
-	};
-	const _Game_CharacterBase_isMoving = Game_CharacterBase.prototype.isMoving;
-	Game_CharacterBase.prototype.isMoving = function() {
-		if( this.isAnimating ) return false;
-		return _Game_CharacterBase_isMoving.call( this );
-	}
-
 
 
 	/*--- Game_Variables ---*/
