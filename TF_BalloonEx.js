@@ -1,6 +1,6 @@
 //========================================
 // TF_BalloonEx.js
-// Version :0.1.0.1
+// Version :0.1.1.1
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -57,7 +57,7 @@
 	 */
 	function getEventById( interpreter, id ) {
 		if( id < -1 ) {
-			return $gamePlayer.followers().follower( -id );			// 隊列メンバー
+			return $gamePlayer.followers().follower( -2 - id );			// 隊列メンバー(0〜2)
 		} else {
 			return interpreter.character( id );			// プレイヤーキャラおよびイベント
 		}
