@@ -1,6 +1,6 @@
 //========================================
 // TF_BalloonEx.js
-// Version :0.2.0.0
+// Version :0.2.1.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -146,9 +146,9 @@
 			const eventId = parseIntStrict( args[ 0 ] );
 			this._character = getEventById( this, eventId );
 
-			const iconId = parseIntStrict( this._params[ 1 ] );
-			this._character.TF_balloon = pluginParams.preset[ iconId ];
-			this._character.TF_balloon.isPlay = true;
+			const iconId = parseIntStrict( args[ 1 ] );
+			this._character.TF_balloon = pluginParams.preset[ iconId - 1 ];
+			this._character.TF_isPlay = true;
 
 			if( this._character ) {
 				this._character.requestBalloon( args[ 1 ] );
@@ -159,7 +159,7 @@
 			return true;
 		} else if( commandStr === TF_STOP_BALLOON ) {
 			const targetEvent = getEventById( this, parseIntStrict( args[ 0 ] ) );
-			targetEvent.TF_balloon.isPlay = false;
+			targetEvent.TF_isPlay = false;
 		}
 	};
 
@@ -171,31 +171,46 @@
 		this._character = getEventById( this, eventId );
 
 		const iconId = parseIntStrict( this._params[ 1 ] );
-		this._character.TF_balloon = pluginParams.preset[ iconId ];
-		this._character.TF_balloon.isPlay = true;
+		this._character.TF_balloon = pluginParams.preset[ iconId - 1 ];
+		this._character.TF_isPlay = true;
 
 		return _Game_Interpreter_command213.call( this );
 	};
 
 	/*--- Sprite_Character ---*/
+	/**
+	 * フキダシアイコンの表示開始。
+	 */
 	const _Sprite_Character_startBalloon = Sprite_Character.prototype.startBalloon;
 	Sprite_Character.prototype.startBalloon = function() {
 		_Sprite_Character_startBalloon.call( this );
-		const c = this._character;
-		this._balloonSprite.TF_loopPatterns = ( c.TF_balloon.loopPatterns ) ? c.TF_balloon.loopPatterns : 0;
-		this._balloonSprite.TF_loops = ( c.TF_balloon.loops ) ? c.TF_balloon.loops : 0;
+
+		// TF_balloonを直接渡したいが、参照が切れるようにコピーして渡す
+		const bs = this._balloonSprite;
+		const TFb = this._character.TF_balloon;
+
+		bs.TF_startPatterns = TFb.startPatterns;
+		bs.TF_loopPatterns = TFb.loopPatterns;
+		bs.TF_endPatterns = TFb.endPatterns;
+		bs.TF_loops = TFb.loops;
 	};
+
+	/**
+	 * フキダシアイコンのアップデート。
+	 */
 	const _Sprite_Character_updateBalloon = Sprite_Character.prototype.updateBalloon;
 	Sprite_Character.prototype.updateBalloon = function() {
 		_Sprite_Character_updateBalloon.call( this );
-		if( this._balloonSprite ) {
-			const TFb = this._character.TF_balloon;
-			if( !TFb.isPlay ) {
-				this._balloonSprite._duration = 0;
-				this._balloonSprite.TF_loopPatterns = 0;
+		const bs = this._balloonSprite;
+		if( bs ) {
+			if( !this._character.TF_isPlay ) {
+				// トリガがOFFになったら終了
+				bs._duration = 0;
+				bs.TF_loopPatterns = 0;
 			}
-			this._balloonSprite.x += TFb.dx;
-			this._balloonSprite.y += TFb.dy;
+			const TFb = this._character.TF_balloon;
+			bs.x += TFb.dx;
+			bs.y += TFb.dy;
 		}
 	};
 
@@ -206,12 +221,20 @@
 			if( this.TF_loops === 1 ) {
 				this.TF_loopPatterns = 0;	// ループ終了(waitTimeに入る)
 			} else {
+				// ループを行う
 				if( 1 < this.TF_loops ) {
 					this.TF_loops--;
 				}
+
 				this._duration = this.TF_loopPatterns * this.speed() + this.waitTime()
 			};
 		}
 		_Sprite_Balloon_update.call( this );
 	};
+	/**
+	 * パターン表示の継続フレーム数を返す。
+	 */
+	Sprite_Balloon.prototype.speed = function() {
+		return 8;
+	}
 } )();
