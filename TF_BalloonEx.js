@@ -1,6 +1,6 @@
 //========================================
 // TF_BalloonEx.js
-// Version :0.2.2.0
+// Version :0.2.2.1
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -185,14 +185,14 @@
 	Sprite_Character.prototype.startBalloon = function() {
 		_Sprite_Character_startBalloon.call( this );
 
-		// TF_balloonを直接渡したいが、参照が切れるようにコピーして渡す
 		const bs = this._balloonSprite;
 		const TFb = this._character.TF_balloon;
 
-		bs.TF_startPatterns = TFb.startPatterns;
-		bs.TF_loopPatterns = TFb.loopPatterns;
-		bs.TF_endPatterns = TFb.endPatterns;
+		bs.TF_loopStartDuration = ( 8 - TFb.startPatterns ) * bs.speed() + bs.waitTime();
+		bs.TF_loopEndDuration = bs.TF_loopStartDuration - TFb.loopPatterns * bs.speed();
+		bs.TF_endDuration = bs.TF_loopEndDuration - TFb.endPatterns * bs.speed();
 		bs.TF_loops = TFb.loops;
+		bs.TF_phase = 'loop';
 	};
 
 	/**
@@ -206,7 +206,7 @@
 			if( !this._character.TF_isPlay ) {
 				// トリガがOFFになったら終了
 				bs._duration = 0;
-				bs.TF_loopPatterns = 0;
+				bs.TF_phase = 'end';
 			}
 			const TFb = this._character.TF_balloon;
 			bs.x += TFb.dx;
@@ -217,20 +217,16 @@
 	/*--- Sprite_Balloon ---*/
 	const _Sprite_Balloon_update = Sprite_Balloon.prototype.update;
 	Sprite_Balloon.prototype.update = function() {
-		if( this.TF_loopPatterns &&
-			// TF_loopEndDuration = ( 8 - this.TF_startPatterns - this.TF_loopPatterns ) * this.speed() + this.waitTime() );
-			this._duration < ( ( 8 - this.TF_startPatterns - this.TF_loopPatterns ) * this.speed() + this.waitTime() ) ) {
+		if( this.TF_phase === 'loop' && this._duration < this.TF_loopEndDuration ) {
 			if( this.TF_loops === 1 ) {
 				this._duration = this.waitTime();
-				this.TF_loopPatterns = 0;	// ループ終了(waitTimeに入る)
+				this.TF_phase = 'end';
 			} else {
 				// ループを行う
 				if( 1 < this.TF_loops ) {
 					this.TF_loops--;
 				}
-
-
-				this._duration = ( 8 - this.TF_startPatterns ) * this.speed() + this.waitTime()
+				this._duration = this.TF_loopStartDuration;
 			};
 		}
 		_Sprite_Balloon_update.call( this );
