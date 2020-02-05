@@ -1,6 +1,6 @@
 //========================================
 // TF_BalloonEx.js
-// Version :0.2.2.1
+// Version :0.3.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -102,6 +102,8 @@
 		params.loopPatterns = parseIntStrict( params.loopPatterns );
 		params.endPatterns = parseIntStrict( params.endPatterns );
 		params.loops = parseIntStrict( params.loops );
+		params.speed = parseIntStrict( params.speed );
+
 		return params;
 	} );
 
@@ -188,11 +190,14 @@
 		const bs = this._balloonSprite;
 		const TFb = this._character.TF_balloon;
 
-		bs.TF_loopStartDuration = ( 8 - TFb.startPatterns ) * bs.speed() + bs.waitTime();
-		bs.TF_loopEndDuration = bs.TF_loopStartDuration - TFb.loopPatterns * bs.speed();
-		bs.TF_endDuration = bs.TF_loopEndDuration - TFb.endPatterns * bs.speed();
+		bs.TF_speed = TFb.speed;
+		bs._duration = 8 * TFb.speed + bs.waitTime();		// speedが反映されていないので開始時の残りフレームを上書き
+		bs.TF_loopStartDuration = ( 8 - TFb.startPatterns ) * TFb.speed + bs.waitTime();
+		bs.TF_loopEndDuration = bs.TF_loopStartDuration - TFb.loopPatterns * TFb.speed;
+		bs.TF_endDuration = bs.TF_loopEndDuration - TFb.endPatterns * TFb.speed;
 		bs.TF_loops = TFb.loops;
 		bs.TF_phase = 'loop';
+
 	};
 
 	/**
@@ -235,6 +240,6 @@
 	 * パターン表示の継続フレーム数を返す。
 	 */
 	Sprite_Balloon.prototype.speed = function() {
-		return 8;
+		return this.TF_speed;
 	}
 } )();
