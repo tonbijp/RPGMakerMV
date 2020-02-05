@@ -1,6 +1,6 @@
 //========================================
 // TF_BalloonEx.js
-// Version :0.2.1.0
+// Version :0.2.2.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -217,8 +217,11 @@
 	/*--- Sprite_Balloon ---*/
 	const _Sprite_Balloon_update = Sprite_Balloon.prototype.update;
 	Sprite_Balloon.prototype.update = function() {
-		if( this.TF_loopPatterns && this._duration < this.waitTime() ) {
+		if( this.TF_loopPatterns &&
+			// TF_loopEndDuration = ( 8 - this.TF_startPatterns - this.TF_loopPatterns ) * this.speed() + this.waitTime() );
+			this._duration < ( ( 8 - this.TF_startPatterns - this.TF_loopPatterns ) * this.speed() + this.waitTime() ) ) {
 			if( this.TF_loops === 1 ) {
+				this._duration = this.waitTime();
 				this.TF_loopPatterns = 0;	// ループ終了(waitTimeに入る)
 			} else {
 				// ループを行う
@@ -226,7 +229,8 @@
 					this.TF_loops--;
 				}
 
-				this._duration = this.TF_loopPatterns * this.speed() + this.waitTime()
+
+				this._duration = ( 8 - this.TF_startPatterns ) * this.speed() + this.waitTime()
 			};
 		}
 		_Sprite_Balloon_update.call( this );
