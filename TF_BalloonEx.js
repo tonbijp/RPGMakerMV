@@ -199,7 +199,7 @@
 		bs.TF_loopEndDuration = bs.TF_loopStartDuration - TFb.loopPatterns * TFb.speed;
 		bs.TF_endDuration = bs.TF_loopEndDuration - TFb.endPatterns * TFb.speed;
 		bs.TF_loops = TFb.loops;
-		bs.TF_phase = BALLOON_PHASE_LOOP';
+		bs.TF_phase = BALLOON_PHASE_LOOP;
 
 	};
 
