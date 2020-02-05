@@ -1,6 +1,6 @@
 //========================================
 // TF_BalloonEx.js
-// Version :0.3.0.0
+// Version :0.3.0.1
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -77,7 +77,7 @@
  * @desc パターンの表示時間(フレーム)
  * @type Number
  * @default 8
- * @min 0
+ * @min 1
  * 
  * 
  */
@@ -88,6 +88,9 @@
 	const TF_STOP_BALLOON = 'TF_STOP_BALLOON';
 	const WAIT_BALLOON = 'balloon';
 	const PARAM_TRUE = 'true';
+	const BALLOON_PHASE_LOOP = 'loop';
+	const BALLOON_PHASE_END = 'end';
+	const BALLOON_PHASE_WAIT = 'wait';
 
     /**
      * パラメータを受け取る
@@ -196,7 +199,7 @@
 		bs.TF_loopEndDuration = bs.TF_loopStartDuration - TFb.loopPatterns * TFb.speed;
 		bs.TF_endDuration = bs.TF_loopEndDuration - TFb.endPatterns * TFb.speed;
 		bs.TF_loops = TFb.loops;
-		bs.TF_phase = 'loop';
+		bs.TF_phase = BALLOON_PHASE_LOOP';
 
 	};
 
@@ -211,7 +214,7 @@
 			if( !this._character.TF_isPlay ) {
 				// トリガがOFFになったら終了
 				bs._duration = 0;
-				bs.TF_phase = 'end';
+				bs.TF_phase = BALLOON_PHASE_END;
 			}
 			const TFb = this._character.TF_balloon;
 			bs.x += TFb.dx;
@@ -222,10 +225,10 @@
 	/*--- Sprite_Balloon ---*/
 	const _Sprite_Balloon_update = Sprite_Balloon.prototype.update;
 	Sprite_Balloon.prototype.update = function() {
-		if( this.TF_phase === 'loop' && this._duration < this.TF_loopEndDuration ) {
+		if( this.TF_phase === BALLOON_PHASE_LOOP && this._duration < this.TF_loopEndDuration ) {
 			if( this.TF_loops === 1 ) {
 				this._duration = this.waitTime();
-				this.TF_phase = 'end';
+				this.TF_phase = BALLOON_PHASE_END;
 			} else {
 				// ループを行う
 				if( 1 < this.TF_loops ) {
