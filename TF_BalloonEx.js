@@ -1,6 +1,6 @@
 //========================================
 // TF_BalloonEx.js
-// Version :0.3.0.1
+// Version :0.3.0.2
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -148,12 +148,7 @@
 
 		const commandStr = command.toUpperCase();
 		if( commandStr === TF_START_BALLOON ) {
-			const eventId = parseIntStrict( args[ 0 ] );
-			this._character = getEventById( this, eventId );
-
-			const iconId = parseIntStrict( args[ 1 ] );
-			this._character.TF_balloon = pluginParams.preset[ iconId - 1 ];
-			this._character.TF_isPlay = true;
+			this._character = getEventById( this, parseIntStrict( args[ 0 ] ) );
 
 			if( this._character ) {
 				this._character.requestBalloon( args[ 1 ] );
@@ -161,25 +156,18 @@
 					this.setWaitMode( WAIT_BALLOON );
 				}
 			}
-			return true;
 		} else if( commandStr === TF_STOP_BALLOON ) {
 			const targetEvent = getEventById( this, parseIntStrict( args[ 0 ] ) );
 			targetEvent.TF_isPlay = false;
 		}
 	};
 
-
-	// Show Balloon Icon
-	const _Game_Interpreter_command213 = Game_Interpreter.prototype.command213;
-	Game_Interpreter.prototype.command213 = function() {
-		const eventId = parseIntStrict( this._params[ 0 ] );
-		this._character = getEventById( this, eventId );
-
-		const iconId = parseIntStrict( this._params[ 1 ] );
-		this._character.TF_balloon = pluginParams.preset[ iconId - 1 ];
-		this._character.TF_isPlay = true;
-
-		return _Game_Interpreter_command213.call( this );
+	/*--- Game_CharacterBase ---*/
+	const _Game_CharacterBase_requestBalloon = Game_CharacterBase.prototype.requestBalloon;
+	Game_CharacterBase.prototype.requestBalloon = function( balloonId ) {
+		this.TF_balloon = pluginParams.preset[ parseIntStrict( balloonId ) - 1 ];
+		this.TF_isPlay = true;
+		_Game_CharacterBase_requestBalloon.apply( this, arguments );
 	};
 
 	/*--- Sprite_Character ---*/
@@ -200,7 +188,6 @@
 		bs.TF_endDuration = bs.TF_loopEndDuration - TFb.endPatterns * TFb.speed;
 		bs.TF_loops = TFb.loops;
 		bs.TF_phase = BALLOON_PHASE_LOOP;
-
 	};
 
 	/**
@@ -210,16 +197,16 @@
 	Sprite_Character.prototype.updateBalloon = function() {
 		_Sprite_Character_updateBalloon.call( this );
 		const bs = this._balloonSprite;
-		if( bs ) {
-			if( !this._character.TF_isPlay ) {
-				// トリガがOFFになったら終了
-				bs._duration = 0;
-				bs.TF_phase = BALLOON_PHASE_END;
-			}
-			const TFb = this._character.TF_balloon;
-			bs.x += TFb.dx;
-			bs.y += TFb.dy;
+		if( !bs ) return;
+
+		if( !this._character.TF_isPlay ) {
+			// トリガがOFFになったら終了
+			bs._duration = 0;
+			bs.TF_phase = BALLOON_PHASE_END;
 		}
+		const TFb = this._character.TF_balloon;
+		bs.x += TFb.dx;
+		bs.y += TFb.dy;
 	};
 
 	/*--- Sprite_Balloon ---*/
