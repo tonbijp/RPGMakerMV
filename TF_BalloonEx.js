@@ -1,6 +1,6 @@
 //========================================
 // TF_BalloonEx.js
-// Version :0.4.0.0
+// Version :0.5.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -66,10 +66,10 @@
  * @max 8
  * 
  * @param endPatterns
- * @desc 消滅に使用するパターン数(-1:出現パターンを逆再生)
+ * @desc 消滅に使用するパターン数
  * @type Number
  * @default 0
- * @min -1
+ * @min 0
  * @max 7
  *
  * @param loops
@@ -176,7 +176,13 @@
 				if( args[ 2 ].toLowerCase() === PARAM_TRUE ) {
 					this.setWaitMode( WAIT_BALLOON );
 				}
-				setBalloonPosition( this._character, args[ 3 ], args[ 4 ] );
+				if( args[ 3 ] !== undefined ) {
+					if( args[ 4 ] === undefined ) {
+						this._character.TF_balloon.dx = parseIntStrict( args[ 3 ] );
+					} else {
+						setBalloonPosition( this._character, args[ 3 ], args[ 4 ] );
+					}
+				}
 			}
 		} else if( commandStr === TF_BALLOON_POSITION ) {
 			const targetEvent = getEventById( this, parseIntStrict( args[ 0 ] ) );
@@ -208,7 +214,7 @@
 		const TFb = this._character.TF_balloon;
 
 		bs.TF_speed = TFb.speed;
-		bs._duration = 8 * TFb.speed + bs.waitTime();		// speedが反映されていないので開始時の残りフレームを上書き
+		bs._duration = 8 * TFb.speed + bs.waitTime();
 		bs.TF_loopStartDuration = ( 8 - TFb.startPatterns ) * TFb.speed + bs.waitTime();
 		bs.TF_loopEndDuration = bs.TF_loopStartDuration - TFb.loopPatterns * TFb.speed;
 		bs.TF_endDuration = bs.TF_loopEndDuration - TFb.endPatterns * TFb.speed;
@@ -227,8 +233,9 @@
 
 		if( !this._character.TF_isPlay ) {
 			// トリガがOFFになったら終了
-			bs._duration = 0;
+			bs._duration = bs.TF_loopEndDuration;
 			bs.TF_phase = BALLOON_PHASE_END;
+			this._character.TF_isPlay = true;
 		}
 		const TFb = this._character.TF_balloon;
 		bs.x += TFb.dx;
@@ -240,7 +247,6 @@
 	Sprite_Balloon.prototype.update = function() {
 		if( this.TF_phase === BALLOON_PHASE_LOOP && this._duration < this.TF_loopEndDuration ) {
 			if( this.TF_loops === 1 ) {
-				this._duration = this.waitTime();
 				this.TF_phase = BALLOON_PHASE_END;
 			} else {
 				// ループを行う
@@ -250,6 +256,14 @@
 				this._duration = this.TF_loopStartDuration;
 			};
 		}
+		if( this.TF_phase === BALLOON_PHASE_END && this._duration < this.TF_endDuration ) {
+			this._duration = this.waitTime();
+			this.TF_phase = BALLOON_PHASE_WAIT;
+		}
+		if( this.TF_phase === BALLOON_PHASE_WAIT && this._duration === 0 ) {
+			this.TF_phase = '';
+		}
+
 		_Sprite_Balloon_update.call( this );
 	};
 	/**
