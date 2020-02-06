@@ -1,6 +1,6 @@
 //========================================
 // TF_BalloonEx.js
-// Version :0.5.2.0
+// Version :0.5.3.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -174,7 +174,7 @@
 
 			if( this._character ) {
 				this._character.requestBalloon( args[ 1 ] );
-				if( args[ 2 ].toLowerCase() === PARAM_TRUE ) {
+				if( args[ 2 ] && args[ 2 ].toLowerCase() === PARAM_TRUE ) {
 					this.setWaitMode( WAIT_BALLOON );
 				}
 				if( args[ 3 ] !== undefined ) {
