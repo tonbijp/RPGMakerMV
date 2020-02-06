@@ -1,6 +1,6 @@
 //========================================
 // TF_BalloonEx.js
-// Version :0.3.0.2
+// Version :0.3.0.3
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -165,7 +165,8 @@
 	/*--- Game_CharacterBase ---*/
 	const _Game_CharacterBase_requestBalloon = Game_CharacterBase.prototype.requestBalloon;
 	Game_CharacterBase.prototype.requestBalloon = function( balloonId ) {
-		this.TF_balloon = pluginParams.preset[ parseIntStrict( balloonId ) - 1 ];
+		const iconIndex = parseIntStrict( balloonId ) - 1;
+		this.TF_balloon = Object.assign( {}, pluginParams.preset[ iconIndex ] );// 参照渡しでなくコピー渡し
 		this.TF_isPlay = true;
 		_Game_CharacterBase_requestBalloon.apply( this, arguments );
 	};
