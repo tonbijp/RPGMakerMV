@@ -1,6 +1,6 @@
 //========================================
 // TF_BalloonEx.js
-// Version :0.5.0.0
+// Version :0.5.2.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -16,7 +16,7 @@
 * @param preset
 * @desc フキダシのアニメーション設定
 * @type struct<BalloonParam>[]
-* @default ["{\"xDiff\":\"0\",\"yDiff\":\"0\",\"startNumber\":\"2\",\"loopPatterns\":\"6\",\"loopTimes\":\"1\",\"isWait\":\"false\"}","{\"xDiff\":\"0\",\"yDiff\":\"0\",\"startNumber\":\"2\",\"loopPatterns\":\"6\",\"loopTimes\":\"1\",\"isWait\":\"false\"}","{\"xDiff\":\"0\",\"yDiff\":\"0\",\"startNumber\":\"2\",\"loopPatterns\":\"6\",\"loopTimes\":\"1\",\"isWait\":\"false\"}"]
+* @default ["{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}","{\"dx\":\"20\",\"dy\":\"40\",\"startPatterns\":\"0\",\"loopPatterns\":\"3\",\"endPatterns\":\"0\",\"loops\":\"4\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"0\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"60\",\"startPatterns\":\"5\",\"loopPatterns\":\"1\",\"endPatterns\":\"2\",\"loops\":\"6\",\"speed\":\"1\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}"]
 *
 *
 * @help
@@ -43,13 +43,14 @@
  * @desc フキダシ表示座標のx差分。正の値で右に負の値で左にずれる。
  * @type Number
  * @default 0
- * @min 0
+ * @min -1000000
  * 
  * @param dy
  * @desc フキダシ表示座標のy差分。正の値で下に負の値で上にずれる。
  * @type Number
  * @default 0
  * @min 0
+ * @min -1000000
  *
  * @param startPatterns
  * @desc 出現に使用するパターン数。
@@ -245,7 +246,7 @@
 	/*--- Sprite_Balloon ---*/
 	const _Sprite_Balloon_update = Sprite_Balloon.prototype.update;
 	Sprite_Balloon.prototype.update = function() {
-		if( this.TF_phase === BALLOON_PHASE_LOOP && this._duration < this.TF_loopEndDuration ) {
+		if( this.TF_phase === BALLOON_PHASE_LOOP && this._duration <= this.TF_loopEndDuration ) {
 			if( this.TF_loops === 1 ) {
 				this.TF_phase = BALLOON_PHASE_END;
 			} else {
