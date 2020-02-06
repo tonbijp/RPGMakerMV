@@ -1,6 +1,6 @@
 //========================================
 // TF_BalloonEx.js
-// Version :0.3.0.3
+// Version :0.4.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -20,11 +20,16 @@
 *
 *
 * @help
-* TF_START_BALLOON [イベントID] [フキダシID] [完了までウェイト]
-*　フキダシの(ループ)アニメーションを開始。
+* TF_START_BALLOON [イベントID] [フキダシID] [完了までウェイト] [dx] [dy]
+*　フキダシの(ループ)アニメーションを開始。引数はすべて省略可能。
 *　[イベントID] 0:このイベント、-1:プレイヤー、-2〜-4:隊列メンバー、1〜:イベントID(規定値:0)
 *　[フキダシID] img/system/balloon.png の上から1〜15(規定値:11)
 *　[完了までウェイト] 真偽値(true:フキダシのアニメーション終了まで待つ false:待たない)(規定値:false)
+*　[dx] 表示位置のx差分。
+*　[dy] 表示位置のy差分。
+*
+* TF_BALLOON_POSITION [イベントID] [dx] [dy]
+*　フキダシ表示位置を変更。フキダシ表示中のみ可能。
 *
 * TF_STOP_BALLOON [イベントID]
 *　フキダシのアニメーションを停止。
@@ -85,6 +90,7 @@
 ( function() {
 	'use strict';
 	const TF_START_BALLOON = 'TF_START_BALLOON';
+	const TF_BALLOON_POSITION = 'TF_BALLOON_POSITION';
 	const TF_STOP_BALLOON = 'TF_STOP_BALLOON';
 	const WAIT_BALLOON = 'balloon';
 	const PARAM_TRUE = 'true';
@@ -113,12 +119,14 @@
 
 	/**
 	 * @method parseIntStrict
-	 * @param {Number} value
-	 * @type Number
+	 * @param {String} value
 	 * @return {Number} 数値に変換した結果
 	 */
 	function parseIntStrict( value ) {
 		if( value === undefined ) return 0;
+		if( value[ 0 ] === 'V' ) {
+			value = value.replace( /V\[([0-9]+)\]/, ( match, p1 ) => $gameVariables.value( parseInt( p1, 10 ) ) );
+		}
 		const result = parseInt( value, 10 );
 		if( isNaN( result ) ) throw Error( '指定した値[' + value + ']が数値ではありません。' );
 		return result;
@@ -135,6 +143,19 @@
 			return $gamePlayer.followers().follower( -2 - id );			// 隊列メンバー(0〜2)
 		} else {
 			return interpreter.character( id );			// プレイヤーキャラおよびイベント
+		}
+	}
+
+	/**
+	 * 
+	 * @param {Game_CharacterBase} target 対象となるキャラ・イベント
+	 * @param {Number} dx x差分
+	 * @param {Number} dy y差分
+	 */
+	function setBalloonPosition( target, dx, dy ) {
+		if( target.TF_balloon ) {
+			target.TF_balloon.dx = parseIntStrict( dx );
+			target.TF_balloon.dy = parseIntStrict( dy );
 		}
 	}
 
@@ -155,7 +176,11 @@
 				if( args[ 2 ].toLowerCase() === PARAM_TRUE ) {
 					this.setWaitMode( WAIT_BALLOON );
 				}
+				setBalloonPosition( this._character, args[ 3 ], args[ 4 ] );
 			}
+		} else if( commandStr === TF_BALLOON_POSITION ) {
+			const targetEvent = getEventById( this, parseIntStrict( args[ 0 ] ) );
+			setBalloonPosition( targetEvent, args[ 1 ], args[ 2 ] );
 		} else if( commandStr === TF_STOP_BALLOON ) {
 			const targetEvent = getEventById( this, parseIntStrict( args[ 0 ] ) );
 			targetEvent.TF_isPlay = false;
