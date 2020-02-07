@@ -1,6 +1,6 @@
 //========================================
 // TF_BalloonEx.js
-// Version :0.5.5.0
+// Version :0.5.5.1
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -33,8 +33,10 @@
 *
 * TF_STOP_BALLOON [イベントID]
 *　フキダシのアニメーションを停止。
-*　TF_startBalloon で[ループ回数] 0 を指定した場合など、これを使って止める。
+*　TF_START_BALLOON で[ループ回数] 0 を指定した場合など、これを使って止める。
 *
+* [イベントID][フキダシID][dx][dy]の数値は全てV[n]の形式で、変数を指定できます。
+* 例 : TF_BALLOON_POSITION 0 V[1] V[2]
 */
 
 /*~struct~BalloonParam:
