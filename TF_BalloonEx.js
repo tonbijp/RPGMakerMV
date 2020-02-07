@@ -1,6 +1,6 @@
 //========================================
 // TF_BalloonEx.js
-// Version :0.5.3.0
+// Version :0.5.5.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -125,8 +125,8 @@
 	 */
 	function parseIntStrict( value ) {
 		if( value === undefined ) return 0;
-		if( value[ 0 ] === 'V' ) {
-			value = value.replace( /V\[([0-9]+)\]/, ( match, p1 ) => $gameVariables.value( parseInt( p1, 10 ) ) );
+		if( value[ 0 ] === 'V' || value[ 0 ] === 'v' ) {
+			value = value.replace( /[Vv]\[([0-9]+)\]/, ( match, p1 ) => $gameVariables.value( parseInt( p1, 10 ) ) );
 		}
 		const result = parseInt( value, 10 );
 		if( isNaN( result ) ) throw Error( '指定した値[' + value + ']が数値ではありません。' );
@@ -197,10 +197,10 @@
 	/*--- Game_CharacterBase ---*/
 	const _Game_CharacterBase_requestBalloon = Game_CharacterBase.prototype.requestBalloon;
 	Game_CharacterBase.prototype.requestBalloon = function( balloonId ) {
-		const iconIndex = parseIntStrict( balloonId ) - 1;
-		this.TF_balloon = Object.assign( {}, pluginParams.preset[ iconIndex ] );// 参照渡しでなくコピー渡し
+		const iconIndex = parseIntStrict( balloonId );
+		this.TF_balloon = Object.assign( {}, pluginParams.preset[ iconIndex - 1 ] );// 参照渡しでなくコピー渡し
 		this.TF_isPlay = true;
-		_Game_CharacterBase_requestBalloon.apply( this, arguments );
+		_Game_CharacterBase_requestBalloon.call( this, iconIndex );
 	};
 
 	/*--- Sprite_Character ---*/
