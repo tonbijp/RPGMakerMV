@@ -1,6 +1,6 @@
 //========================================
 // TF_BalloonEx.js
-// Version :0.5.6.0
+// Version :0.5.7.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -175,6 +175,7 @@
 			this._character = getEventById( this, parseIntStrict( args[ 0 ] ) );
 
 			if( this._character ) {
+				this._character.TF_balloon = null;
 				this._character.requestBalloon( args[ 1 ] );
 				if( args[ 2 ] && args[ 2 ].toLowerCase() === PARAM_TRUE ) {
 					this.setWaitMode( WAIT_BALLOON );
@@ -196,6 +197,18 @@
 				targetEvent.TF_balloon.finishTrigger = true;
 			}
 		}
+	};
+
+	/**
+	 * フキダシを新規に生成すると判断できるように、TF_balloon を空にして呼び出す。
+	 */
+	const _Game_Interpreter_command213 = Game_Interpreter.prototype.command213;
+	Game_Interpreter.prototype.command213 = function() {
+		const target = this.character( this._params[ 0 ] );
+		if( target ) {
+			target.TF_balloon = null;
+		}
+		return _Game_Interpreter_command213.call( this );
 	};
 
 	/*--- Game_CharacterBase ---*/
