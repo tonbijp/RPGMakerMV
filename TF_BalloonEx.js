@@ -1,6 +1,6 @@
 //========================================
 // TF_BalloonEx.js
-// Version :0.5.7.0
+// Version :0.6.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -10,34 +10,42 @@
 // http://opensource.org/licenses/mit-license.php
 //========================================
 /*:ja
-* @plugindesc [フキダシアイコンの表示]の拡張
-* @author とんび@鳶嶋工房
-*
-* @param preset
-* @desc フキダシのアニメーション設定
-* @type struct<BalloonParam>[]
-* @default ["{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}","{\"dx\":\"20\",\"dy\":\"40\",\"startPatterns\":\"0\",\"loopPatterns\":\"3\",\"endPatterns\":\"0\",\"loops\":\"4\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"0\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"60\",\"startPatterns\":\"5\",\"loopPatterns\":\"1\",\"endPatterns\":\"2\",\"loops\":\"6\",\"speed\":\"1\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}"]
-*
-*
-* @help
-* TF_START_BALLOON [イベントID] [フキダシID] [完了までウェイト] [dx] [dy]
-*　フキダシの(ループ)アニメーションを開始。引数はすべて省略可能。
-*　[イベントID] 0:このイベント、-1:プレイヤー、-2〜-4:隊列メンバー、1〜:イベントID(規定値:0)
-*　[フキダシID] img/system/balloon.png の上から1〜15(規定値:11)
-*　[完了までウェイト] 真偽値(true:フキダシのアニメーション終了まで待つ false:待たない)(規定値:false)
-*　[dx] 表示位置のx差分。
-*　[dy] 表示位置のy差分。
-*
-* TF_BALLOON_POSITION [イベントID] [dx] [dy]
-*　フキダシ表示位置を変更。フキダシ表示中のみ可能。
-*
-* TF_STOP_BALLOON [イベントID]
-*　フキダシのアニメーションを停止。
-*　TF_START_BALLOON で[ループ回数] 0 を指定した場合など、これを使って止める。
-*
-* [イベントID][フキダシID][dx][dy]の数値は全てV[n]の形式で、変数を指定できます。
-* 例 : TF_BALLOON_POSITION 0 V[1] V[2]
-*/
+ * @plugindesc [フキダシアイコンの表示]の拡張
+ * @author とんび@鳶嶋工房
+ *
+ * @param preset
+ * @desc フキダシのアニメーション設定
+ * @type struct<BalloonParam>[]
+ * @default ["{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}","{\"dx\":\"20\",\"dy\":\"40\",\"startPatterns\":\"0\",\"loopPatterns\":\"3\",\"endPatterns\":\"0\",\"loops\":\"4\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"0\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"60\",\"startPatterns\":\"5\",\"loopPatterns\":\"1\",\"endPatterns\":\"2\",\"loops\":\"6\",\"speed\":\"1\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}"]
+ *
+ *
+ * @help
+ *
+ * TF_START_BALLOON [イベントID] [フキダシID] [完了までウェイト] [dx] [dy]
+ *　フキダシの(ループ)アニメーションを開始。引数はすべて省略可能。
+ *　[イベントID] 0:このイベント、-1:プレイヤー、-2〜-4:隊列メンバー、1〜:イベントID(規定値:0)
+ *　[フキダシID] img/system/balloon.png の上から1〜15(規定値:11)
+ *　[完了までウェイト] 真偽値(true:フキダシのアニメーション終了まで待つ false:待たない)(規定値:false)
+ *　[dx] 表示位置のx差分(規定値:プラグインパラメータでdxに設定した値)
+ *　[dy] 表示位置のy差分(規定値:プラグインパラメータでdyに設定した値)
+ *
+ * TF_BALLOON_POSITION [イベントID] [dx] [dy]
+ *　フキダシ表示位置を変更。フキダシ表示中のみ可能。
+ *
+ * TF_STOP_BALLOON [イベントID]
+ *　フキダシのアニメーションを停止。
+ *　TF_START_BALLOON で[ループ回数] 0 を指定した場合など、これを使って止める。
+ *
+ * [イベントID][フキダシID][dx][dy]の数値は全てV[n]の形式で、変数を指定できます。
+ * 例 : TF_BALLOON_POSITION 0 V[1] V[2]
+ *
+ * 【[移動ルートの設定]で使えるスクリプト】
+ *
+ * this.balloon( [イベントID], [完了までウエイト], [dx], [dy] );
+ *
+ * ※ [完了までウエイト], [dx], [dy] は省略できます。規定値は TF_START_BALLOON に準拠します。
+ * ※ EventEffects.js は、このプラグインの上に配置してください。
+ */
 
 /*~struct~BalloonParam:
  *
@@ -157,8 +165,12 @@
 	 */
 	function setBalloonPosition( target, dx, dy ) {
 		if( target.TF_balloon ) {
-			target.TF_balloon.dx = parseIntStrict( dx );
-			target.TF_balloon.dy = parseIntStrict( dy );
+			if( dx !== undefined ) {
+				target.TF_balloon.dx = parseIntStrict( dx );
+			}
+			if( dy !== undefined ) {
+				target.TF_balloon.dy = parseIntStrict( dy );
+			}
 		}
 	}
 
@@ -180,13 +192,7 @@
 				if( args[ 2 ] && args[ 2 ].toLowerCase() === PARAM_TRUE ) {
 					this.setWaitMode( WAIT_BALLOON );
 				}
-				if( args[ 3 ] !== undefined ) {
-					if( args[ 4 ] === undefined ) {
-						this._character.TF_balloon.dx = parseIntStrict( args[ 3 ] );
-					} else {
-						setBalloonPosition( this._character, args[ 3 ], args[ 4 ] );
-					}
-				}
+				setBalloonPosition( this._character, args[ 3 ], args[ 4 ] );
 			}
 		} else if( commandStr === TF_BALLOON_POSITION ) {
 			const targetEvent = getEventById( this, parseIntStrict( args[ 0 ] ) );
@@ -220,6 +226,18 @@
 			this.TF_balloon.finishTrigger = false;
 		}
 		_Game_CharacterBase_requestBalloon.call( this, iconIndex );
+	};
+
+	/**
+	 * EventEffects.js の機能を上書きして、dx, dy を追加。
+	 */
+	Game_CharacterBase.prototype.balloon = function( num, wait, dx, dy ) {
+		this.requestBalloon( num );
+		if( wait ) {
+			this.currentInterpreter().setWaitMode( WAIT_BALLOON );
+		}
+		setBalloonPosition( this, dx, dy );
+		return true;
 	};
 
 	/*--- Sprite_Character ---*/
