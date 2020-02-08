@@ -1,6 +1,6 @@
 //========================================
 // TF_BalloonEx.js
-// Version :0.6.0.0
+// Version :0.7.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -29,7 +29,7 @@
  *　[dx] 表示位置のx差分(規定値:プラグインパラメータでdxに設定した値)
  *　[dy] 表示位置のy差分(規定値:プラグインパラメータでdyに設定した値)
  *
- * TF_BALLOON_POSITION [イベントID] [dx] [dy]
+ * TF_POSITION_BALLOON [イベントID] [dx] [dy]
  *　フキダシ表示位置を変更。フキダシ表示中のみ可能。
  *
  * TF_STOP_BALLOON [イベントID]
@@ -37,14 +37,17 @@
  *　TF_START_BALLOON で[ループ回数] 0 を指定した場合など、これを使って止める。
  *
  * [イベントID][フキダシID][dx][dy]の数値は全てV[n]の形式で、変数を指定できます。
- * 例 : TF_BALLOON_POSITION 0 V[1] V[2]
+ * 例 : TF_POSITION_BALLOON 0 V[1] V[2]
  *
  * 【[移動ルートの設定]で使えるスクリプト】
- *
- * this.balloon( [イベントID], [完了までウエイト], [dx], [dy] );
+ * this.TF_startBalloon( [イベントID], [完了までウエイト], [dx], [dy] ); // TF_START_BALLOONの機能
  *
  * ※ [完了までウエイト], [dx], [dy] は省略できます。規定値は TF_START_BALLOON に準拠します。
- * ※ EventEffects.js は、このプラグインの上に配置してください。
+ * ※ this.TF_startBalloon の代わりに this.balloon も使えます。
+ * 　 ただし EventEffects.js と併用の際は EventEffects.js を、このプラグインの上に配置してください。
+ *
+ * this.TF_positionBalloon( [dx], [dy] ); // TF_POSITION_BALLOONの機能
+ * this.TF_stopBalloon(); // TF_STOP_BALLOON の機能
  */
 
 /*~struct~BalloonParam:
@@ -101,7 +104,7 @@
 ( function() {
 	'use strict';
 	const TF_START_BALLOON = 'TF_START_BALLOON';
-	const TF_BALLOON_POSITION = 'TF_BALLOON_POSITION';
+	const TF_POSITION_BALLOON = 'TF_POSITION_BALLOON';
 	const TF_STOP_BALLOON = 'TF_STOP_BALLOON';
 	const WAIT_BALLOON = 'balloon';
 	const PARAM_TRUE = 'true';
@@ -194,7 +197,7 @@
 				}
 				setBalloonPosition( this._character, args[ 3 ], args[ 4 ] );
 			}
-		} else if( commandStr === TF_BALLOON_POSITION ) {
+		} else if( commandStr === TF_POSITION_BALLOON ) {
 			const targetEvent = getEventById( this, parseIntStrict( args[ 0 ] ) );
 			setBalloonPosition( targetEvent, args[ 1 ], args[ 2 ] );
 		} else if( commandStr === TF_STOP_BALLOON ) {
@@ -232,6 +235,10 @@
 	 * EventEffects.js の機能を上書きして、dx, dy を追加。
 	 */
 	Game_CharacterBase.prototype.balloon = function( num, wait, dx, dy ) {
+		return Game_CharacterBase.prototype.TF_startBalloon.apply( this, arguments );
+	};
+	Game_CharacterBase.prototype.TF_startBalloon = function( num, wait, dx, dy ) {
+		this.TF_balloon = null;
 		this.requestBalloon( num );
 		if( wait ) {
 			this.currentInterpreter().setWaitMode( WAIT_BALLOON );
@@ -239,6 +246,15 @@
 		setBalloonPosition( this, dx, dy );
 		return true;
 	};
+	Game_CharacterBase.prototype.TF_positionBalloon = function( dx, dy ) {
+		setBalloonPosition( this, dx, dy );
+	};
+	Game_CharacterBase.prototype.TF_stopBalloon = function() {
+		if( this.TF_balloon ) {
+			this.TF_balloon.finishTrigger = true;
+		}
+	};
+
 
 	/*--- Sprite_Character ---*/
 	/**
