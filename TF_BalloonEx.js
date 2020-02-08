@@ -1,6 +1,6 @@
 //========================================
 // TF_BalloonEx.js
-// Version :0.5.5.1
+// Version :0.5.5.2
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -192,7 +192,9 @@
 			setBalloonPosition( targetEvent, args[ 1 ], args[ 2 ] );
 		} else if( commandStr === TF_STOP_BALLOON ) {
 			const targetEvent = getEventById( this, parseIntStrict( args[ 0 ] ) );
-			targetEvent.TF_isPlay = false;
+			if( targetEvent.TF_balloon ) {
+				targetEvent.TF_balloon.isPlay = false;
+			}
 		}
 	};
 
@@ -201,7 +203,7 @@
 	Game_CharacterBase.prototype.requestBalloon = function( balloonId ) {
 		const iconIndex = parseIntStrict( balloonId );
 		this.TF_balloon = Object.assign( {}, pluginParams.preset[ iconIndex - 1 ] );// 参照渡しでなくコピー渡し
-		this.TF_isPlay = true;
+		this.TF_balloon.isPlay = true;
 		_Game_CharacterBase_requestBalloon.call( this, iconIndex );
 	};
 
@@ -212,17 +214,17 @@
 	const _Sprite_Character_startBalloon = Sprite_Character.prototype.startBalloon;
 	Sprite_Character.prototype.startBalloon = function() {
 		_Sprite_Character_startBalloon.call( this );
-
 		const bs = this._balloonSprite;
 		const TFb = this._character.TF_balloon;
+		this._balloonSprite.TF_balloon = TFb;	// Game_CharacterBase のフキダシデータへの参照を渡す
 
-		bs.TF_speed = TFb.speed;
-		bs._duration = 8 * TFb.speed + bs.waitTime();
-		bs.TF_loopStartDuration = ( 8 - TFb.startPatterns ) * TFb.speed + bs.waitTime();
-		bs.TF_loopEndDuration = bs.TF_loopStartDuration - TFb.loopPatterns * TFb.speed;
-		bs.TF_endDuration = bs.TF_loopEndDuration - TFb.endPatterns * TFb.speed;
-		bs.TF_loops = TFb.loops;
-		bs.TF_phase = BALLOON_PHASE_LOOP;
+		TFb._duration = bs._duration = 8 * TFb.speed + bs.waitTime();
+		TFb.loopStartDuration = TFb._duration - TFb.startPatterns * TFb.speed;
+		TFb.loopEndDuration = TFb.loopStartDuration - TFb.loopPatterns * TFb.speed;
+		TFb.endDuration = TFb.loopEndDuration - TFb.endPatterns * TFb.speed;
+		TFb.phase = BALLOON_PHASE_LOOP;
+
+		this._balloonSprite._duration = TFb._duration;	// speedを反映させたので上書き
 	};
 
 	/**
@@ -234,13 +236,13 @@
 		const bs = this._balloonSprite;
 		if( !bs ) return;
 
-		if( !this._character.TF_isPlay ) {
-			// トリガがOFFになったら終了
-			bs._duration = bs.TF_loopEndDuration;
-			bs.TF_phase = BALLOON_PHASE_END;
-			this._character.TF_isPlay = true;
-		}
 		const TFb = this._character.TF_balloon;
+		if( !TFb.isPlay ) {
+			// トリガがOFFになったら終了
+			bs._duration = TFb.loopEndDuration;
+			TFb.phase = BALLOON_PHASE_END;
+			TFb.isPlay = true;
+		}
 		bs.x += TFb.dx;
 		bs.y += TFb.dy;
 	};
@@ -248,23 +250,28 @@
 	/*--- Sprite_Balloon ---*/
 	const _Sprite_Balloon_update = Sprite_Balloon.prototype.update;
 	Sprite_Balloon.prototype.update = function() {
-		if( this.TF_phase === BALLOON_PHASE_LOOP && this._duration <= this.TF_loopEndDuration ) {
-			if( this.TF_loops === 1 ) {
-				this.TF_phase = BALLOON_PHASE_END;
+		const TFb = this.TF_balloon;
+		TFb._duration = this._duration;		// Game_CharacterBase への保存
+
+		if( TFb.phase === BALLOON_PHASE_LOOP && this._duration <= TFb.loopEndDuration ) {
+			if( TFb.loops === 1 ) {
+				TFb.phase = BALLOON_PHASE_END;
 			} else {
 				// ループを行う
-				if( 1 < this.TF_loops ) {
-					this.TF_loops--;
+				if( 1 < TFb.loops ) {
+					TFb.loops--;
 				}
-				this._duration = this.TF_loopStartDuration;
+				this._duration = TFb.loopStartDuration;
 			};
 		}
-		if( this.TF_phase === BALLOON_PHASE_END && this._duration < this.TF_endDuration ) {
+
+		if( TFb.phase === BALLOON_PHASE_END && this._duration < this.endDuration ) {
 			this._duration = this.waitTime();
-			this.TF_phase = BALLOON_PHASE_WAIT;
+			TFb.phase = BALLOON_PHASE_WAIT;
 		}
-		if( this.TF_phase === BALLOON_PHASE_WAIT && this._duration === 0 ) {
-			this.TF_phase = '';
+
+		if( TFb.phase === BALLOON_PHASE_WAIT && this._duration === 0 ) {
+			TFb.phase = '';
 		}
 
 		_Sprite_Balloon_update.call( this );
@@ -273,6 +280,10 @@
 	 * パターン表示の継続フレーム数を返す。
 	 */
 	Sprite_Balloon.prototype.speed = function() {
-		return this.TF_speed;
+		if( this.TF_balloon ) {
+			return this.TF_balloon.speed;
+		} else {
+			return 8;	//すぐに上書きするので、これはダミー値
+		}
 	}
 } )();
