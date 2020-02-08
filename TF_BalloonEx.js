@@ -1,6 +1,6 @@
 //========================================
 // TF_BalloonEx.js
-// Version :0.5.5.2
+// Version :0.5.6.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -193,7 +193,7 @@
 		} else if( commandStr === TF_STOP_BALLOON ) {
 			const targetEvent = getEventById( this, parseIntStrict( args[ 0 ] ) );
 			if( targetEvent.TF_balloon ) {
-				targetEvent.TF_balloon.isPlay = false;
+				targetEvent.TF_balloon.finishTrigger = true;
 			}
 		}
 	};
@@ -202,28 +202,60 @@
 	const _Game_CharacterBase_requestBalloon = Game_CharacterBase.prototype.requestBalloon;
 	Game_CharacterBase.prototype.requestBalloon = function( balloonId ) {
 		const iconIndex = parseIntStrict( balloonId );
-		this.TF_balloon = Object.assign( {}, pluginParams.preset[ iconIndex - 1 ] );// 参照渡しでなくコピー渡し
-		this.TF_balloon.isPlay = true;
+		if( !this.TF_balloon ) {
+			this.TF_balloon = Object.assign( {}, pluginParams.preset[ iconIndex - 1 ] );// 参照渡しでなくコピー渡し
+			this.TF_balloon.finishTrigger = false;
+		}
 		_Game_CharacterBase_requestBalloon.call( this, iconIndex );
 	};
 
 	/*--- Sprite_Character ---*/
 	/**
+	 * 初期化時にフキダシデータがあったら復帰。
+	 */
+	const _Sprite_Character_initialize = Sprite_Character.prototype.initialize;
+	Sprite_Character.prototype.initialize = function( character ) {
+		_Sprite_Character_initialize.apply( this, arguments );
+
+		if( this._character.TF_balloon ) {
+			this._character.requestBalloon( this._character.TF_balloon._balloonId );
+		}
+	}
+
+	const _Sprite_Character_endBalloon = Sprite_Character.prototype.endBalloon;
+	Sprite_Character.prototype.endBalloon = function() {
+		if( this._balloonSprite ) {
+			this._character.TF_balloon = null;
+		}
+		_Sprite_Character_endBalloon.call( this );
+	};
+
+	/**
 	 * フキダシアイコンの表示開始。
 	 */
 	const _Sprite_Character_startBalloon = Sprite_Character.prototype.startBalloon;
 	Sprite_Character.prototype.startBalloon = function() {
-		_Sprite_Character_startBalloon.call( this );
-		const bs = this._balloonSprite;
 		const TFb = this._character.TF_balloon;
+
+		if( TFb._balloonId ) {
+			// 復帰
+			if( !this._balloonSprite ) {
+				this._balloonSprite = new Sprite_Balloon();
+			}
+			this._balloonSprite._balloonId = TFb._balloonId;
+			this.parent.addChild( this._balloonSprite );
+		} else {
+			// 生成
+			_Sprite_Character_startBalloon.call( this );
+			TFb._duration = 8 * TFb.speed + this._balloonSprite.waitTime();
+			TFb.loopStartDuration = TFb._duration - TFb.startPatterns * TFb.speed;
+			TFb.loopEndDuration = TFb.loopStartDuration - TFb.loopPatterns * TFb.speed;
+			TFb.endDuration = TFb.loopEndDuration - TFb.endPatterns * TFb.speed;
+			TFb.phase = BALLOON_PHASE_LOOP;
+			TFb._balloonId = this._character.balloonId();	//復帰用に保存
+		}
+
 		this._balloonSprite.TF_balloon = TFb;	// Game_CharacterBase のフキダシデータへの参照を渡す
-
-		TFb._duration = bs._duration = 8 * TFb.speed + bs.waitTime();
-		TFb.loopStartDuration = TFb._duration - TFb.startPatterns * TFb.speed;
-		TFb.loopEndDuration = TFb.loopStartDuration - TFb.loopPatterns * TFb.speed;
-		TFb.endDuration = TFb.loopEndDuration - TFb.endPatterns * TFb.speed;
-		TFb.phase = BALLOON_PHASE_LOOP;
-
 		this._balloonSprite._duration = TFb._duration;	// speedを反映させたので上書き
 	};
 
@@ -237,11 +269,10 @@
 		if( !bs ) return;
 
 		const TFb = this._character.TF_balloon;
-		if( !TFb.isPlay ) {
-			// トリガがOFFになったら終了
+		if( TFb.finishTrigger ) {
 			bs._duration = TFb.loopEndDuration;
 			TFb.phase = BALLOON_PHASE_END;
-			TFb.isPlay = true;
+			TFb.finishTrigger = false;
 		}
 		bs.x += TFb.dx;
 		bs.y += TFb.dy;
