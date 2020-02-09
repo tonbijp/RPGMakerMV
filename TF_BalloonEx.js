@@ -1,6 +1,6 @@
 //========================================
 // TF_BalloonEx.js
-// Version :0.7.1.0
+// Version :0.8.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -16,7 +16,7 @@
  * @param preset
  * @desc フキダシのアニメーション設定
  * @type struct<BalloonParam>[]
- * @default ["{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}","{\"dx\":\"20\",\"dy\":\"40\",\"startPatterns\":\"0\",\"loopPatterns\":\"3\",\"endPatterns\":\"0\",\"loops\":\"4\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"0\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"60\",\"startPatterns\":\"5\",\"loopPatterns\":\"1\",\"endPatterns\":\"2\",\"loops\":\"6\",\"speed\":\"1\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\"}"]
+ * @default ["{\"dx\":\"0\",\"dy\":\"20\",\"startPatterns\":\"6\",\"loopPatterns\":\"1\",\"endPatterns\":\"0\",\"loops\":\"8\",\"speed\":\"4\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"20\",\"startPatterns\":\"7\",\"loopPatterns\":\"1\",\"endPatterns\":\"0\",\"loops\":\"8\",\"speed\":\"4\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"20\",\"startPatterns\":\"3\",\"loopPatterns\":\"5\",\"endPatterns\":\"0\",\"loops\":\"0\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"20\",\"dy\":\"40\",\"startPatterns\":\"0\",\"loopPatterns\":\"3\",\"endPatterns\":\"0\",\"loops\":\"4\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"-15\",\"dy\":\"40\",\"startPatterns\":\"7\",\"loopPatterns\":\"1\",\"endPatterns\":\"0\",\"loops\":\"8\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"0\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"60\",\"startPatterns\":\"5\",\"loopPatterns\":\"1\",\"endPatterns\":\"2\",\"loops\":\"6\",\"speed\":\"1\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"10\",\"dy\":\"40\",\"startPatterns\":\"5\",\"loopPatterns\":\"3\",\"endPatterns\":\"0\",\"loops\":\"4\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"20\",\"dy\":\"20\",\"startPatterns\":\"3\",\"loopPatterns\":\"2\",\"endPatterns\":\"3\",\"loops\":\"4\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"20\",\"startPatterns\":\"3\",\"loopPatterns\":\"4\",\"endPatterns\":\"1\",\"loops\":\"3\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"20\",\"startPatterns\":\"2\",\"loopPatterns\":\"3\",\"endPatterns\":\"3\",\"loops\":\"4\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"20\",\"startPatterns\":\"2\",\"loopPatterns\":\"3\",\"endPatterns\":\"3\",\"loops\":\"5\",\"speed\":\"8\",\"waitTime\":\"12\"}"]
  *
  *
  * @help
@@ -29,7 +29,7 @@
  *　[dx] 表示位置のx差分(規定値:プラグインパラメータでdxに設定した値)
  *　[dy] 表示位置のy差分(規定値:プラグインパラメータでdyに設定した値)
  *
- * TF_POSITION_BALLOON [イベントID] [dx] [dy]
+ * TF_LOCATE_BALLOON [イベントID] [dx] [dy]
  *　フキダシ表示位置を変更。フキダシ表示中のみ可能。
  *
  * TF_STOP_BALLOON [イベントID]
@@ -37,7 +37,7 @@
  *　TF_START_BALLOON で[ループ回数] 0 を指定した場合など、これを使って止める。
  *
  * [イベントID][フキダシID][dx][dy]の数値は全てV[n]の形式で、変数を指定できます。
- * 例 : TF_POSITION_BALLOON 0 V[1] V[2]
+ * 例 : TF_LOCATE_BALLOON 0 V[1] V[2]
  *
  * 【[移動ルートの設定]で使えるスクリプト】
  * this.TF_startBalloon( [フキダシID], [完了までウエイト], [dx], [dy] ); // TF_START_BALLOONの機能
@@ -46,7 +46,7 @@
  * ※ this.TF_startBalloon の代わりに this.balloon も使えます。
  * 　 ただし EventEffects.js と併用の際は EventEffects.js を、このプラグインの上に配置してください。
  *
- * this.TF_positionBalloon( [dx], [dy] ); // TF_POSITION_BALLOONの機能
+ * this.TF_locateBalloon( [dx], [dy] ); // TF_LOCATE_BALLOONの機能
  * this.TF_stopBalloon(); // TF_STOP_BALLOON の機能
  */
 
@@ -97,6 +97,12 @@
  * @type Number
  * @default 8
  * @min 1
+ *
+ * @param waitTime
+ * @desc 最終パターンの表示時間(フレーム)
+ * @type Number
+ * @default 12
+ * @min 0
  * 
  * 
  */
@@ -104,7 +110,7 @@
 ( function() {
 	'use strict';
 	const TF_START_BALLOON = 'TF_START_BALLOON';
-	const TF_POSITION_BALLOON = 'TF_POSITION_BALLOON';
+	const TF_LOCATE_BALLOON = 'TF_LOCATE_BALLOON';
 	const TF_STOP_BALLOON = 'TF_STOP_BALLOON';
 	const WAIT_BALLOON = 'balloon';
 	const PARAM_TRUE = 'true';
@@ -126,7 +132,7 @@
 		params.endPatterns = parseIntStrict( params.endPatterns );
 		params.loops = parseIntStrict( params.loops );
 		params.speed = parseIntStrict( params.speed );
-
+		params.waitTime = parseIntStrict( params.waitTime );
 		return params;
 	} );
 
@@ -137,7 +143,7 @@
 	 * @return {Number} 数値に変換した結果
 	 */
 	function parseIntStrict( value ) {
-		if( value === undefined ) return 0;
+		if( value === undefined || value === '' ) return 0;
 		if( value[ 0 ] === 'V' || value[ 0 ] === 'v' ) {
 			value = value.replace( /[Vv]\[([0-9]+)\]/, ( match, p1 ) => $gameVariables.value( parseInt( p1, 10 ) ) );
 		}
@@ -166,7 +172,7 @@
 	 * @param {Number} dx x差分
 	 * @param {Number} dy y差分
 	 */
-	function setBalloonPosition( target, dx, dy ) {
+	function locateBalloon( target, dx, dy ) {
 		if( target.TF_balloon ) {
 			if( dx !== undefined ) {
 				target.TF_balloon.dx = parseIntStrict( dx );
@@ -195,11 +201,12 @@
 				if( args[ 2 ] && args[ 2 ].toLowerCase() === PARAM_TRUE ) {
 					this.setWaitMode( WAIT_BALLOON );
 				}
-				setBalloonPosition( this._character, args[ 3 ], args[ 4 ] );
+				locateBalloon( this._character, args[ 3 ], args[ 4 ] );
 			}
-		} else if( commandStr === TF_POSITION_BALLOON ) {
+		} else if( commandStr === TF_LOCATE_BALLOON ) {
 			const targetEvent = getEventById( this, parseIntStrict( args[ 0 ] ) );
-			setBalloonPosition( targetEvent, args[ 1 ], args[ 2 ] );
+			locateBalloon( targetEvent, args[ 1 ], args[ 2 ] );
+
 		} else if( commandStr === TF_STOP_BALLOON ) {
 			const targetEvent = getEventById( this, parseIntStrict( args[ 0 ] ) );
 			if( targetEvent.TF_balloon ) {
@@ -243,11 +250,11 @@
 		if( wait ) {
 			this.currentInterpreter().setWaitMode( WAIT_BALLOON );
 		}
-		setBalloonPosition( this, dx, dy );
+		locateBalloon( this, dx, dy );
 		return true;
 	};
-	Game_CharacterBase.prototype.TF_positionBalloon = function( dx, dy ) {
-		setBalloonPosition( this, dx, dy );
+	Game_CharacterBase.prototype.TF_locateBalloon = function( dx, dy ) {
+		locateBalloon( this, dx, dy );
 	};
 	Game_CharacterBase.prototype.TF_stopBalloon = function() {
 		if( this.TF_balloon ) {
@@ -294,7 +301,7 @@
 		} else {
 			// 生成
 			_Sprite_Character_startBalloon.call( this );
-			TFb._duration = 8 * TFb.speed + this._balloonSprite.waitTime();
+			TFb._duration = 8 * TFb.speed + TFb.waitTime;
 			TFb.loopStartDuration = TFb._duration - TFb.startPatterns * TFb.speed;
 			TFb.loopEndDuration = TFb.loopStartDuration - TFb.loopPatterns * TFb.speed;
 			TFb.endDuration = TFb.loopEndDuration - TFb.endPatterns * TFb.speed;
@@ -316,13 +323,15 @@
 		if( !bs ) return;
 
 		const TFb = this._character.TF_balloon;
-		if( TFb.finishTrigger ) {
-			bs._duration = TFb.loopEndDuration;
-			TFb.phase = BALLOON_PHASE_END;
-			TFb.finishTrigger = false;
-		}
 		bs.x += TFb.dx;
 		bs.y += TFb.dy;
+		if( !TFb.finishTrigger ) return;
+
+		TFb.finishTrigger = false;
+		if( bs._duration < TFb.loopEndDuration ) return;	// ループ終了以降ならそのまま進行
+
+		bs._duration = TFb.loopEndDuration;
+		TFb.phase = BALLOON_PHASE_END;
 	};
 
 	/*--- Sprite_Balloon ---*/
@@ -343,7 +352,7 @@
 			};
 		}
 
-		if( TFb.phase === BALLOON_PHASE_END && this._duration < this.endDuration ) {
+		if( TFb.phase === BALLOON_PHASE_END && this._duration < TFb.endDuration ) {
 			this._duration = this.waitTime();
 			TFb.phase = BALLOON_PHASE_WAIT;
 		}
@@ -354,6 +363,7 @@
 
 		_Sprite_Balloon_update.call( this );
 	};
+
 	/**
 	 * パターン表示の継続フレーム数を返す。
 	 */
@@ -364,4 +374,11 @@
 			return 8;	//すぐに上書きするので、これはダミー値
 		}
 	}
+	Sprite_Balloon.prototype.waitTime = function() {
+		if( this.TF_balloon ) {
+			return this.TF_balloon.waitTime;
+		} else {
+			return 12;	//すぐに上書きするので、これはダミー値
+		}
+	};
 } )();
