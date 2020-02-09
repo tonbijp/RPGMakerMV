@@ -1,6 +1,6 @@
 //========================================
 // TF_BalloonEx.js
-// Version :0.7.0.0
+// Version :0.7.1.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -40,7 +40,7 @@
  * 例 : TF_POSITION_BALLOON 0 V[1] V[2]
  *
  * 【[移動ルートの設定]で使えるスクリプト】
- * this.TF_startBalloon( [イベントID], [完了までウエイト], [dx], [dy] ); // TF_START_BALLOONの機能
+ * this.TF_startBalloon( [フキダシID], [完了までウエイト], [dx], [dy] ); // TF_START_BALLOONの機能
  *
  * ※ [完了までウエイト], [dx], [dy] は省略できます。規定値は TF_START_BALLOON に準拠します。
  * ※ this.TF_startBalloon の代わりに this.balloon も使えます。
