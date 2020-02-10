@@ -1,6 +1,6 @@
 //========================================
 // TF_BalloonEx.js
-// Version :0.8.2.0
+// Version :0.9.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -20,35 +20,56 @@
  *
  *
  * @help
+ * ●基本的な使い方
+ * 　プラグインのパラメータの preset に[フキダシID]毎に設定を書いておきます。
+ * 　・配置(dx,dy)、ループ回数(loops)、速度(speed)、終了時間(waitTime)などが設定できます。
+ * 　・パターン数(startPatterns, loopPatterns,endPatterns)は合計で8以内に設定します。
+ * 　・presetに設定する値について詳細は、それぞれの値入力時のヘルプ文を参照ください。
+ * 　通常の[フキダシアイコンの表示]イベントコマンドを実行すると[フキダシID]に応じた設定でアニメが再生されます。
  *
+ * ●プラグインコマンド
  * TF_START_BALLOON [イベントID] [フキダシID] [完了までウェイト] [dx] [dy]
- *　フキダシの(ループ)アニメーションを開始。引数はすべて省略可能。
- *　[イベントID] 0:このイベント、-1:プレイヤー、-2〜-4:隊列メンバー、1〜:イベントID(規定値:0)
- *　[フキダシID] img/system/balloon.png の上から1〜15(規定値:11)
- *　[完了までウェイト] 真偽値(true:フキダシのアニメーション終了まで待つ false:待たない)(規定値:false)
- *　[dx] 表示位置のx差分(規定値:プラグインパラメータでdxに設定した値)
- *　[dy] 表示位置のy差分(規定値:プラグインパラメータでdyに設定した値)
+ * 　フキダシの(ループ)アニメーションを開始。引数はすべて省略可能。
+ * 　[イベントID] 0:このイベント、-1:プレイヤー、-2〜-4:隊列メンバー、1〜:イベントID(規定値:0)
+ * 　[フキダシID] img/system/balloon.png の上から1〜15(規定値:11)
+ * 　[完了までウェイト] 真偽値(true:フキダシのアニメーション終了まで待つ false:待たない)(規定値:false)
+ * 　[dx] 表示位置のx差分(規定値:プラグインパラメータでdxに設定した値)
+ * 　[dy] 表示位置のy差分(規定値:プラグインパラメータでdyに設定した値)
+ * 　例: TF_START_BALLOON -1 5 false 0 20
  *
+ * TF_SET_BALLOON [イベントID] [フキダシID] [パターン番号] [表示フレーム数] [完了までウェイト] [dx] [dy]
+ * 　[パターン番号] フキダシ画像の左から 1〜8 のパターン(規定値:8)
+ * 　[表示フレーム数] 表示するフレーム数(waitTimeにあたる)(規定値:12フレーム)
+ * 　例: TF_SET_BALLOON 0 9 2 60 true 10 -50
+ * 
  * TF_LOCATE_BALLOON [イベントID] [dx] [dy]
- *　フキダシ表示位置を変更。フキダシ表示中のみ可能。
+ * 　フキダシ表示位置を変更。フキダシ表示中のみ可能。
+ * 　例: TF_LOCATE_BALLOON 15 0 10
  *
  * TF_STOP_BALLOON [イベントID] [消滅アニメを表示]
- *　フキダシのアニメーションを停止。
- *　TF_START_BALLOON で[ループ回数] 0 を指定した場合など、これを使って止める。
+ * 　フキダシのアニメーションを停止。
+ * 　TF_START_BALLOON で[ループ回数] 0 を指定した場合など、これを使って止める。
  * 　[消滅アニメを表示] 真偽値(true:消滅アニメを表示 false:即終了)(規定値:false)
+ * 　例: TF_STOP_BALLOON 0 true
  *
  * [イベントID][フキダシID][dx][dy]の数値は全てV[n]の形式で、変数を指定できます。
  * 例 : TF_LOCATE_BALLOON 0 V[1] V[2]
  *
- * 【[移動ルートの設定]で使えるスクリプト】
- * this.TF_startBalloon( [フキダシID], [完了までウエイト], [dx], [dy] ); // TF_START_BALLOONの機能
+ * ● [移動ルートの設定]で使えるスクリプト
+ * this.TF_startBalloon( [フキダシID], [完了までウエイト], [dx], [dy] );
+ * 　TF_START_BALLOONの機能
+ * 　[完了までウエイト], [dx], [dy] は省略できます。規定値は TF_START_BALLOON に準拠します。
+ * 　this.TF_startBalloon の代わりに this.balloon も使えます。
+ * 　ただし EventEffects.js と併用の際は EventEffects.js を、このプラグインの上に配置してください。
  *
- * ※ [完了までウエイト], [dx], [dy] は省略できます。規定値は TF_START_BALLOON に準拠します。
- * ※ this.TF_startBalloon の代わりに this.balloon も使えます。
- * 　 ただし EventEffects.js と併用の際は EventEffects.js を、このプラグインの上に配置してください。
- *
- * this.TF_locateBalloon( [dx], [dy] ); // TF_LOCATE_BALLOONの機能
- * this.TF_stopBalloon( [消滅アニメを表示] ); // TF_STOP_BALLOON の機能
+ * this.TF_setBalloon( [イベントID], [フキダシID], [パターン番号], [表示フレーム数], [完了までウェイト], [dx], [dy] ); 
+ * 　TF_SET_BALLOONの機能
+ * 
+ * this.TF_locateBalloon( [dx], [dy] );
+ * 　TF_LOCATE_BALLOONの機能
+ * 
+ * this.TF_stopBalloon( [消滅アニメを表示] );
+ * 　TF_STOP_BALLOON の機能
  */
 
 /*~struct~BalloonParam:
@@ -81,7 +102,7 @@
  * @max 8
  * 
  * @param endPatterns
- * @desc 消滅に使用するパターン数
+ * @desc 消滅に使用するパターン数。
  * @type Number
  * @default 0
  * @min 0
@@ -104,13 +125,12 @@
  * @type Number
  * @default 12
  * @min 0
- * 
- * 
  */
 
 ( function() {
 	'use strict';
 	const TF_START_BALLOON = 'TF_START_BALLOON';
+	const TF_SET_BALLOON = 'TF_SET_BALLOON';
 	const TF_LOCATE_BALLOON = 'TF_LOCATE_BALLOON';
 	const TF_STOP_BALLOON = 'TF_STOP_BALLOON';
 	const WAIT_BALLOON = 'balloon';
@@ -167,6 +187,35 @@
 		}
 	}
 
+	//TF_SET_BALLOON[ イベントID ][ フキダシID ][ パターン番号 ][ 表示フレーム数 ][ 完了までウェイト ][ dx ][ dy ]
+	function setBalloon( character, balloonId, pattern, waitTime, dx, dy ) {
+		if( !character ) return;
+		character.TF_balloon = null;
+		character.requestBalloon( balloonId );
+		character.TF_balloon = {
+			dx: parseIntStrict( dx ),
+			dy: parseIntStrict( dy ),
+			startPatterns: ( pattern ? parseIntStrict( pattern ) : 8 ),
+			loopPatterns: 0,
+			endPatterns: 0,
+			loops: 8,
+			speed: 0,
+			waitTime: ( waitTime ? parseIntStrict( waitTime ) : 24 )
+		}
+	}
+
+	/**
+	 * フキダシ待ち状態に設定。
+	 * @param {Game_Character} character 実行中のイベント・プレイヤーキャラ
+	 */
+	function setWaitMode2Balloon( character ) {
+		let interpreter = ( character._trigger === 4 ? character._interpreter : $gameMap._interpreter );
+		while( interpreter._childInterpreter ) {
+			interpreter = interpreter._childInterpreter;
+		}
+		interpreter.setWaitMode( WAIT_BALLOON );
+	}
+
 	/**
 	 * 
 	 * @param {Game_CharacterBase} target 対象となるキャラ・イベント
@@ -199,9 +248,9 @@
 	}
 
 	/*---- Game_Interpreter ----*/
-    /**
-     * プラグインコマンドの実行
-     */
+	/**
+	 * プラグインコマンドの実行
+	 */
 	const _Game_Interpreter_pluginCommand = Game_Interpreter.prototype.pluginCommand;
 	Game_Interpreter.prototype.pluginCommand = function( command, args ) {
 		_Game_Interpreter_pluginCommand.apply( this, arguments );
@@ -217,6 +266,13 @@
 					this.setWaitMode( WAIT_BALLOON );
 				}
 				locateBalloon( this._character, args[ 3 ], args[ 4 ] );
+			}
+		} else if( commandStr === TF_SET_BALLOON ) {
+			this._character = getEventById( this, parseIntStrict( args[ 0 ] ) );
+			setBalloon( this._character, args[ 1 ], args[ 2 ], args[ 3 ], args[ 5 ], args[ 6 ] );
+
+			if( args[ 4 ] && args[ 4 ].toLowerCase() === PARAM_TRUE ) {
+				this.setWaitMode( WAIT_BALLOON );
 			}
 		} else if( commandStr === TF_LOCATE_BALLOON ) {
 			const target = getEventById( this, parseIntStrict( args[ 0 ] ) );
@@ -251,29 +307,32 @@
 		}
 		_Game_CharacterBase_requestBalloon.call( this, iconIndex );
 	};
-
-	/**
-	 * EventEffects.js の機能を上書きして、dx, dy を追加。
-	 */
-	Game_CharacterBase.prototype.balloon = function( num, wait, dx, dy ) {
-		return Game_CharacterBase.prototype.TF_startBalloon.apply( this, arguments );
+	/*--- [移動ルートの設定]用のメソッド ---*/
+	// EventEffects.js の機能を上書きして、dx, dy を追加
+	Game_CharacterBase.prototype.balloon = function( balloonId, wait, dx, dy ) {
+		Game_CharacterBase.prototype.TF_startBalloon.apply( this, arguments );
 	};
-	Game_CharacterBase.prototype.TF_startBalloon = function( num, wait, dx, dy ) {
+	// TF_START_BALLOON に対応したメソッド
+	Game_CharacterBase.prototype.TF_startBalloon = function( balloonId, wait, dx, dy ) {
 		this.TF_balloon = null;
-		this.requestBalloon( num );
+		this.requestBalloon( balloonId );
 		if( wait ) {
-			let interpreter = this._interpreter;
-			while( interpreter._childInterpreter ) {
-				interpreter = interpreter._childInterpreter;
-			}
-			interpreter.setWaitMode( WAIT_BALLOON );
+			setWaitMode2Balloon( this );
 		}
 		locateBalloon( this, dx, dy );
-		return true;
 	};
+	// TF_SET_BALLOON に対応したメソッド
+	Game_CharacterBase.prototype.TF_setBalloon = function( balloonId, pattern, waitTime, wait, dx, dy ) {
+		setBalloon( this, balloonId, pattern, waitTime, dx, dy );
+		if( wait ) {
+			setWaitMode2Balloon( this );
+		}
+	};
+	// TF_LOCATE_BALLOON に対応したメソッド
 	Game_CharacterBase.prototype.TF_locateBalloon = function( dx, dy ) {
 		locateBalloon( this, dx, dy );
 	};
+	// TF_STOP_BALLOON に対応したメソッド
 	Game_CharacterBase.prototype.TF_stopBalloon = function( showFinish ) {
 		stopBalloon( this, showFinish );
 	};
