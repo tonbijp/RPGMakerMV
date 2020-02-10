@@ -1,6 +1,6 @@
 //========================================
 // TF_BalloonEx.js
-// Version :0.8.0.0
+// Version :0.8.1.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -96,7 +96,7 @@
  * @desc パターンの表示時間(フレーム)
  * @type Number
  * @default 8
- * @min 1
+ * @min 0
  *
  * @param waitTime
  * @desc 最終パターンの表示時間(フレーム)
@@ -363,6 +363,16 @@
 
 		_Sprite_Balloon_update.call( this );
 	};
+
+	const _Sprite_Balloon_frameIndex = Sprite_Balloon.prototype.frameIndex;
+	Sprite_Balloon.prototype.frameIndex = function() {
+		const TFb = this.TF_balloon;
+		if( this._duration < TFb.endDuration ) {
+			return TFb.startPatterns + TFb.loopPatterns + TFb.endPatterns - 1;
+		}
+		return _Sprite_Balloon_frameIndex.call( this );
+	};
+
 
 	/**
 	 * パターン表示の継続フレーム数を返す。
