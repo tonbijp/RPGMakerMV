@@ -1,6 +1,6 @@
 //========================================
 // TF_BalloonEx.js
-// Version :0.9.0.0
+// Version :0.9.1.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -9,23 +9,23 @@
 // This software is released under the MIT License.
 // http://opensource.org/licenses/mit-license.php
 //========================================
-/*:ja
- * @plugindesc [フキダシアイコンの表示]の拡張
- * @author とんび@鳶嶋工房
+/*:
+ * @plugindesc [Display balloon icon] extension
+ * @author Tobishima-Factory
  *
  * @param preset
- * @desc フキダシのアニメーション設定
  * @type struct<BalloonParam>[]
  * @default ["{\"dx\":\"0\",\"dy\":\"20\",\"startPatterns\":\"6\",\"loopPatterns\":\"1\",\"endPatterns\":\"0\",\"loops\":\"8\",\"speed\":\"4\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"20\",\"startPatterns\":\"7\",\"loopPatterns\":\"1\",\"endPatterns\":\"0\",\"loops\":\"8\",\"speed\":\"4\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"20\",\"startPatterns\":\"3\",\"loopPatterns\":\"5\",\"endPatterns\":\"0\",\"loops\":\"0\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"20\",\"dy\":\"40\",\"startPatterns\":\"0\",\"loopPatterns\":\"3\",\"endPatterns\":\"0\",\"loops\":\"4\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"-15\",\"dy\":\"40\",\"startPatterns\":\"7\",\"loopPatterns\":\"1\",\"endPatterns\":\"0\",\"loops\":\"8\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"0\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"60\",\"startPatterns\":\"5\",\"loopPatterns\":\"1\",\"endPatterns\":\"2\",\"loops\":\"6\",\"speed\":\"1\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"10\",\"dy\":\"40\",\"startPatterns\":\"5\",\"loopPatterns\":\"3\",\"endPatterns\":\"0\",\"loops\":\"4\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"20\",\"dy\":\"20\",\"startPatterns\":\"3\",\"loopPatterns\":\"2\",\"endPatterns\":\"3\",\"loops\":\"4\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"20\",\"startPatterns\":\"3\",\"loopPatterns\":\"4\",\"endPatterns\":\"1\",\"loops\":\"3\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"20\",\"startPatterns\":\"2\",\"loopPatterns\":\"3\",\"endPatterns\":\"3\",\"loops\":\"4\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"20\",\"startPatterns\":\"2\",\"loopPatterns\":\"3\",\"endPatterns\":\"3\",\"loops\":\"5\",\"speed\":\"8\",\"waitTime\":\"12\"}"]
  *
  *
  * @help
- * ●基本的な使い方
- * 　プラグインのパラメータの preset に[フキダシID]毎に設定を書いておきます。
- * 　・配置(dx,dy)、ループ回数(loops)、速度(speed)、終了時間(waitTime)などが設定できます。
- * 　・パターン数(startPatterns, loopPatterns,endPatterns)は合計で8以内に設定します。
- * 　・presetに設定する値について詳細は、それぞれの値入力時のヘルプ文を参照ください。
- * 　通常の[フキダシアイコンの表示]イベントコマンドを実行すると[フキダシID]に応じた設定でアニメが再生されます。
+ * ● Basic usage
+ * 		Write the settings to each [BalloonID] of the plug-in parameter "preset".
+ * 　・You can edit the settings for dx, dy, loops, speed, waitTime.
+ * 　・Summation of startPatterns, loopPatterns and endPatterns must under or equal 8.
+ * 　・For details on the values to be set in parameter "preset", refer to the help text for entering each value.
+ * 　Now, You execute [Display balloon icon] event command, The animation is played back with the settings according to [BalloonID].
+ * 　When combined with Triacontan's BalloonPlaySe.js, the sound can be played automatically, which is convenient.
  *
  * ●プラグインコマンド
  * TF_START_BALLOON [イベントID] [フキダシID] [完了までウェイト] [dx] [dy]
@@ -70,6 +70,76 @@
  * 
  * this.TF_stopBalloon( [消滅アニメを表示] );
  * 　TF_STOP_BALLOON の機能
+ * 
+ * 
+ * 利用規約 : MITライセンス
+ */
+
+/*:ja
+ * @plugindesc [フキダシアイコンの表示]の拡張
+ * @author とんび@鳶嶋工房
+ *
+ * @param preset
+ * @desc フキダシのアニメーション設定
+ * @type struct<BalloonParam>[]
+ * @default ["{\"dx\":\"0\",\"dy\":\"20\",\"startPatterns\":\"6\",\"loopPatterns\":\"1\",\"endPatterns\":\"0\",\"loops\":\"8\",\"speed\":\"4\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"20\",\"startPatterns\":\"7\",\"loopPatterns\":\"1\",\"endPatterns\":\"0\",\"loops\":\"8\",\"speed\":\"4\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"20\",\"startPatterns\":\"3\",\"loopPatterns\":\"5\",\"endPatterns\":\"0\",\"loops\":\"0\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"20\",\"dy\":\"40\",\"startPatterns\":\"0\",\"loopPatterns\":\"3\",\"endPatterns\":\"0\",\"loops\":\"4\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"-15\",\"dy\":\"40\",\"startPatterns\":\"7\",\"loopPatterns\":\"1\",\"endPatterns\":\"0\",\"loops\":\"8\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"0\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"60\",\"startPatterns\":\"5\",\"loopPatterns\":\"1\",\"endPatterns\":\"2\",\"loops\":\"6\",\"speed\":\"1\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"10\",\"dy\":\"40\",\"startPatterns\":\"5\",\"loopPatterns\":\"3\",\"endPatterns\":\"0\",\"loops\":\"4\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"20\",\"dy\":\"20\",\"startPatterns\":\"3\",\"loopPatterns\":\"2\",\"endPatterns\":\"3\",\"loops\":\"4\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"20\",\"startPatterns\":\"3\",\"loopPatterns\":\"4\",\"endPatterns\":\"1\",\"loops\":\"3\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"20\",\"startPatterns\":\"2\",\"loopPatterns\":\"3\",\"endPatterns\":\"3\",\"loops\":\"4\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"20\",\"startPatterns\":\"2\",\"loopPatterns\":\"3\",\"endPatterns\":\"3\",\"loops\":\"5\",\"speed\":\"8\",\"waitTime\":\"12\"}"]
+ *
+ *
+ * @help
+ * ●基本的な使い方
+ * 　プラグインのパラメータの preset に[フキダシID]毎に設定を書いておきます。
+ * 　・配置(dx,dy)、ループ回数(loops)、速度(speed)、終了時間(waitTime)などが設定できます。
+ * 　・パターン数(startPatterns, loopPatterns,endPatterns)は合計で8以内に設定します。
+ * 　・presetに設定する値について詳細は、それぞれの値入力時のヘルプ文を参照ください。
+ * 　通常の[フキダシアイコンの表示]イベントコマンドを実行すると[フキダシID]に応じた設定でアニメが再生されます。
+ * 　トリアコンタンさんの BalloonPlaySe.js と組み合わせると、音も自動的に鳴るようにできて便利です。
+ *
+ * ●プラグインコマンド
+ * TF_START_BALLOON [イベントID] [フキダシID] [完了までウェイト] [dx] [dy]
+ * 　フキダシの(ループ)アニメーションを開始。引数はすべて省略可能。
+ * 　[イベントID] 0:このイベント、-1:プレイヤー、-2〜-4:隊列メンバー、1〜:イベントID(規定値:0)
+ * 　[フキダシID] img/system/balloon.png の上から1〜15(規定値:11)
+ * 　[完了までウェイト] 真偽値(true:フキダシのアニメーション終了まで待つ false:待たない)(規定値:false)
+ * 　[dx] 表示位置のx差分(規定値:プラグインパラメータでdxに設定した値)
+ * 　[dy] 表示位置のy差分(規定値:プラグインパラメータでdyに設定した値)
+ * 　例: TF_START_BALLOON -1 5 false 0 20
+ *
+ * TF_SET_BALLOON [イベントID] [フキダシID] [パターン番号] [表示フレーム数] [完了までウェイト] [dx] [dy]
+ * 　[パターン番号] フキダシ画像の左から 1〜8 のパターン(規定値:8)
+ * 　[表示フレーム数] 表示するフレーム数(waitTimeにあたる)(規定値:12フレーム)
+ * 　例: TF_SET_BALLOON 0 9 2 60 true 10 -50
+ *
+ * TF_LOCATE_BALLOON [イベントID] [dx] [dy]
+ * 　フキダシ表示位置を変更。フキダシ表示中のみ可能。
+ * 　例: TF_LOCATE_BALLOON 15 0 10
+ *
+ * TF_STOP_BALLOON [イベントID] [消滅アニメを表示]
+ * 　フキダシのアニメーションを停止。
+ * 　TF_START_BALLOON で[ループ回数] 0 を指定した場合など、これを使って止める。
+ * 　[消滅アニメを表示] 真偽値(true:消滅アニメを表示 false:即終了)(規定値:false)
+ * 　例: TF_STOP_BALLOON 0 true
+ *
+ * [イベントID][フキダシID][dx][dy]の数値は全てV[n]の形式で、変数を指定できます。
+ * 例 : TF_LOCATE_BALLOON 0 V[1] V[2]
+ *
+ * ● [移動ルートの設定]で使えるスクリプト
+ * this.TF_startBalloon( [フキダシID], [完了までウエイト], [dx], [dy] );
+ * 　TF_START_BALLOONの機能
+ * 　[完了までウエイト], [dx], [dy] は省略できます。規定値は TF_START_BALLOON に準拠します。
+ * 　this.TF_startBalloon の代わりに this.balloon も使えます。
+ * 　ただし EventEffects.js と併用の際は EventEffects.js を、このプラグインの上に配置してください。
+ *
+ * this.TF_setBalloon( [イベントID], [フキダシID], [パターン番号], [表示フレーム数], [完了までウェイト], [dx], [dy] );
+ * 　TF_SET_BALLOONの機能
+ *
+ * this.TF_locateBalloon( [dx], [dy] );
+ * 　TF_LOCATE_BALLOONの機能
+ *
+ * this.TF_stopBalloon( [消滅アニメを表示] );
+ * 　TF_STOP_BALLOON の機能
+ *
+ *
+ * 利用規約 : MITライセンス
  */
 
 /*~struct~BalloonParam:
@@ -402,12 +472,14 @@
 		bs.y += TFb.dy;
 		if( !TFb.finishTrigger ) return;
 
-		bs._duration = TFb._duration;
 		TFb.finishTrigger = false;
-		if( bs._duration < TFb.loopEndDuration ) return;	// ループ終了以降ならそのまま進行
-
-		bs._duration = TFb.loopEndDuration;
-		TFb.phase = BALLOON_PHASE_END;
+		if( TFb._duration < TFb.loopEndDuration ) {
+			bs._duration = TFb._duration;	// 即終了の場合 TFb._duration : 0 に設定してある
+			TFb.phase = BALLOON_PHASE_WAIT;
+		} else {
+			bs._duration = TFb.loopEndDuration;
+			TFb.phase = BALLOON_PHASE_END;
+		}
 	};
 
 	/*--- Sprite_Balloon ---*/
