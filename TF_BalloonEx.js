@@ -1,6 +1,6 @@
 //========================================
 // TF_BalloonEx.js
-// Version :0.8.1.0
+// Version :0.8.2.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -32,9 +32,10 @@
  * TF_LOCATE_BALLOON [イベントID] [dx] [dy]
  *　フキダシ表示位置を変更。フキダシ表示中のみ可能。
  *
- * TF_STOP_BALLOON [イベントID]
+ * TF_STOP_BALLOON [イベントID] [消滅アニメを表示]
  *　フキダシのアニメーションを停止。
  *　TF_START_BALLOON で[ループ回数] 0 を指定した場合など、これを使って止める。
+ * 　[消滅アニメを表示] 真偽値(true:消滅アニメを表示 false:即終了)(規定値:false)
  *
  * [イベントID][フキダシID][dx][dy]の数値は全てV[n]の形式で、変数を指定できます。
  * 例 : TF_LOCATE_BALLOON 0 V[1] V[2]
@@ -47,7 +48,7 @@
  * 　 ただし EventEffects.js と併用の際は EventEffects.js を、このプラグインの上に配置してください。
  *
  * this.TF_locateBalloon( [dx], [dy] ); // TF_LOCATE_BALLOONの機能
- * this.TF_stopBalloon(); // TF_STOP_BALLOON の機能
+ * this.TF_stopBalloon( [消滅アニメを表示] ); // TF_STOP_BALLOON の機能
  */
 
 /*~struct~BalloonParam:
@@ -183,6 +184,20 @@
 		}
 	}
 
+	/**
+	 * フキダシアイコン表示の停止
+	 * @param {Game_CharacterBase} target 対象となるキャラ・イベント
+	 * @param {Boolean} showFinish 消滅アニメを表示するか
+	 */
+	function stopBalloon( target, showFinish ) {
+		if( target.TF_balloon ) {
+			if( !showFinish ) {
+				target.TF_balloon._duration = 0;
+			}
+			target.TF_balloon.finishTrigger = true;
+		}
+	}
+
 	/*---- Game_Interpreter ----*/
     /**
      * プラグインコマンドの実行
@@ -204,14 +219,13 @@
 				locateBalloon( this._character, args[ 3 ], args[ 4 ] );
 			}
 		} else if( commandStr === TF_LOCATE_BALLOON ) {
-			const targetEvent = getEventById( this, parseIntStrict( args[ 0 ] ) );
-			locateBalloon( targetEvent, args[ 1 ], args[ 2 ] );
+			const target = getEventById( this, parseIntStrict( args[ 0 ] ) );
+			locateBalloon( target, args[ 1 ], args[ 2 ] );
 
 		} else if( commandStr === TF_STOP_BALLOON ) {
-			const targetEvent = getEventById( this, parseIntStrict( args[ 0 ] ) );
-			if( targetEvent.TF_balloon ) {
-				targetEvent.TF_balloon.finishTrigger = true;
-			}
+			const target = getEventById( this, parseIntStrict( args[ 0 ] ) );
+			const showFinish = ( args[ 1 ] && args[ 1 ].toLowerCase() === PARAM_TRUE );
+			stopBalloon( target, showFinish );
 		}
 	};
 
@@ -248,7 +262,11 @@
 		this.TF_balloon = null;
 		this.requestBalloon( num );
 		if( wait ) {
-			this.currentInterpreter().setWaitMode( WAIT_BALLOON );
+			let interpreter = this._interpreter;
+			while( interpreter._childInterpreter ) {
+				interpreter = interpreter._childInterpreter;
+			}
+			interpreter.setWaitMode( WAIT_BALLOON );
 		}
 		locateBalloon( this, dx, dy );
 		return true;
@@ -256,10 +274,8 @@
 	Game_CharacterBase.prototype.TF_locateBalloon = function( dx, dy ) {
 		locateBalloon( this, dx, dy );
 	};
-	Game_CharacterBase.prototype.TF_stopBalloon = function() {
-		if( this.TF_balloon ) {
-			this.TF_balloon.finishTrigger = true;
-		}
+	Game_CharacterBase.prototype.TF_stopBalloon = function( showFinish ) {
+		stopBalloon( this, showFinish );
 	};
 
 
@@ -327,6 +343,7 @@
 		bs.y += TFb.dy;
 		if( !TFb.finishTrigger ) return;
 
+		bs._duration = TFb._duration;
 		TFb.finishTrigger = false;
 		if( bs._duration < TFb.loopEndDuration ) return;	// ループ終了以降ならそのまま進行
 
