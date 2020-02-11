@@ -1,6 +1,6 @@
 //========================================
 // TF_BalloonEx.js
-// Version :0.9.1.0
+// Version :0.9.1.1
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -14,65 +14,130 @@
  * @author Tobishima-Factory
  *
  * @param preset
+ * @desc The presets of balloon animation.
  * @type struct<BalloonParam>[]
  * @default ["{\"dx\":\"0\",\"dy\":\"20\",\"startPatterns\":\"6\",\"loopPatterns\":\"1\",\"endPatterns\":\"0\",\"loops\":\"8\",\"speed\":\"4\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"20\",\"startPatterns\":\"7\",\"loopPatterns\":\"1\",\"endPatterns\":\"0\",\"loops\":\"8\",\"speed\":\"4\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"20\",\"startPatterns\":\"3\",\"loopPatterns\":\"5\",\"endPatterns\":\"0\",\"loops\":\"0\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"20\",\"dy\":\"40\",\"startPatterns\":\"0\",\"loopPatterns\":\"3\",\"endPatterns\":\"0\",\"loops\":\"4\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"-15\",\"dy\":\"40\",\"startPatterns\":\"7\",\"loopPatterns\":\"1\",\"endPatterns\":\"0\",\"loops\":\"8\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"0\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"60\",\"startPatterns\":\"5\",\"loopPatterns\":\"1\",\"endPatterns\":\"2\",\"loops\":\"6\",\"speed\":\"1\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"10\",\"dy\":\"40\",\"startPatterns\":\"5\",\"loopPatterns\":\"3\",\"endPatterns\":\"0\",\"loops\":\"4\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"20\",\"dy\":\"20\",\"startPatterns\":\"3\",\"loopPatterns\":\"2\",\"endPatterns\":\"3\",\"loops\":\"4\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"20\",\"startPatterns\":\"3\",\"loopPatterns\":\"4\",\"endPatterns\":\"1\",\"loops\":\"3\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"20\",\"startPatterns\":\"2\",\"loopPatterns\":\"3\",\"endPatterns\":\"3\",\"loops\":\"4\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"20\",\"startPatterns\":\"2\",\"loopPatterns\":\"3\",\"endPatterns\":\"3\",\"loops\":\"5\",\"speed\":\"8\",\"waitTime\":\"12\"}"]
  *
  *
  * @help
  * ● Basic usage
- * 		Write the settings to each [BalloonID] of the plug-in parameter "preset".
+ * 		Write the settings to each [Balloon ID] of the plug-in parameter "preset".
  * 　・You can edit the settings for dx, dy, loops, speed, waitTime.
  * 　・Summation of startPatterns, loopPatterns and endPatterns must under or equal 8.
  * 　・For details on the values to be set in parameter "preset", refer to the help text for entering each value.
- * 　Now, You execute [Display balloon icon] event command, The animation is played back with the settings according to [BalloonID].
+ * 　Now, You execute [Display balloon icon] event command, The animation is played back with the settings according to [Balloon ID].
  * 　When combined with Triacontan's BalloonPlaySe.js, the sound can be played automatically, which is convenient.
  *
- * ●プラグインコマンド
- * TF_START_BALLOON [イベントID] [フキダシID] [完了までウェイト] [dx] [dy]
- * 　フキダシの(ループ)アニメーションを開始。引数はすべて省略可能。
- * 　[イベントID] 0:このイベント、-1:プレイヤー、-2〜-4:隊列メンバー、1〜:イベントID(規定値:0)
- * 　[フキダシID] img/system/balloon.png の上から1〜15(規定値:11)
- * 　[完了までウェイト] 真偽値(true:フキダシのアニメーション終了まで待つ false:待たない)(規定値:false)
- * 　[dx] 表示位置のx差分(規定値:プラグインパラメータでdxに設定した値)
- * 　[dy] 表示位置のy差分(規定値:プラグインパラメータでdyに設定した値)
- * 　例: TF_START_BALLOON -1 5 false 0 20
- *
- * TF_SET_BALLOON [イベントID] [フキダシID] [パターン番号] [表示フレーム数] [完了までウェイト] [dx] [dy]
- * 　[パターン番号] フキダシ画像の左から 1〜8 のパターン(規定値:8)
- * 　[表示フレーム数] 表示するフレーム数(waitTimeにあたる)(規定値:12フレーム)
- * 　例: TF_SET_BALLOON 0 9 2 60 true 10 -50
  * 
- * TF_LOCATE_BALLOON [イベントID] [dx] [dy]
- * 　フキダシ表示位置を変更。フキダシ表示中のみ可能。
- * 　例: TF_LOCATE_BALLOON 15 0 10
- *
- * TF_STOP_BALLOON [イベントID] [消滅アニメを表示]
- * 　フキダシのアニメーションを停止。
- * 　TF_START_BALLOON で[ループ回数] 0 を指定した場合など、これを使って止める。
- * 　[消滅アニメを表示] 真偽値(true:消滅アニメを表示 false:即終了)(規定値:false)
- * 　例: TF_STOP_BALLOON 0 true
- *
- * [イベントID][フキダシID][dx][dy]の数値は全てV[n]の形式で、変数を指定できます。
- * 例 : TF_LOCATE_BALLOON 0 V[1] V[2]
- *
- * ● [移動ルートの設定]で使えるスクリプト
- * this.TF_startBalloon( [フキダシID], [完了までウエイト], [dx], [dy] );
- * 　TF_START_BALLOONの機能
- * 　[完了までウエイト], [dx], [dy] は省略できます。規定値は TF_START_BALLOON に準拠します。
- * 　this.TF_startBalloon の代わりに this.balloon も使えます。
- * 　ただし EventEffects.js と併用の際は EventEffects.js を、このプラグインの上に配置してください。
- *
- * this.TF_setBalloon( [イベントID], [フキダシID], [パターン番号], [表示フレーム数], [完了までウェイト], [dx], [dy] ); 
- * 　TF_SET_BALLOONの機能
+ * ● Plug-in command
+ *------------------------------
+ * TF_START_BALLOON [Event ID] [Balloon ID] [Wait for finish] [dx] [dy]
+ * 　Start a balloon animation.All parameters can omitted.
+ * 　[Event ID] 0:This event  -1:Player  -2〜-4:Member 1〜:Event ID (Default:0)
+ * 　[Balloon ID] 1 to 15 counting from the top of the image(img/system/balloon.png).(Default:11)
+ * 　[Wait for finish] true:Wait for finish  false:Don't stop (Default:false)
+ * 　[dx] Difference x coordinate.(Default:dx at plug-in parameter)
+ * 　[dy] Difference y coordinate.(Default:dy at plug-in parameter)
  * 
+ * 　EX: TF_START_BALLOON -1 5 false 0 20
+ *------------------------------
+ * TF_SET_BALLOON [Event ID] [Balloon ID] [Pattern Number] [Wait time] [Wait for finish] [dx] [dy]
+ * 　[Pattern Number] 1 to 8 patterns from the left of the balloon image.(Default:8)
+ * 　[Wait time] The number of frames to display the balloon.(Default:12)
+ * 
+ * 　EX: TF_SET_BALLOON 0 9 2 60 true 10 -50
+ *------------------------------
+ * TF_LOCATE_BALLOON [Event ID] [dx] [dy]
+ * 　Locate ballon position. Apply to displayed balloon.
+ * 
+ * 　EX: TF_LOCATE_BALLOON 15 0 10
+ *------------------------------
+ * TF_STOP_BALLOON [Event ID] [Show end animation]
+ * 　Stop balloon animation.
+ * 　When executing TF_START_BALLOON specifying the preset [Loop] to 0.
+ * 　[Show end animation] true:Show end animation  false:Immediately (Default:false)
+ * 
+ * 　EX: TF_STOP_BALLOON 0 true
+ *------------------------------
+ * All of the numbers of [Event ID][Balloon ID][dx][dy] can set format V[n]. That means variables.
+ * 
+ * 　EX : TF_LOCATE_BALLOON 0 V[1] V[2]
+ *------------------------------
+ * 
+ * 
+ * ● Scripts for [route settings]
+ *------------------------------
+ * this.TF_startBalloon( [Balloon ID], [Wait for finish], [dx], [dy] );
+ * 　The function of  TF_START_BALLOON.
+ * 　[Wait for finish], [dx], [dy] can omitted.Default values are confirmed on TF_START_BALLOON.
+ * 　this.balloon is same syntax of this.TF_startBalloon.
+ * 　If you use EventEffects.js, Place EventEffects.js over this plug-in.
+ *------------------------------
+ * this.TF_setBalloon( [Balloon ID], [Pattern Number], [Wait time], [Wait for finish], [dx], [dy] );
+ * 　The function of TF_SET_BALLOON.
+ *------------------------------
  * this.TF_locateBalloon( [dx], [dy] );
- * 　TF_LOCATE_BALLOONの機能
- * 
- * this.TF_stopBalloon( [消滅アニメを表示] );
- * 　TF_STOP_BALLOON の機能
- * 
- * 
- * 利用規約 : MITライセンス
+ * 　The function of  TF_LOCATE_BALLOON.
+ *------------------------------
+ * this.TF_stopBalloon( [Show end animation] );
+ * 　The function of  TF_STOP_BALLOON .
+ *------------------------------
+ *
+ * Released under the MIT License.
+ */
+/*~struct~BalloonParam:
+ *
+ * @param dx
+ * @desc difference x coordinate.
+ * @type Number
+ * @default 0
+ * @min -1000000
+ *
+ * @param dy
+ * @desc difference y coordinate.
+ * @type Number
+ * @default 0
+ * @min 0
+ * @min -1000000
+ *
+ * @param startPatterns
+ * @desc The number of appearance patterns.
+ * @type Number
+ * @default 2
+ * @min 0
+ * @max 7
+ *
+ * @param loopPatterns
+ * @desc The number of loop patterns.
+ * @type Number
+ * @default 6
+ * @min 0
+ * @max 8
+ *
+ * @param endPatterns
+ * @desc The number of disappearance patterns.
+ * @type Number
+ * @default 0
+ * @min 0
+ * @max 7
+ *
+ * @param loops
+ * @desc The number of loops.(0:Loop until TF STOP BALLOON is executed)
+ * @type Number
+ * @default 1
+ * @min 0
+ *
+ * @param speed
+ * @desc Duration of the pattern.(frame)
+ * @type Number
+ * @default 8
+ * @min 0
+ *
+ * @param waitTime
+ * @desc Duration of the last pattern.(frame)
+ * @type Number
+ * @default 12
+ * @min 0
  */
 
 /*:ja
@@ -81,9 +146,9 @@
  *
  * @param preset
  * @desc フキダシのアニメーション設定
- * @type struct<BalloonParam>[]
+ * @type struct<BalloonParamJa>[]
  * @default ["{\"dx\":\"0\",\"dy\":\"20\",\"startPatterns\":\"6\",\"loopPatterns\":\"1\",\"endPatterns\":\"0\",\"loops\":\"8\",\"speed\":\"4\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"20\",\"startPatterns\":\"7\",\"loopPatterns\":\"1\",\"endPatterns\":\"0\",\"loops\":\"8\",\"speed\":\"4\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"20\",\"startPatterns\":\"3\",\"loopPatterns\":\"5\",\"endPatterns\":\"0\",\"loops\":\"0\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"20\",\"dy\":\"40\",\"startPatterns\":\"0\",\"loopPatterns\":\"3\",\"endPatterns\":\"0\",\"loops\":\"4\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"-15\",\"dy\":\"40\",\"startPatterns\":\"7\",\"loopPatterns\":\"1\",\"endPatterns\":\"0\",\"loops\":\"8\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"0\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"60\",\"startPatterns\":\"5\",\"loopPatterns\":\"1\",\"endPatterns\":\"2\",\"loops\":\"6\",\"speed\":\"1\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"10\",\"dy\":\"40\",\"startPatterns\":\"5\",\"loopPatterns\":\"3\",\"endPatterns\":\"0\",\"loops\":\"4\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"20\",\"dy\":\"20\",\"startPatterns\":\"3\",\"loopPatterns\":\"2\",\"endPatterns\":\"3\",\"loops\":\"4\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"20\",\"startPatterns\":\"3\",\"loopPatterns\":\"4\",\"endPatterns\":\"1\",\"loops\":\"3\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"20\",\"startPatterns\":\"2\",\"loopPatterns\":\"3\",\"endPatterns\":\"3\",\"loops\":\"4\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"20\",\"startPatterns\":\"2\",\"loopPatterns\":\"3\",\"endPatterns\":\"3\",\"loops\":\"5\",\"speed\":\"8\",\"waitTime\":\"12\"}"]
- *
+ * 
  *
  * @help
  * ●基本的な使い方
@@ -94,7 +159,9 @@
  * 　通常の[フキダシアイコンの表示]イベントコマンドを実行すると[フキダシID]に応じた設定でアニメが再生されます。
  * 　トリアコンタンさんの BalloonPlaySe.js と組み合わせると、音も自動的に鳴るようにできて便利です。
  *
+ * 
  * ●プラグインコマンド
+ *------------------------------
  * TF_START_BALLOON [イベントID] [フキダシID] [完了までウェイト] [dx] [dy]
  * 　フキダシの(ループ)アニメーションを開始。引数はすべて省略可能。
  * 　[イベントID] 0:このイベント、-1:プレイヤー、-2〜-4:隊列メンバー、1〜:イベントID(規定値:0)
@@ -102,47 +169,56 @@
  * 　[完了までウェイト] 真偽値(true:フキダシのアニメーション終了まで待つ false:待たない)(規定値:false)
  * 　[dx] 表示位置のx差分(規定値:プラグインパラメータでdxに設定した値)
  * 　[dy] 表示位置のy差分(規定値:プラグインパラメータでdyに設定した値)
+ * 
  * 　例: TF_START_BALLOON -1 5 false 0 20
- *
+ *------------------------------
  * TF_SET_BALLOON [イベントID] [フキダシID] [パターン番号] [表示フレーム数] [完了までウェイト] [dx] [dy]
  * 　[パターン番号] フキダシ画像の左から 1〜8 のパターン(規定値:8)
  * 　[表示フレーム数] 表示するフレーム数(waitTimeにあたる)(規定値:12フレーム)
+ * 
  * 　例: TF_SET_BALLOON 0 9 2 60 true 10 -50
- *
+ *------------------------------
  * TF_LOCATE_BALLOON [イベントID] [dx] [dy]
  * 　フキダシ表示位置を変更。フキダシ表示中のみ可能。
+ * 
  * 　例: TF_LOCATE_BALLOON 15 0 10
- *
+ *------------------------------
  * TF_STOP_BALLOON [イベントID] [消滅アニメを表示]
  * 　フキダシのアニメーションを停止。
  * 　TF_START_BALLOON で[ループ回数] 0 を指定した場合など、これを使って止める。
  * 　[消滅アニメを表示] 真偽値(true:消滅アニメを表示 false:即終了)(規定値:false)
+ * 
  * 　例: TF_STOP_BALLOON 0 true
- *
+ *------------------------------
  * [イベントID][フキダシID][dx][dy]の数値は全てV[n]の形式で、変数を指定できます。
+ * 
  * 例 : TF_LOCATE_BALLOON 0 V[1] V[2]
+ *------------------------------
  *
+ * 
  * ● [移動ルートの設定]で使えるスクリプト
+ * 
  * this.TF_startBalloon( [フキダシID], [完了までウエイト], [dx], [dy] );
  * 　TF_START_BALLOONの機能
  * 　[完了までウエイト], [dx], [dy] は省略できます。規定値は TF_START_BALLOON に準拠します。
  * 　this.TF_startBalloon の代わりに this.balloon も使えます。
  * 　ただし EventEffects.js と併用の際は EventEffects.js を、このプラグインの上に配置してください。
- *
- * this.TF_setBalloon( [イベントID], [フキダシID], [パターン番号], [表示フレーム数], [完了までウェイト], [dx], [dy] );
+ *------------------------------
+ * this.TF_setBalloon( [フキダシID], [パターン番号], [表示フレーム数], [完了までウェイト], [dx], [dy] );
  * 　TF_SET_BALLOONの機能
- *
+ *------------------------------
  * this.TF_locateBalloon( [dx], [dy] );
  * 　TF_LOCATE_BALLOONの機能
- *
+ *------------------------------
  * this.TF_stopBalloon( [消滅アニメを表示] );
  * 　TF_STOP_BALLOON の機能
+ *------------------------------
  *
  *
  * 利用規約 : MITライセンス
  */
 
-/*~struct~BalloonParam:
+/*~struct~BalloonParamJa:
  *
  * @param dx
  * @desc フキダシ表示座標のx差分。正の値で右に負の値で左にずれる。
