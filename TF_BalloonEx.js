@@ -1,6 +1,6 @@
 //========================================
 // TF_BalloonEx.js
-// Version :0.9.1.1
+// Version :1.0.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -16,8 +16,13 @@
  * @param preset
  * @desc The presets of balloon animation.
  * @type struct<BalloonParam>[]
- * @default ["{\"dx\":\"0\",\"dy\":\"20\",\"startPatterns\":\"6\",\"loopPatterns\":\"1\",\"endPatterns\":\"0\",\"loops\":\"8\",\"speed\":\"4\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"20\",\"startPatterns\":\"7\",\"loopPatterns\":\"1\",\"endPatterns\":\"0\",\"loops\":\"8\",\"speed\":\"4\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"20\",\"startPatterns\":\"3\",\"loopPatterns\":\"5\",\"endPatterns\":\"0\",\"loops\":\"0\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"20\",\"dy\":\"40\",\"startPatterns\":\"0\",\"loopPatterns\":\"3\",\"endPatterns\":\"0\",\"loops\":\"4\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"-15\",\"dy\":\"40\",\"startPatterns\":\"7\",\"loopPatterns\":\"1\",\"endPatterns\":\"0\",\"loops\":\"8\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"0\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"60\",\"startPatterns\":\"5\",\"loopPatterns\":\"1\",\"endPatterns\":\"2\",\"loops\":\"6\",\"speed\":\"1\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"10\",\"dy\":\"40\",\"startPatterns\":\"5\",\"loopPatterns\":\"3\",\"endPatterns\":\"0\",\"loops\":\"4\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"20\",\"dy\":\"20\",\"startPatterns\":\"3\",\"loopPatterns\":\"2\",\"endPatterns\":\"3\",\"loops\":\"4\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"20\",\"startPatterns\":\"3\",\"loopPatterns\":\"4\",\"endPatterns\":\"1\",\"loops\":\"3\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"20\",\"startPatterns\":\"2\",\"loopPatterns\":\"3\",\"endPatterns\":\"3\",\"loops\":\"4\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"20\",\"startPatterns\":\"2\",\"loopPatterns\":\"3\",\"endPatterns\":\"3\",\"loops\":\"5\",\"speed\":\"8\",\"waitTime\":\"12\"}"]
- *
+ * @default ["{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}"]
+ * 
+ * @param baseDy
+ * @desc The base difference y coordinate for a balloon.
+ * @type Number
+ * @default 0
+ * 
  *
  * @help
  * ● Basic usage
@@ -43,7 +48,7 @@
  *------------------------------
  * TF_SET_BALLOON [Event ID] [Balloon ID] [Pattern Number] [Wait time] [Wait for finish] [dx] [dy]
  * 　[Pattern Number] 1 to 8 patterns from the left of the balloon image.(Default:8)
- * 　[Wait time] The number of frames to display the balloon.(Default:12)
+ * 　[Wait time] The number of frames to display the balloon(0:Loop until TF STOP BALLOON is executed).(Default:64)
  * 
  * 　EX: TF_SET_BALLOON 0 9 2 60 true 10 -50
  *------------------------------
@@ -147,7 +152,12 @@
  * @param preset
  * @desc フキダシのアニメーション設定
  * @type struct<BalloonParamJa>[]
- * @default ["{\"dx\":\"0\",\"dy\":\"20\",\"startPatterns\":\"6\",\"loopPatterns\":\"1\",\"endPatterns\":\"0\",\"loops\":\"8\",\"speed\":\"4\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"20\",\"startPatterns\":\"7\",\"loopPatterns\":\"1\",\"endPatterns\":\"0\",\"loops\":\"8\",\"speed\":\"4\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"20\",\"startPatterns\":\"3\",\"loopPatterns\":\"5\",\"endPatterns\":\"0\",\"loops\":\"0\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"20\",\"dy\":\"40\",\"startPatterns\":\"0\",\"loopPatterns\":\"3\",\"endPatterns\":\"0\",\"loops\":\"4\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"-15\",\"dy\":\"40\",\"startPatterns\":\"7\",\"loopPatterns\":\"1\",\"endPatterns\":\"0\",\"loops\":\"8\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"0\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"60\",\"startPatterns\":\"5\",\"loopPatterns\":\"1\",\"endPatterns\":\"2\",\"loops\":\"6\",\"speed\":\"1\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"10\",\"dy\":\"40\",\"startPatterns\":\"5\",\"loopPatterns\":\"3\",\"endPatterns\":\"0\",\"loops\":\"4\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"20\",\"dy\":\"20\",\"startPatterns\":\"3\",\"loopPatterns\":\"2\",\"endPatterns\":\"3\",\"loops\":\"4\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"20\",\"startPatterns\":\"3\",\"loopPatterns\":\"4\",\"endPatterns\":\"1\",\"loops\":\"3\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"20\",\"startPatterns\":\"2\",\"loopPatterns\":\"3\",\"endPatterns\":\"3\",\"loops\":\"4\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"20\",\"startPatterns\":\"2\",\"loopPatterns\":\"3\",\"endPatterns\":\"3\",\"loops\":\"5\",\"speed\":\"8\",\"waitTime\":\"12\"}"]
+ * @default ["{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}","{\"dx\":\"0\",\"dy\":\"0\",\"startPatterns\":\"2\",\"loopPatterns\":\"6\",\"endPatterns\":\"0\",\"loops\":\"1\",\"speed\":\"8\",\"waitTime\":\"12\"}"]
+ * 
+ * @param baseDy
+ * @desc フキダシの基本y座標差分
+ * @type Number
+ * @default 0
  * 
  *
  * @help
@@ -174,7 +184,7 @@
  *------------------------------
  * TF_SET_BALLOON [イベントID] [フキダシID] [パターン番号] [表示フレーム数] [完了までウェイト] [dx] [dy]
  * 　[パターン番号] フキダシ画像の左から 1〜8 のパターン(規定値:8)
- * 　[表示フレーム数] 表示するフレーム数(waitTimeにあたる)(規定値:12フレーム)
+ * 　[表示フレーム数] 表示するフレーム数(0:TF_STOP_BALLOONを実行するまでループ)(規定値:64フレーム)
  * 
  * 　例: TF_SET_BALLOON 0 9 2 60 true 10 -50
  *------------------------------
@@ -289,11 +299,12 @@
      * パラメータを受け取る
      */
 	const pluginParams = PluginManager.parameters( 'TF_BalloonEx' );
+	const TF_baseDy = parseIntStrict( pluginParams.baseDy );
 	const presetList = JsonEx.parse( pluginParams.preset );
 	pluginParams.preset = presetList.map( value => {
 		const params = JsonEx.parse( value );
 		params.dx = parseIntStrict( params.dx );
-		params.dy = parseIntStrict( params.dy );
+		params.dy = parseIntStrict( params.dy ) + TF_baseDy;
 		params.startPatterns = parseIntStrict( params.startPatterns );
 		params.loopPatterns = parseIntStrict( params.loopPatterns );
 		params.endPatterns = parseIntStrict( params.endPatterns );
@@ -338,15 +349,24 @@
 		if( !character ) return;
 		character.TF_balloon = null;
 		character.requestBalloon( balloonId );
+		pattern = ( pattern ? parseIntStrict( pattern ) : 8 );
+		waitTime = ( waitTime ? parseIntStrict( waitTime ) : 64 );
+		let loops = 1;
+		if( waitTime === 0 ) {
+			// waitTime:0 の場合は無限ループ
+			loops = 0;
+			waitTime = 2;
+		}
+
 		character.TF_balloon = {
 			dx: parseIntStrict( dx ),
-			dy: parseIntStrict( dy ),
-			startPatterns: ( pattern ? parseIntStrict( pattern ) : 8 ),
-			loopPatterns: 0,
+			dy: parseIntStrict( dy ) + TF_baseDy,
+			startPatterns: ( pattern - 1 ),
+			loopPatterns: 1,
 			endPatterns: 0,
-			loops: 8,
+			loops: loops,
 			speed: 0,
-			waitTime: ( waitTime ? parseIntStrict( waitTime ) : 24 )
+			waitTime: waitTime
 		}
 	}
 
@@ -374,7 +394,7 @@
 				target.TF_balloon.dx = parseIntStrict( dx );
 			}
 			if( dy !== undefined ) {
-				target.TF_balloon.dy = parseIntStrict( dy );
+				target.TF_balloon.dy = parseIntStrict( dy ) + TF_baseDy;
 			}
 		}
 	}
