@@ -1,6 +1,6 @@
 //========================================
 // TF_CharEx.js
-// Version :0.0.0.0
+// Version :0.0.1.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -17,37 +17,42 @@
  *
  *------------------------------
  * TF_SET_CHAR [イベントID] [画像ファイル名] [キャラ番号] [歩行パターン] [向き]
- * 　キャラパターンを設定(一度のコマンドで設定でき、歩行パターンも指定可能)。
+ * 　[移動ルートの設定] の[画像の変更]と[○を向く]に加え歩行パターンも一度に指定。
+ * 　[イベントID] 0:このイベント、-1:プレイヤー、-2〜-4:隊列メンバー、1〜:イベントID
+ * 　[画像ファイル名] .pngを除いた img/character/ フォルダのファイル名
+ * 　[キャラ番号] 画像の上段左から 0,１, 2, 3 、下段目が 4, 5, 6, 7 となる番号
+ * 　[歩行パターン] 3パターンアニメの左から 0, 1, 2(規定値:現在値)
+ * 　[向き] 4方向のキャラの向き、テンキーに対応した 2, 4, 6, 8 (規定値:2、[歩行パターン]の指定がない場合は現在値)
  * 
  * 　例: TF_SET_CHAR 2 !Door2 2 0 2
+ *------------------------------
+ * TF_SET_CHAR [イベントID] [画像ファイル名] [キャラ番号] [パターン]
+ * 　[パターン] 一度に [歩行パターン] と [向き] を指定する番号(規定値:現在値)
+ * 　歩行グラフィックの位置だと以下並び。
+ * 　　0, 1, 2		<= 下向き(テンキー2)
+ * 　　3, 4, 5		<= 左向き(テンキー4)
+ * 　　6, 7, 8		<= 右向き(テンキー6)
+ * 　　9, 10, 11 <= 上向き(テンキー8)
+ * 　TF_SET_CHAR 以外でも [歩行パターン] [向き] の代わりに [パターン] を指定できる。
  *------------------------------
  * TF_START_ANIME [イベントID]
  * 　アニメモードに変更(移動アニメ停止・[すり抜け]ON)。
  *------------------------------
- * TF_ANIME [イベントID] [dx] [dy] [ウエイト] [キャラ番号] [歩行パターン] [向き]
+ * TF_ANIME [イベントID] [mx] [my] [ウエイト] [キャラ番号] [歩行パターン] [向き]
  * 　アニメの指定。
+ * 　[mx] x移動距離(規定値:0ピクセル)
+ * 　[my] y移動距離(規定値:0ピクセル)
+ * 　[ウエイト] 表示時間(規定値:3フレーム)
  *------------------------------
  * TF_END_ANIME [イベントID]
  * 　通常モードに戻る。
  *------------------------------
  * TF_V_ANIME [イベントID] [画像ファイル名] [キャラ番号] [歩行パターン] [ウエイト]
  * 　下→左→右→上 の順に向きを変えてアニメーションする。
- * 　宝箱や扉などに
+ * 　宝箱や扉などのアニメーションに使用する。
  * 
  * 　例:TF_V_ANIME 2 !Door2 2 0
  *------------------------------
- *【引数の説明】
- * [イベントID] 0:このイベント、-1:プレイヤー、-2〜-4:隊列メンバー、1〜:イベントID
- * [画像ファイル名] .pngを除いた img/character/ フォルダのファイル名
- * [キャラ番号] 画像の上段左から 0,１, 2, 3 、下段目が 4, 5, 6, 7 となる番号
- * [歩行パターン] 3パターンアニメの左から 0, 1, 2(3以降を指定すると向き不要な[パターン]指定となる)
- * [向き] 4方向のキャラの向き、テンキーに対応した 2, 4, 6, 8 (規定値:2)
- * [パターン] [歩行パターン] と [向き] を一度に指定する番号。
- * 歩行グラフィックの位置だと以下並び。
- * 0, 1, 2		<= 下向き(テンキー2)
- * 3, 4, 5		<= 左向き(テンキー4)
- * 6, 7, 8		<= 右向き(テンキー6)
- * 9, 10, 11 <= 上向き(テンキー8)
  */
 
 ( function() {
@@ -141,8 +146,8 @@
 			} else {
 				d = ( d === undefined ) ? 2 : parseIntStrict( d );
 			}
-			targetEvent.setPattern( patternNo );
 			targetEvent._originalPattern = patternNo;
+			targetEvent.setPattern( patternNo );
 
 			// 向きを設定
 			const tmp = targetEvent.isDirectionFixed();
@@ -221,6 +226,7 @@
 		setCharPattern.apply( this, this._params );
 	}
 
+	/*---- Game_CharacterBase ----*/
 	/**
 	 * TF_START_ANIME, TF_END_ANIME 対応。
 	 */
@@ -230,4 +236,23 @@
 		return _Game_CharacterBase_isMoving.call( this );
 	}
 
+	/*---- Game_Player ----*/
+	const _Game_Player_initMembers = Game_Player.prototype.initMembers;
+	Game_Player.prototype.initMembers = function() {
+		_Game_Player_initMembers.call( this );
+		this._originalPattern = 1;
+	}
+	Game_Player.prototype.isOriginalPattern = function() {
+		return this.pattern() === this._originalPattern;
+	};
+
+	/*---- Game_Follower ----*/
+	const _Game_Follower_initMembers = Game_Follower.prototype.initMembers;
+	Game_Follower.prototype.initMembers = function() {
+		_Game_Follower_initMembers.call( this );
+		this._originalPattern = 1;
+	}
+	Game_Follower.prototype.isOriginalPattern = function() {
+		return this.pattern() === this._originalPattern;
+	};
 } )();
