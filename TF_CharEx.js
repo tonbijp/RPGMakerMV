@@ -1,6 +1,6 @@
 //========================================
 // TF_CharEx.js
-// Version :0.0.1.0
+// Version :0.2.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -47,21 +47,27 @@
  * TF_END_ANIME [イベントID]
  * 　通常モードに戻る。
  *------------------------------
- * TF_V_ANIME [イベントID] [画像ファイル名] [キャラ番号] [歩行パターン] [ウエイト]
- * 　下→左→右→上 の順に向きを変えてアニメーションする。
- * 　宝箱や扉などのアニメーションに使用する。
- * 
- * 　例:TF_V_ANIME 2 !Door2 2 0
+ * TF_VD_ANIME [イベントID] [画像ファイル名] [キャラ番号] [歩行パターン] [ウエイト]
+ * 　キャラ画像の縦下方向にアニメーションする(キャラの向きだと 左→右→上 の順)
+ *
+ * 　例:TF_VD_ANIME 2 !Door2 2 0
+ *------------------------------
+ * TF_VU_ANIME [イベントID] [画像ファイル名] [キャラ番号] [歩行パターン] [ウエイト]
+ * 　キャラ画像の縦上方向にアニメーションする(キャラの向きだと 右→左→下 の順)
+ *
+ * 　例:TF_VU_ANIME
  *------------------------------
  */
 
 ( function() {
 	'use strict';
-	const TF_START_ANIME = 'TF_START_ANIME';
 	const TF_SET_CHAR = 'TF_SET_CHAR';
+	const TF_LOCATE_CHARA = 'TF_LOCATE_CHARA';
+	const TF_START_ANIME = 'TF_START_ANIME';
 	const TF_ANIME = 'TF_ANIME';
 	const TF_END_ANIME = 'TF_END_ANIME';
-	const TF_V_ANIME = 'TF_V_ANIME';
+	const TF_VD_ANIME = 'TF_VD_ANIME';
+	const TF_VU_ANIME = 'TF_VU_ANIME';
 	const PARAM_TRUE = 'true';
 
 	/**
@@ -181,6 +187,9 @@
 		if( commandStr === TF_SET_CHAR ) {
 			setCharPattern.apply( this, args );
 
+		} else if( commandStr === TF_LOCATE_CHARA ) {
+
+
 		} else if( commandStr === TF_START_ANIME ) {
 			const targetEvent = getEventById( this, parseIntStrict( args[ 0 ] ) );
 			targetEvent.setThrough( true );
@@ -196,21 +205,42 @@
 			result.object._realX += parseIntStrict( args[ 1 ] ) / $gameMap.tileWidth();
 			result.object._realY += parseIntStrict( args[ 2 ] ) / $gameMap.tileHeight();
 			const commandList = [
-				{ indent: 0, code: WAIT_FOR, parameters: [ parseIntStrict( args[ 3 ] ) ] },
+				{ indent: 0, code: WAIT_FOR, parameters: [ ( args[ 3 ] === undefined ) ? 3 : parseIntStrict( args[ 3 ] ) ] },
 				{ indent: 0, code: COMMAND_END }
 			];
 			this.setupChild( commandList, result.id );
 
-		} else if( commandStr === TF_V_ANIME ) {
+		} else if( commandStr === TF_VD_ANIME ) {
 			const result = setCharPattern.apply( this, args );
+			const tempDirectionFix = result.object.isDirectionFixed();
 			result.object.setDirectionFix( false );
+			const waitFrames = ( args[ 4 ] === undefined ) ? 3 : parseIntStrict( args[ 4 ] );
 			this._params = [ result.id, {
 				repeat: false, skippable: true, wait: true, list: [
 					{ code: gc.ROUTE_TURN_LEFT },
-					{ code: gc.ROUTE_WAIT, parameters: [ 3 ] },
+					{ code: gc.ROUTE_WAIT, parameters: [ waitFrames ] },
 					{ code: gc.ROUTE_TURN_RIGHT },
-					{ code: gc.ROUTE_WAIT, parameters: [ 3 ] },
+					{ code: gc.ROUTE_WAIT, parameters: [ waitFrames ] },
 					{ code: gc.ROUTE_TURN_UP },
+					{ code: tempDirectionFix ? gc.ROUTE_DIR_FIX_ON : gc.ROUTE_DIR_FIX_OFF },
+					{ code: gc.ROUTE_END }
+				]
+			} ];
+			this.command205();	// SET_MOVEMENT_ROUTE
+
+		} else if( commandStr === TF_VU_ANIME ) {
+			const result = setCharPattern.apply( this, args );
+			const tempDirectionFix = result.object.isDirectionFixed();
+			result.object.setDirectionFix( false );
+			const waitFrames = ( args[ 4 ] === undefined ) ? 3 : parseIntStrict( args[ 4 ] );
+			this._params = [ result.id, {
+				repeat: false, skippable: true, wait: true, list: [
+					{ code: gc.ROUTE_TURN_RIGHT },
+					{ code: gc.ROUTE_WAIT, parameters: [ waitFrames ] },
+					{ code: gc.ROUTE_TURN_LEFT },
+					{ code: gc.ROUTE_WAIT, parameters: [ waitFrames ] },
+					{ code: gc.ROUTE_TURN_DOWN },
+					{ code: tempDirectionFix ? gc.ROUTE_DIR_FIX_ON : gc.ROUTE_DIR_FIX_OFF },
 					{ code: gc.ROUTE_END }
 				]
 			} ];
