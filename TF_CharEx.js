@@ -1,6 +1,6 @@
 //========================================
 // TF_CharEx.js
-// Version :0.2.0.0
+// Version :0.3.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -35,6 +35,12 @@
  * 　　9, 10, 11 <= 上向き(テンキー8)
  * 　TF_SET_CHAR 以外でも [歩行パターン] [向き] の代わりに [パターン] を指定できる。
  *------------------------------
+ * TF_LOCATE_CHAR [イベントID] [x] [y] [歩行パターン] [向き]
+ * 　位置を設定。
+ * 　[x] x位置(タイル数)
+ * 　[y] y位置(タイル数)
+ *
+ *------------------------------
  * TF_START_ANIME [イベントID]
  * 　アニメモードに変更(移動アニメ停止・[すり抜け]ON)。
  *------------------------------
@@ -62,7 +68,7 @@
 ( function() {
 	'use strict';
 	const TF_SET_CHAR = 'TF_SET_CHAR';
-	const TF_LOCATE_CHARA = 'TF_LOCATE_CHARA';
+	const TF_LOCATE_CHAR = 'TF_LOCATE_CHAR';
 	const TF_START_ANIME = 'TF_START_ANIME';
 	const TF_ANIME = 'TF_ANIME';
 	const TF_END_ANIME = 'TF_END_ANIME';
@@ -71,16 +77,36 @@
 	const PARAM_TRUE = 'true';
 
 	/**
+	 * 与えられた文字列を適当な数値文字列に変換して返す。
+	 * @param {String} value 変換元の文字列( v[n]形式を含む )
+	 * @return {String} 文字列で表された数値
+	 */
+	function treatValue( value ) {
+		if( value === undefined || value === '' ) return '0';
+		if( value[ 0 ] === 'V' || value[ 0 ] === 'v' ) {
+			return value.replace( /[Vv]\[([0-9]+)\]/, ( match, p1 ) => $gameVariables.value( parseInt( p1, 10 ) ) );
+		}
+		return value;
+	}
+
+	/**
 	 * @method parseIntStrict
 	 * @param {String} value
 	 * @return {Number} 数値に変換した結果
 	 */
 	function parseIntStrict( value ) {
-		if( value === undefined || value === '' ) return 0;
-		if( value[ 0 ] === 'V' || value[ 0 ] === 'v' ) {
-			value = value.replace( /[Vv]\[([0-9]+)\]/, ( match, p1 ) => $gameVariables.value( parseInt( p1, 10 ) ) );
-		}
-		const result = parseInt( value, 10 );
+		const result = parseInt( treatValue( value ), 10 );
+		if( isNaN( result ) ) throw Error( '指定した値[' + value + ']が数値ではありません。' );
+		return result;
+	};
+
+	/**
+	 * @method parseFloatStrict
+	 * @param {String} value
+	 * @return {Number} 数値に変換した結果
+	 */
+	function parseFloatStrict( value ) {
+		const result = parseFloat( treatValue( value ) );
 		if( isNaN( result ) ) throw Error( '指定した値[' + value + ']が数値ではありません。' );
 		return result;
 	};
@@ -187,8 +213,14 @@
 		if( commandStr === TF_SET_CHAR ) {
 			setCharPattern.apply( this, args );
 
-		} else if( commandStr === TF_LOCATE_CHARA ) {
-
+		} else if( commandStr === TF_LOCATE_CHAR ) {
+			let targetEvent;
+			if( args[ 3 ] ) {
+				targetEvent = setCharPattern.apply( this, [ args[ 0 ], , , args[ 3 ], args[ 4 ] ] ).object;
+			} else {
+				targetEvent = getEventById( this, parseIntStrict( args[ 0 ] ) );
+			}
+			targetEvent.setPosition( parseFloatStrict( args[ 1 ] ), parseFloatStrict( args[ 2 ] ) );// HalfMove.js 対応でparseFloatStrict()を使う
 
 		} else if( commandStr === TF_START_ANIME ) {
 			const targetEvent = getEventById( this, parseIntStrict( args[ 0 ] ) );
