@@ -1,6 +1,6 @@
 //========================================
 // TF_CharEx.js
-// Version :0.3.0.0
+// Version :0.3.1.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -192,15 +192,6 @@
 	}
 
 
-	/* ---------------- コマンド本体 ---------------- */
-	/**
-	 * イベントID　　 : -4〜-2 隊列メンバ、 -1:プレイヤーキャラ、0:このイベント、1〜:イベントID
-	 * 画像ファイル名 : .pngを含まない img/characters/以下のファイル名
-	 * キャラ番号　　 : 0〜7 の番号(開始左上から右へ進み、下の段へ左から右へ)
-	 * パターン番号　 : 0〜2 の番号(0:左列 1:中央列 2:右列)
-	 * 向き　　　　　 : テンキー対応(2:下 4:左 6:右 8:上)
-	*/
-
 	/*---- Game_Interpreter ----*/
 	/**
 	 * プラグインコマンドの実行
@@ -225,12 +216,16 @@
 		} else if( commandStr === TF_START_ANIME ) {
 			const targetEvent = getEventById( this, parseIntStrict( args[ 0 ] ) );
 			targetEvent.setThrough( true );
-			targetEvent.isAnimating = true;
+			targetEvent.TF_isAnime = true;
 
 		} else if( commandStr === TF_END_ANIME ) {
 			const targetEvent = getEventById( this, parseIntStrict( args[ 0 ] ) );
 			targetEvent.setThrough( false );
-			targetEvent.isAnimating = false;
+			targetEvent.TF_isAnime = false;
+			// targetEvent._x = Math.round( targetEvent._realX );
+			// targetEvent._y = Math.round( targetEvent._realY );
+			targetEvent._x = Math.round( targetEvent._realX * 2 ) / 2;
+			targetEvent._y = Math.round( targetEvent._realY * 2 ) / 2;
 
 		} else if( commandStr === TF_ANIME ) {
 			const result = setCharPattern.apply( this, [ args[ 0 ], , args[ 4 ], args[ 5 ], args[ 6 ] ] );
@@ -243,10 +238,11 @@
 			this.setupChild( commandList, result.id );
 
 		} else if( commandStr === TF_VD_ANIME ) {
+			const waitFrames = ( args[ 4 ] === undefined ) ? 3 : parseIntStrict( args[ 4 ] );
+			delete args[ 4 ];
 			const result = setCharPattern.apply( this, args );
 			const tempDirectionFix = result.object.isDirectionFixed();
 			result.object.setDirectionFix( false );
-			const waitFrames = ( args[ 4 ] === undefined ) ? 3 : parseIntStrict( args[ 4 ] );
 			this._params = [ result.id, {
 				repeat: false, skippable: true, wait: true, list: [
 					{ code: gc.ROUTE_TURN_LEFT },
@@ -261,10 +257,11 @@
 			this.command205();	// SET_MOVEMENT_ROUTE
 
 		} else if( commandStr === TF_VU_ANIME ) {
+			const waitFrames = ( args[ 4 ] === undefined ) ? 3 : parseIntStrict( args[ 4 ] );
+			delete args[ 4 ];
 			const result = setCharPattern.apply( this, args );
 			const tempDirectionFix = result.object.isDirectionFixed();
 			result.object.setDirectionFix( false );
-			const waitFrames = ( args[ 4 ] === undefined ) ? 3 : parseIntStrict( args[ 4 ] );
 			this._params = [ result.id, {
 				repeat: false, skippable: true, wait: true, list: [
 					{ code: gc.ROUTE_TURN_RIGHT },
@@ -294,7 +291,7 @@
 	 */
 	const _Game_CharacterBase_isMoving = Game_CharacterBase.prototype.isMoving;
 	Game_CharacterBase.prototype.isMoving = function() {
-		if( this.isAnimating ) return false;
+		if( this.TF_isAnime ) return false;
 		return _Game_CharacterBase_isMoving.call( this );
 	}
 
