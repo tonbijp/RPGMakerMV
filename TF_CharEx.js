@@ -1,6 +1,6 @@
 //========================================
 // TF_CharEx.js
-// Version :0.3.1.0
+// Version :0.4.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -19,6 +19,7 @@
  * TF_SET_CHAR [イベントID] [画像ファイル名] [キャラ番号] [歩行パターン] [向き]
  * 　[移動ルートの設定] の[画像の変更]と[○を向く]に加え歩行パターンも一度に指定。
  * 　[イベントID] 0:このイベント、-1:プレイヤー、-2〜-4:隊列メンバー、1〜:イベントID
+ * 　　this:このイベント、player:プレイヤー、follower0:隊列メンバー0、follower1:隊列メンバー1、follower2:隊列メンバー2
  * 　[画像ファイル名] .pngを除いた img/character/ フォルダのファイル名
  * 　[キャラ番号] 画像の上段左から 0,１, 2, 3 、下段目が 4, 5, 6, 7 となる番号
  * 　[歩行パターン] 3パターンアニメの左から 0, 1, 2(規定値:現在値)
@@ -124,6 +125,36 @@
 			return interpreter.character( id );			// プレイヤーキャラおよびイベント
 		}
 	}
+	/**
+	 * 文字列をイベントIDへ変換
+	 * @param {String} value イベントIDの番号か識別子
+	 * @returns {Number} 拡張イベントID
+	 */
+	const EVENT_THIS = 'this';
+	const EVENT_PLAYER = 'player';
+	const EVENT_FOLLOWER0 = 'follower0';
+	const EVENT_FOLLOWER1 = 'follower1';
+	const EVENT_FOLLOWER2 = 'follower2';
+	function stringToEventId( value ) {
+		const result = parseInt( treatValue( value ), 10 );
+		if( !isNaN( result ) ) return result;
+
+		switch( value ) {
+			case EVENT_THIS:
+				return 0;
+			case EVENT_PLAYER:
+				return -1;
+			case EVENT_FOLLOWER0:
+				return -2;
+			case EVENT_FOLLOWER1:
+				return -3;
+			case EVENT_FOLLOWER2:
+				return -4;
+		}
+
+		// TODO: イベント名で指定できるようにする
+		throw Error( '指定した値[' + value + ']が数値ではありません。' );
+	}
 
 
 	// イベントコマンドの番号
@@ -142,7 +173,7 @@
 
 	/**
 	 * setCharPattern
-	 * @param {Number} eventId イベントID(規定値:0)
+	 * @param {String} eventId イベントID(規定値:'0')
 	 * @param {String} fileName 画像ファイル名(規定値:現在値)
 	 * @param {Number} charaNo キャラ番号(規定値:現在値)
 	 * @param {Number} patternNo 歩行パターン(あるいは パターン番号)(規定値:現在値)
@@ -152,7 +183,7 @@
 	function setCharPattern( eventId, fileName, charaNo, patternNo, d ) {
 
 		// キャラクタオブジェクト(Game_Character)
-		const id = parseIntStrict( eventId );
+		const id = stringToEventId( eventId );
 		const targetEvent = getEventById( this, id );
 
 		// 画像ファイル
@@ -209,17 +240,17 @@
 			if( args[ 3 ] ) {
 				targetEvent = setCharPattern.apply( this, [ args[ 0 ], , , args[ 3 ], args[ 4 ] ] ).object;
 			} else {
-				targetEvent = getEventById( this, parseIntStrict( args[ 0 ] ) );
+				targetEvent = getEventById( this, stringToEventId( args[ 0 ] ) );
 			}
 			targetEvent.setPosition( parseFloatStrict( args[ 1 ] ), parseFloatStrict( args[ 2 ] ) );// HalfMove.js 対応でparseFloatStrict()を使う
 
 		} else if( commandStr === TF_START_ANIME ) {
-			const targetEvent = getEventById( this, parseIntStrict( args[ 0 ] ) );
+			const targetEvent = getEventById( this, stringToEventId( args[ 0 ] ) );
 			targetEvent.setThrough( true );
 			targetEvent.TF_isAnime = true;
 
 		} else if( commandStr === TF_END_ANIME ) {
-			const targetEvent = getEventById( this, parseIntStrict( args[ 0 ] ) );
+			const targetEvent = getEventById( this, stringToEventId( args[ 0 ] ) );
 			targetEvent.setThrough( false );
 			targetEvent.TF_isAnime = false;
 			// targetEvent._x = Math.round( targetEvent._realX );
