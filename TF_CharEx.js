@@ -1,6 +1,6 @@
 //========================================
 // TF_CharEx.js
-// Version :0.4.0.0
+// Version :0.5.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -19,7 +19,9 @@
  * TF_SET_CHAR [イベントID] [画像ファイル名] [キャラ番号] [歩行パターン] [向き]
  * 　[移動ルートの設定] の[画像の変更]と[○を向く]に加え歩行パターンも一度に指定。
  * 　[イベントID] 0:このイベント、-1:プレイヤー、-2〜-4:隊列メンバー、1〜:イベントID
+ * 　　V[n]( n は変数ID )形式による変数による上記数値の指定。
  * 　　this:このイベント、player:プレイヤー、follower0:隊列メンバー0、follower1:隊列メンバー1、follower2:隊列メンバー2
+ * 　　イベントの[名前]で指定(上記の数値や this などと同じ名前、およびスペースの入った名前は指定できません)
  * 　[画像ファイル名] .pngを除いた img/character/ フォルダのファイル名
  * 　[キャラ番号] 画像の上段左から 0,１, 2, 3 、下段目が 4, 5, 6, 7 となる番号
  * 　[歩行パターン] 3パターンアニメの左から 0, 1, 2(規定値:現在値)
@@ -152,8 +154,15 @@
 				return -4;
 		}
 
-		// TODO: イベント名で指定できるようにする
-		throw Error( '指定した値[' + value + ']が数値ではありません。' );
+		// イベント名で指定できるようにする
+		const i = $gameMap._events.findIndex( event => {
+			if( event === undefined ) return false;	// _events[0] が undefined なので無視
+
+			const eventId = event._eventId;
+			return $dataMap.events[ eventId ].name === value
+		} );
+		if( i === -1 ) throw Error( `指定したイベント[${value}]がありません。` );
+		return i;
 	}
 
 
