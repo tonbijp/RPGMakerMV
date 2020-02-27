@@ -1,6 +1,6 @@
 //========================================
 // TF_BalloonEx.js
-// Version :1.0.0.0
+// Version :1.1.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -39,6 +39,8 @@
  * TF_START_BALLOON [Event ID] [Balloon ID] [Wait for finish] [dx] [dy]
  * 　Start a balloon animation.All parameters can omitted.
  * 　[Event ID] 0:This event  -1:Player  -2〜-4:Member 1〜:Event ID (Default:0)
+ * 　　You can use this, player,follower0,follower1,follower2 instead the number.
+ * 　　And [name] of the event. (But can't use the name about like identifier of 'this',includes space, and number)
  * 　[Balloon ID] 1 to 15 counting from the top of the image(img/system/balloon.png).(Default:11)
  * 　[Wait for finish] true:Wait for finish  false:Don't stop (Default:false)
  * 　[dx] Difference x coordinate.(Default:dx at plug-in parameter)
@@ -175,6 +177,8 @@
  * TF_START_BALLOON [イベントID] [フキダシID] [完了までウェイト] [dx] [dy]
  * 　フキダシの(ループ)アニメーションを開始。引数はすべて省略可能。
  * 　[イベントID] 0:このイベント、-1:プレイヤー、-2〜-4:隊列メンバー、1〜:イベントID(規定値:0)
+ * 　　this:このイベント、player:プレイヤー、follower0:隊列メンバー0、follower1:隊列メンバー1、follower2:隊列メンバー2
+ * 　　イベントの[名前]で指定(上記の数値や this などと同じ名前、およびスペースの入った名前は指定できません)
  * 　[フキダシID] img/system/balloon.png の上から1〜15(規定値:11)
  * 　[完了までウェイト] 真偽値(true:フキダシのアニメーション終了まで待つ false:待たない)(規定値:false)
  * 　[dx] 表示位置のx差分(規定値:プラグインパラメータでdxに設定した値)
@@ -316,19 +320,28 @@
 
 
 	/**
+	 * 与えられた文字列に変数が指定されていたら、変数の内容に変換して返す。
+	 * @param {String} value 変換元の文字列( v[n]形式を含む )
+	 * @return {String} 変換後の文字列
+	 */
+	function treatValue( value ) {
+		if( value === undefined || value === '' ) return '0';
+		if( value[ 0 ] === 'V' || value[ 0 ] === 'v' ) {
+			return value.replace( /[Vv]\[([0-9]+)\]/, ( match, p1 ) => $gameVariables.value( parseInt( p1, 10 ) ) );
+		}
+		return value;
+	}
+
+	/**
 	 * @method parseIntStrict
 	 * @param {String} value
 	 * @return {Number} 数値に変換した結果
 	 */
 	function parseIntStrict( value ) {
-		if( value === undefined || value === '' ) return 0;
-		if( value[ 0 ] === 'V' || value[ 0 ] === 'v' ) {
-			value = value.replace( /[Vv]\[([0-9]+)\]/, ( match, p1 ) => $gameVariables.value( parseInt( p1, 10 ) ) );
-		}
-		const result = parseInt( value, 10 );
+		const result = parseInt( treatValue( value ), 10 );
 		if( isNaN( result ) ) throw Error( '指定した値[' + value + ']が数値ではありません。' );
 		return result;
-	};
+	}
 
 	/**
 	 * character を拡張して隊列メンバーも指定できるようにしたもの。
@@ -342,6 +355,43 @@
 		} else {
 			return interpreter.character( id );			// プレイヤーキャラおよびイベント
 		}
+	}
+	/**
+	 * 文字列をイベントIDへ変換
+	 * @param {String} value イベントIDの番号か識別子
+	 * @returns {Number} 拡張イベントID
+	 */
+	const EVENT_THIS = 'this';
+	const EVENT_PLAYER = 'player';
+	const EVENT_FOLLOWER0 = 'follower0';
+	const EVENT_FOLLOWER1 = 'follower1';
+	const EVENT_FOLLOWER2 = 'follower2';
+	function stringToEventId( value ) {
+		const result = parseInt( treatValue( value ), 10 );
+		if( !isNaN( result ) ) return result;
+
+		switch( value ) {
+			case EVENT_THIS:
+				return 0;
+			case EVENT_PLAYER:
+				return -1;
+			case EVENT_FOLLOWER0:
+				return -2;
+			case EVENT_FOLLOWER1:
+				return -3;
+			case EVENT_FOLLOWER2:
+				return -4;
+		}
+
+		// イベント名で指定できるようにする
+		const i = $gameMap._events.findIndex( event => {
+			if( event === undefined ) return false;	// _events[0] が undefined なので無視
+
+			const eventId = event._eventId;
+			return $dataMap.events[ eventId ].name === value
+		} );
+		if( i === -1 ) throw Error( `指定したイベント[${value}]がありません。` );
+		return i;
 	}
 
 	//TF_SET_BALLOON[ イベントID ][ フキダシID ][ パターン番号 ][ 表示フレーム数 ][ 完了までウェイト ][ dx ][ dy ]
@@ -423,7 +473,7 @@
 
 		const commandStr = command.toUpperCase();
 		if( commandStr === TF_START_BALLOON ) {
-			this._character = getEventById( this, parseIntStrict( args[ 0 ] ) );
+			this._character = getEventById( this, stringToEventId( args[ 0 ] ) );
 
 			if( this._character ) {
 				this._character.TF_balloon = null;
@@ -434,18 +484,18 @@
 				locateBalloon( this._character, args[ 3 ], args[ 4 ] );
 			}
 		} else if( commandStr === TF_SET_BALLOON ) {
-			this._character = getEventById( this, parseIntStrict( args[ 0 ] ) );
+			this._character = getEventById( this, stringToEventId( args[ 0 ] ) );
 			setBalloon( this._character, args[ 1 ], args[ 2 ], args[ 3 ], args[ 5 ], args[ 6 ] );
 
 			if( args[ 4 ] && args[ 4 ].toLowerCase() === PARAM_TRUE ) {
 				this.setWaitMode( WAIT_BALLOON );
 			}
 		} else if( commandStr === TF_LOCATE_BALLOON ) {
-			const target = getEventById( this, parseIntStrict( args[ 0 ] ) );
+			const target = getEventById( this, stringToEventId( args[ 0 ] ) );
 			locateBalloon( target, args[ 1 ], args[ 2 ] );
 
 		} else if( commandStr === TF_STOP_BALLOON ) {
-			const target = getEventById( this, parseIntStrict( args[ 0 ] ) );
+			const target = getEventById( this, stringToEventId( args[ 0 ] ) );
 			const showFinish = ( args[ 1 ] && args[ 1 ].toLowerCase() === PARAM_TRUE );
 			stopBalloon( target, showFinish );
 		}
