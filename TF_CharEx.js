@@ -1,6 +1,6 @@
 //========================================
 // TF_CharEx.js
-// Version :0.5.2.1
+// Version :0.5.2.2
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -14,12 +14,14 @@
  * @author とんび@鳶嶋工房
  *
  * @param moveUnit
- * @desc 移動の刻み
+ * @desc 移動単位(TF_END_ANIME時の配置単位)
  * @type select
  * @option 通常(1タイル)
  * @value 1
  * @option 半歩(0.5タイル)
  * @value 0.5
+ * @option なし(アナログ)
+ * @value 0
  * @default 1
  * 
  * @help
@@ -207,13 +209,36 @@
 	const PLAYER_CHARACTER = -1;
 	const gc = Game_Character;
 
+
+
+	/*---- Game_Interpreter ----*/
 	/**
-	 * setCharPattern
-	 * @param {String} eventId イベントID(規定値:'0')
-	 * @param {String} fileName 画像ファイル名(規定値:現在値)
-	 * @param {Number} charaNo キャラ番号(規定値:現在値)
-	 * @param {Number} patternNo 歩行パターン(あるいは パターン番号)(規定値:現在値)
-	 * @param {Number} d 向き(規定値:2)
+	 * プラグインコマンドの実行
+	 */
+	const _Game_Interpreter_pluginCommand = Game_Interpreter.prototype.pluginCommand;
+	Game_Interpreter.prototype.pluginCommand = function( command, args ) {
+		_Game_Interpreter_pluginCommand.apply( this, arguments );
+
+		const commandStr = command.toUpperCase();
+		if( commandStr === TF_SET_CHAR ) {
+			setCharPattern.apply( this, args );
+		} else if( commandStr === TF_LOCATE_CHAR ) {
+			locateChar.apply( this, args );
+		} else if( commandStr === TF_START_ANIME ) {
+			startAnime.apply( this, args );
+		} else if( commandStr === TF_END_ANIME ) {
+			endAnime.apply( this, args );
+		} else if( commandStr === TF_ANIME ) {
+			anime.apply( this, args );
+		} else if( commandStr === TF_VD_ANIME ) {
+			vdAnime.apply( this, args );
+		} else if( commandStr === TF_VU_ANIME ) {
+			vuAnime.apply( this, args );
+		}
+	};
+
+	/**
+	 * TF_SET_CHAR  の実行
 	 * @returns {Object} { id:{Number}, object:{Game_Character} }
 	 */
 	function setCharPattern( eventId, fileName, charaNo, patternNo, d ) {
@@ -260,64 +285,65 @@
 		return { id: id, object: targetEvent };
 	}
 
-
-	/*---- Game_Interpreter ----*/
 	/**
-	 * プラグインコマンドの実行
+	 * TF_LOCATE_CHAR  の実行
 	 */
-	const _Game_Interpreter_pluginCommand = Game_Interpreter.prototype.pluginCommand;
-	Game_Interpreter.prototype.pluginCommand = function( command, args ) {
-		_Game_Interpreter_pluginCommand.apply( this, arguments );
-
-		const commandStr = command.toUpperCase();
-		if( commandStr === TF_SET_CHAR ) {
-			setCharPattern.apply( this, args );
-
-		} else if( commandStr === TF_LOCATE_CHAR ) {
-			let targetEvent;
-			if( args[ 3 ] ) {
-				targetEvent = setCharPattern.apply( this, [ args[ 0 ], , , args[ 3 ], args[ 4 ] ] ).object;
-			} else {
-				targetEvent = getEventById( this, stringToEventId( args[ 0 ] ) );
-			}
-			targetEvent.setPosition( parseFloatStrict( args[ 1 ] ), parseFloatStrict( args[ 2 ] ) );// HalfMove.js 対応でparseFloatStrict()を使う
-
-		} else if( commandStr === TF_START_ANIME ) {
-			const targetEvent = getEventById( this, stringToEventId( args[ 0 ] ) );
-			targetEvent.setThrough( true );
-			targetEvent.TF_isAnime = true;
-
-		} else if( commandStr === TF_END_ANIME ) {
-			const targetEvent = getEventById( this, stringToEventId( args[ 0 ] ) );
-			targetEvent.setThrough( false );
-			targetEvent.TF_isAnime = false;
-
-			// 単位座標に合わせて丸める
-			if( TF_moveUnit === 1 ) {
-				targetEvent._x = Math.round( targetEvent._realX );
-				targetEvent._y = Math.round( targetEvent._realY );
-			} else {
-				targetEvent._x = Math.round( targetEvent._realX / TF_moveUnit ) * TF_moveUnit;
-				targetEvent._y = Math.round( targetEvent._realY / TF_moveUnit ) * TF_moveUnit;
-			}
-
-		} else if( commandStr === TF_ANIME ) {
-			const result = setCharPattern.apply( this, [ args[ 0 ], , args[ 4 ], args[ 5 ], args[ 6 ] ] );
-			result.object._realX += parseIntStrict( args[ 1 ] ) / $gameMap.tileWidth();
-			result.object._realY += parseIntStrict( args[ 2 ] ) / $gameMap.tileHeight();
-			const commandList = [
-				{ indent: 0, code: WAIT_FOR, parameters: [ ( args[ 3 ] === undefined ) ? 3 : parseIntStrict( args[ 3 ] ) ] },
-				{ indent: 0, code: COMMAND_END }
-			];
-			this.setupChild( commandList, result.id );
-
-		} else if( commandStr === TF_VD_ANIME ) {
-			vdAnime.apply( this, args );
-
-		} else if( commandStr === TF_VU_ANIME ) {
-			vuAnime.apply( this, args );
+	function locateChar( eventId, x, y, patternNo, d ) {
+		let targetEvent;
+		if( patternNo ) {
+			targetEvent = setCharPattern.call( this, eventId, undefined, undefined, patternNo, d ).object;
+		} else {
+			targetEvent = getEventById( this, stringToEventId( eventId ) );
 		}
-	};
+		targetEvent.setPosition( parseFloatStrict( x ), parseFloatStrict( y ) );// HalfMove.js 対応でparseFloatStrict()を使う
+	}
+
+	/**
+	 * TF_START_ANIME  の実行
+	 */
+	function startAnime( eventId ) {
+		const targetEvent = getEventById( this, stringToEventId( eventId ) );
+		targetEvent.setThrough( true );
+		targetEvent.TF_isAnime = true;
+	}
+
+	/**
+	 * TF_END_ANIME  の実行
+	 */
+	function endAnime( eventId ) {
+		const targetEvent = getEventById( this, stringToEventId( eventId ) );
+		targetEvent.setThrough( false );
+		targetEvent.TF_isAnime = false;
+
+
+		if( TF_moveUnit === 0 ) {
+			targetEvent._x = targetEvent._realX;
+			targetEvent._y = targetEvent._realY;
+		} else if( TF_moveUnit === 1 ) {
+			// タイル座標に合わせて丸める
+			targetEvent._x = Math.round( targetEvent._realX );
+			targetEvent._y = Math.round( targetEvent._realY );
+		} else {
+			// 単位座標に合わせて丸める
+			targetEvent._x = Math.round( targetEvent._realX / TF_moveUnit ) * TF_moveUnit;
+			targetEvent._y = Math.round( targetEvent._realY / TF_moveUnit ) * TF_moveUnit;
+		}
+	}
+
+	/**
+	 * TF_ANIME  の実行
+	 */
+	function anime( eventId, mx, my, waitFrames, charaNo, patternNo, d ) {
+		const result = setCharPattern.call( this, eventId, undefined, charaNo, patternNo, d );
+		result.object._realX += parseIntStrict( mx ) / $gameMap.tileWidth();
+		result.object._realY += parseIntStrict( my ) / $gameMap.tileHeight();
+		waitFrames = ( waitFrames === undefined ) ? 3 : parseIntStrict( waitFrames );
+		const commandList = [
+			{ indent: 0, code: WAIT_FOR, parameters: [ waitFrames ] },
+			{ indent: 0, code: COMMAND_END }
+		];
+		this.setupChild( commandList, result.id );
+	}
 
 	/**
 	 * TF_VD_ANIME  の実行
