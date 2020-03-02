@@ -1,6 +1,6 @@
 //========================================
 // TF_CharEx.js
-// Version :0.5.1.0
+// Version :0.5.2.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -12,14 +12,22 @@
 /*:ja
  * @plugindesc キャラのアニメを強化
  * @author とんび@鳶嶋工房
+ *
+ * @param moveUnit
+ * @desc 移動の刻み
+ * @type select
+ * @option 通常(1タイル)
+ * @value 1
+ * @option 半歩(0.5タイル)
+ * @value 0.5
+ * @default 1
  * 
  * @help
  *
  *------------------------------
  * TF_SET_CHAR [イベントID] [画像ファイル名] [キャラ番号] [歩行パターン] [向き]
  * 　[移動ルートの設定] の[画像の変更]と[○を向く]に加え歩行パターンも一度に指定。
- * 　[イベントID] 0:このイベント、-1:プレイヤー、-2〜-4:隊列メンバー、1〜:イベントID
- * 　　V[n]( n は変数ID )形式による変数による上記数値の指定。
+ * 　[イベントID] 0:このイベント、-1:プレイヤー、-2〜-4:隊列メンバー、1〜:イベントID(規定値:0)
  * 　　this:このイベント、player:プレイヤー、follower0:隊列メンバー0、follower1:隊列メンバー1、follower2:隊列メンバー2
  * 　　イベントの[名前]で指定(上記の数値や this などと同じ名前、およびスペースの入った名前は指定できません)
  * 　[画像ファイル名] .pngを除いた img/character/ フォルダのファイル名
@@ -91,6 +99,13 @@
 	const TF_VU_ANIME = 'TF_VU_ANIME';
 	const PARAM_TRUE = 'true';
 
+    /**
+     * パラメータを受け取る
+     */
+	const pluginParams = PluginManager.parameters( 'TF_CharEx' );
+	const TF_moveUnit = parseFloatStrict( pluginParams.moveUnit );
+
+
 	/**
 	 * 与えられた文字列に変数が指定されていたら、変数の内容に変換して返す。
 	 * @param {String} value 変換元の文字列( v[n]形式を含む )
@@ -124,7 +139,7 @@
 		const result = parseFloat( treatValue( value ) );
 		if( isNaN( result ) ) throw Error( '指定した値[' + value + ']が数値ではありません。' );
 		return result;
-	};
+	}
 
 	/**
 	 * character を拡張して隊列メンバーも指定できるようにしたもの。
@@ -276,10 +291,15 @@
 			const targetEvent = getEventById( this, stringToEventId( args[ 0 ] ) );
 			targetEvent.setThrough( false );
 			targetEvent.TF_isAnime = false;
-			// targetEvent._x = Math.round( targetEvent._realX );
-			// targetEvent._y = Math.round( targetEvent._realY );
-			targetEvent._x = Math.round( targetEvent._realX * 2 ) / 2;
-			targetEvent._y = Math.round( targetEvent._realY * 2 ) / 2;
+
+			// 単位座標に合わせて丸める
+			if( TF_moveUnit === 1 ) {
+				targetEvent._x = Math.round( targetEvent._realX );
+				targetEvent._y = Math.round( targetEvent._realY );
+			} else {
+				targetEvent._x = Math.round( targetEvent._realX / TF_moveUnit ) * TF_moveUnit;
+				targetEvent._y = Math.round( targetEvent._realY / TF_moveUnit ) * TF_moveUnit;
+			}
 
 		} else if( commandStr === TF_ANIME ) {
 			const result = setCharPattern.apply( this, [ args[ 0 ], , args[ 4 ], args[ 5 ], args[ 6 ] ] );
