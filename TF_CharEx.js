@@ -1,6 +1,6 @@
 //========================================
 // TF_CharEx.js
-// Version :0.5.2.0
+// Version :0.5.2.1
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -312,44 +312,56 @@
 			this.setupChild( commandList, result.id );
 
 		} else if( commandStr === TF_VD_ANIME ) {
-			const waitFrames = ( args[ 4 ] === undefined ) ? 3 : parseIntStrict( args[ 4 ] );
-			delete args[ 4 ];
-			const result = setCharPattern.apply( this, args );
-			const tempDirectionFix = result.object.isDirectionFixed();
-			result.object.setDirectionFix( false );
-			this._params = [ result.id, {
-				repeat: false, skippable: true, wait: true, list: [
-					{ code: gc.ROUTE_TURN_LEFT },
-					{ code: gc.ROUTE_WAIT, parameters: [ waitFrames ] },
-					{ code: gc.ROUTE_TURN_RIGHT },
-					{ code: gc.ROUTE_WAIT, parameters: [ waitFrames ] },
-					{ code: gc.ROUTE_TURN_UP },
-					{ code: tempDirectionFix ? gc.ROUTE_DIR_FIX_ON : gc.ROUTE_DIR_FIX_OFF },
-					{ code: gc.ROUTE_END }
-				]
-			} ];
-			this.command205();	// SET_MOVEMENT_ROUTE
+			vdAnime.apply( this, args );
 
 		} else if( commandStr === TF_VU_ANIME ) {
-			const waitFrames = ( args[ 4 ] === undefined ) ? 3 : parseIntStrict( args[ 4 ] );
-			delete args[ 4 ];
-			const result = setCharPattern.apply( this, args );
-			const tempDirectionFix = result.object.isDirectionFixed();
-			result.object.setDirectionFix( false );
-			this._params = [ result.id, {
-				repeat: false, skippable: true, wait: true, list: [
-					{ code: gc.ROUTE_TURN_RIGHT },
-					{ code: gc.ROUTE_WAIT, parameters: [ waitFrames ] },
-					{ code: gc.ROUTE_TURN_LEFT },
-					{ code: gc.ROUTE_WAIT, parameters: [ waitFrames ] },
-					{ code: gc.ROUTE_TURN_DOWN },
-					{ code: tempDirectionFix ? gc.ROUTE_DIR_FIX_ON : gc.ROUTE_DIR_FIX_OFF },
-					{ code: gc.ROUTE_END }
-				]
-			} ];
-			this.command205();	// SET_MOVEMENT_ROUTE
+			vuAnime.apply( this, args );
 		}
 	};
+
+	/**
+	 * TF_VD_ANIME  の実行
+	 */
+	function vdAnime( eventId, fileName, charaNo, patternNo, waitFrames ) {
+		waitFrames = ( waitFrames === undefined ) ? 3 : parseIntStrict( waitFrames );
+		const result = setCharPattern.call( this, eventId, fileName, charaNo, patternNo );
+		const tempDirectionFix = result.object.isDirectionFixed();
+		result.object.setDirectionFix( false );
+		this._params = [ result.id, {
+			repeat: false, skippable: true, wait: true, list: [
+				{ code: gc.ROUTE_TURN_LEFT },
+				{ code: gc.ROUTE_WAIT, parameters: [ waitFrames ] },
+				{ code: gc.ROUTE_TURN_RIGHT },
+				{ code: gc.ROUTE_WAIT, parameters: [ waitFrames ] },
+				{ code: gc.ROUTE_TURN_UP },
+				{ code: tempDirectionFix ? gc.ROUTE_DIR_FIX_ON : gc.ROUTE_DIR_FIX_OFF },
+				{ code: gc.ROUTE_END }
+			]
+		} ];
+		this.command205();	// SET_MOVEMENT_ROUTE
+	}
+
+	/**
+	 * TF_VU_ANIME  の実行
+	 */
+	function vuAnime( eventId, fileName, charaNo, patternNo, waitFrames ) {
+		waitFrames = ( waitFrames === undefined ) ? 3 : parseIntStrict( waitFrames );
+		const result = setCharPattern.call( this, eventId, fileName, charaNo, patternNo );
+		const tempDirectionFix = result.object.isDirectionFixed();
+		result.object.setDirectionFix( false );
+		this._params = [ result.id, {
+			repeat: false, skippable: true, wait: true, list: [
+				{ code: gc.ROUTE_TURN_RIGHT },
+				{ code: gc.ROUTE_WAIT, parameters: [ waitFrames ] },
+				{ code: gc.ROUTE_TURN_LEFT },
+				{ code: gc.ROUTE_WAIT, parameters: [ waitFrames ] },
+				{ code: gc.ROUTE_TURN_DOWN },
+				{ code: tempDirectionFix ? gc.ROUTE_DIR_FIX_ON : gc.ROUTE_DIR_FIX_OFF },
+				{ code: gc.ROUTE_END }
+			]
+		} ];
+		this.command205();	// SET_MOVEMENT_ROUTE
+	}
 
 	/**
 	 *  コマンドリストから呼ばれた場合。
