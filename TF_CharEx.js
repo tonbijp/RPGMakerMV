@@ -1,6 +1,6 @@
 //========================================
 // TF_CharEx.js
-// Version :0.5.2.2
+// Version :0.5.3.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -36,6 +36,8 @@
  * 　[キャラ番号] 画像の上段左から 0,１, 2, 3 、下段目が 4, 5, 6, 7 となる番号
  * 　[歩行パターン] 3パターンアニメの左から 0, 1, 2(規定値:現在値)
  * 　[向き] 4方向のキャラの向き、テンキーに対応した 2, 4, 6, 8 (規定値:2、[歩行パターン]の指定がない場合は現在値)
+ * 　　数値の代わりに、2は down, d, south, s, front, forward, f、4は left, l, west, w
+ * 　　6は right, r, east, e、8は up, u, north, n, back, b が使えます。
  *
  * 　例: TF_SET_CHAR 2 !Door2 2 0 2
  *------------------------------
@@ -167,9 +169,11 @@
 	const EVENT_FOLLOWER1 = 'follower1';
 	const EVENT_FOLLOWER2 = 'follower2';
 	function stringToEventId( value ) {
-		const result = parseInt( treatValue( value ), 10 );
+		value = treatValue( value );
+		const result = parseInt( value, 10 );
 		if( !isNaN( result ) ) return result;
 
+		value = value.toLowerCase();
 		switch( value ) {
 			case EVENT_THIS:
 				return 0;
@@ -194,6 +198,26 @@
 		return i;
 	}
 
+	const DIRECTION_UP = [ 'up', 'u', 'north', 'n', 'back', 'b' ];
+	const DIRECTION_LEFT = [ 'left', 'l', 'west', 'w' ];
+	const DIRECTION_RIGHT = [ 'right', 'r', 'east', 'e' ];
+	const DIRECTION_DOWN = [ 'down', 'd', 'south', 's', 'front', 'forward', 'f' ];
+	function stringToDirection( value ) {
+		value = treatValue( value );
+		const result = parseInt( value, 10 );
+		if( !isNaN( result ) ) return result;
+
+		value = value.toLowerCase();
+		if( DIRECTION_DOWN.includes( value ) ) {
+			return 2;
+		} else if( DIRECTION_LEFT.includes( value ) ) {
+			return 4;
+		} else if( DIRECTION_RIGHT.includes( value ) ) {
+			return 6;
+		} else if( DIRECTION_UP.includes( value ) ) {
+			return 8;
+		}
+	}
 
 	// イベントコマンドの番号
 	const COMMAND_END = 0;
@@ -270,7 +294,7 @@
 				d = ( Math.floor( patternNo / 3 ) + 1 ) * 2;
 				patternNo %= 3;
 			} else {
-				d = ( d === undefined ) ? 2 : parseIntStrict( d );
+				d = ( d === undefined ) ? 2 : stringToDirection( d );
 			}
 			targetEvent._originalPattern = patternNo;
 			targetEvent.setPattern( patternNo );
