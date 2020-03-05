@@ -1,6 +1,6 @@
 //========================================
 // TF_Utility.js
-// Version :0.5.0.0
+// Version :0.6.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019-2020
@@ -16,40 +16,13 @@
 * @help
 * イベントコマンドの[スクリプト]から使いやすいようにラッピング。
 * TkoolMV_PluginCommandBook.js 必須。
-* 
-* TF_setCharPattern [イベントID] [画像ファイル名] [キャラ番号] [歩行パターン] [向き]
-* 　キャラパターンを設定(一度のコマンドで設定でき、歩行パターンも指定可能)。
-*
-* TF_startAnime [イベントID]
-* 　アニメモードに変更(移動アニメ停止・[すり抜け]ON)。
-*
-* TF_anime [イベントID] [x移動] [y移動] [ウエイト] [キャラ番号] [パターン]
-* 　アニメの指定。
-*
-* TF_endAnime [イベントID]
-* 　通常モードに戻る。
-*
-* TF_verticalAnime [イベントID] [画像ファイル名] [キャラ番号] [歩行パターン] [ウエイト]
-* 　下→左→右→上 の順に向きを変えてアニメーションする。
-*
-*【引数の説明】
-* [イベントID] 0:このイベント、-1:プレイヤー、-2〜-4:隊列メンバー、1〜:イベントID
-* [画像ファイル名] .pngを除いた img/character/ フォルダのファイル名
-* [キャラ番号] 画像の上段左から 0,１, 2, 3 、下段目が 4, 5, 6, 7 となる番号
-* [パターン番号] 3パターンアニメの左から 0, 1, 2
-* [向き] 4方向のキャラの向き、テンキーに対応した 2, 4, 6, 8
-* [パターン] [歩行パターン] と [向き] を一度に指定する番号。
-* 歩行グラフィックの位置だと以下並び。
-* 0, 1, 2		<= 下向き(テンキー2)
-* 3, 4, 5		<= 左向き(テンキー4)
-* 6, 7, 8		<= 右向き(テンキー6)
-* 9, 10, 11 <= 上向き(テンキー8)
 */
 
 ( function() {
 	'use strict';
-	const PLUGIN_NAME = 'TF_Utility';
 	const PARAM_TRUE = 'true';
+	const SCREEN_WIDTH = 1280;
+	const SCREEN_HEIGHT = 720;
 
 	/**
 	 * データベースにオリジナルのJSONを追加する
@@ -58,6 +31,11 @@
 	// DataManager._databaseFiles.push(
 	// 	{ name: '$myJson', src: '$myJson.json' }
 	// );
+
+	SceneManager._screenWidth = SCREEN_WIDTH;
+	SceneManager._screenHeight = SCREEN_HEIGHT;
+	SceneManager._boxWidth = SCREEN_WIDTH;
+	SceneManager._boxHeight = SCREEN_HEIGHT;
 
 	/**
 	 * @method parseIntStrict
@@ -189,7 +167,9 @@
 
 	/**
 	 * [セルフスイッチ] を設定します
+	 * @param {Array} args [ type, isOn ]
 	 * @param {String} type A・B・C・D いずれかの文字
+	 * @param {String} isOn ON/OFF状態
 	 */
 	Game_Interpreter.prototype.pluginCommandBook_TF_setSelfSw = function( args ) {
 		const type = args[ 0 ];
@@ -295,6 +275,109 @@
 	 */
 	Window_Message.prototype.newLineX = function() {
 		return $gameMessage.faceName() === '' ? 0 : ( 168 + 40 );
+	};
+
+
+	/*---- BattleManager ----*/
+	/**
+	 * 逃亡音声を流さない。
+	 */
+	BattleManager.checkAbort = function() {
+		if( $gameParty.isEmpty() || this.isAborting() ) {
+			//        SoundManager.playEscape();
+			//        this._escaped = true;
+			this.processAbort();
+		}
+		return false;
+	};
+
+	/*---- Scene_Battle ----*/
+	/**
+	 * パーティコマンドを飛ばす。
+	 */
+	const _Scene_Battle_changeInputWindow = Scene_Battle.prototype.changeInputWindow;
+	Scene_Battle.prototype.changeInputWindow = function() {
+		if( BattleManager.isInputting() && !BattleManager.actor() ) {
+			this.selectNextCommand();
+		}
+		_Scene_Battle_changeInputWindow.call( this );
+	};
+
+
+	/*--- Spriteset_Battle ---*/
+	Spriteset_Battle.prototype.createBattleback = function() {
+		this._back1Sprite = new Sprite_Battleback( this.battleback1Name(), 1 );
+		this._back2Sprite = new Sprite_Battleback( this.battleback2Name(), 2 );
+		this._battleField.addChild( this._back1Sprite );
+		this._battleField.addChild( this._back2Sprite );
+	};
+	Spriteset_Battle.prototype.updateBattleback = function() { };
+
+
+	/*--- Sprite_Battleback ---*/
+	function Sprite_Battleback() {
+		this.initialize.apply( this, arguments );
+	}
+
+	Sprite_Battleback.prototype = Object.create( Sprite.prototype );
+	Sprite_Battleback.prototype.constructor = Sprite_Battleback;
+
+	Sprite_Battleback.prototype.initialize = function( bitmapName, type ) {
+		Sprite.prototype.initialize.call( this );
+		this._bitmapName = bitmapName;
+		this._battlebackType = type;
+		this.createBitmap();
+	};
+
+	Sprite_Battleback.prototype.createBitmap = function() {
+		if( this._bitmapName === '' ) {
+			this.bitmap = new Bitmap( Graphics.boxWidth, Graphics.boxHeight );
+		} else {
+			if( this._battlebackType === 1 ) {
+				this.bitmap = ImageManager.loadBattleback1( this._bitmapName );
+			} else {
+				this.bitmap = ImageManager.loadBattleback2( this._bitmapName );
+			}
+			this.scaleSprite();
+		}
+	};
+
+	Sprite_Battleback.prototype.scaleSprite = function() {
+		if( this.bitmap.width <= 0 ) return setTimeout( this.scaleSprite.bind( this ), 5 );
+		var width = Graphics.boxWidth;
+		var height = Graphics.boxHeight;
+		if( this.bitmap.width < width ) {
+			this.scale.x = width / this.bitmap.width;
+		}
+		if( this.bitmap.height < height ) {
+			this.scale.y = height / this.bitmap.height;
+		}
+		this.anchor.x = 0.5;
+		this.x = Graphics.boxWidth / 2;
+		if( $gameSystem.isSideView() ) {
+			this.anchor.y = 1;
+			this.y = Graphics.boxHeight;
+		} else {
+			this.anchor.y = 0.5;
+			this.y = Graphics.boxHeight / 2;
+		}
+	};
+
+	/*--- Sprite_Enemy ---*/
+	const _Sprite_Enemy_setBattler = Sprite_Enemy.prototype.setBattler;
+	Sprite_Enemy.prototype.setBattler = function( battler ) {
+		_Sprite_Enemy_setBattler.call( this, battler );
+		if( !this._enemy._alteredScreenY ) {
+			this._homeY += Math.floor( ( Graphics.boxHeight - 624 ) / 2 );
+			this._enemy._screenY = this._homeY;
+			this._enemy._alteredScreenY = true;
+		}
+		if( $gameSystem.isSideView() ) return;
+		if( !this._enemy._alteredScreenX ) {
+			this._homeX += ( Graphics.boxWidth - 816 ) / 2;
+			this._enemy._screenX = this._homeX;
+			this._enemy._alteredScreenX = true;
+		}
 	};
 
 } )();
