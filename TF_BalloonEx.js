@@ -1,6 +1,6 @@
 //========================================
 // TF_BalloonEx.js
-// Version :1.1.0.0
+// Version :1.1.0.1
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -39,8 +39,8 @@
  * TF_START_BALLOON [Event ID] [Balloon ID] [Wait for finish] [dx] [dy]
  * 　Start a balloon animation.All parameters can omitted.
  * 　[Event ID] 0:This event  -1:Player  -2〜-4:Member 1〜:Event ID (Default:0)
- * 　　You can use this, player,follower0,follower1,follower2 instead the number.
- * 　　And [name] of the event. (But can't use the name about like identifier of 'this',includes space, and number)
+ * 　　You can use this, player,follower0,follower1,follower2 instead of the number.
+ * 　　And [name] of the event. (But can't use the name about like identifier of 'this', includes space, and number)
  * 　[Balloon ID] 1 to 15 counting from the top of the image(img/system/balloon.png).(Default:11)
  * 　[Wait for finish] true:Wait for finish  false:Don't stop (Default:false)
  * 　[dx] Difference x coordinate.(Default:dx at plug-in parameter)
@@ -667,7 +667,6 @@
 		return _Sprite_Balloon_frameIndex.call( this );
 	};
 
-
 	/**
 	 * パターン表示の継続フレーム数を返す。
 	 */
@@ -677,7 +676,8 @@
 		} else {
 			return 8;	//すぐに上書きするので、これはダミー値
 		}
-	}
+	};
+
 	Sprite_Balloon.prototype.waitTime = function() {
 		if( this.TF_balloon ) {
 			return this.TF_balloon.waitTime;
@@ -685,4 +685,17 @@
 			return 12;	//すぐに上書きするので、これはダミー値
 		}
 	};
+
+
+	/*--- Scene_Base ---*/
+
+	// TODO: 画面の適当な位置に表示する
+	function addBalloonToScene() {
+		const balloon = new Sprite_Balloon();
+		balloon.x = 200;
+		balloon.y = 100;
+		balloon.z = 7;
+		SceneManager._scene.addChild( balloon );
+	}
+
 } )();
