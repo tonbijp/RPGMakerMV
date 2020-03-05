@@ -1,6 +1,6 @@
 //========================================
 // TF_Undulation.js
-// Version :1.8.7.0
+// Version :1.8.7.1
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019
@@ -311,8 +311,8 @@
         const isThisUndulation = undulation => thisUndulation === undulation;
         let isItPassable = null;
 
-        const isWSPassable = () => {
-            // ⤾ WSU
+        // ⤾ WSU
+        const isWSUPassable = () => {
             if( halfPos === 1 || halfPos === 3 ) {
                 if( d === 4 ) {
                     if( getUndulation( x - 1, y ) === WSU ) return false;
@@ -324,8 +324,13 @@
             } else if( halfPos === 2 ) {
                 if( d === 8 && isThisUndulation( WSU ) ) return false;
             }
+            return null;
+        }
+        isItPassable = isWSUPassable();
+        if( isItPassable !== null ) return isItPassable;
 
-            // ⤾ WSN
+        // ⤾ WSN
+        const isWSNPassable = () => {
             if( halfPos === 0 ) {
                 if( d === 8 && ( getUndulation( x, y - 1 ) === WSN || getUndulation( x - 1, y - 1 ) === WSN ) ) return false;
             } else if( halfPos === 1 ) {
@@ -337,8 +342,13 @@
                     if( getUndulation( x + 1, y ) === WSN ) return false;
                 }
             }
+            return null;
+        };
+        isItPassable = isWSNPassable();
+        if( isItPassable !== null ) return isItPassable;
 
-            // ⤾ WSS
+        // ⤾ WSS
+        const isWSSPassable = () => {
             if( halfPos === 1 ) {
                 if( d === 4 && ( isThisUndulation( WSS ) || getUndulation( x - 1, y ) === WSS ) ) return false;
                 if( d === 6 ) {
@@ -350,13 +360,13 @@
             } else if( halfPos === 3 ) {
                 if( d === 6 && getUndulation( x + 1, y ) === WSS ) return false;
             }
-
             return null;
         };
+        isItPassable = isWSSPassable();
+        if( isItPassable !== null ) return isItPassable;
 
-
-        const isESPassable = () => {
-            // ⤿ ESU
+        // ⤿ ESU
+        const isESUPassable = () => {
             if( halfPos === 0 ) {
                 if( d === 2 && getUndulation( x - 1, y ) === ESU ) return false;
             } else if( halfPos === 1 | halfPos === 3 ) {
@@ -368,289 +378,334 @@
             } else if( halfPos === 2 ) {
                 if( d === 8 && getUndulation( x - 1, y ) === ESU ) return false;
             }
+            return null;
+        };
+        isItPassable = isESUPassable();
+        if( isItPassable !== null ) return isItPassable;
 
-            // ⤿ ESN
+        // ⤿ ESN
+        const isESNPassable = () => {
             if( halfPos === 1 ) {
                 if( d === 6 && getUndulation( x + 1, y ) === ESN ) return true;
             } else if( halfPos === 3 ) {
                 if( d === 4 && isThisUndulation( ESN ) ) return true;
             }
+            return null;
+        };
+        isItPassable = isESNPassable();
+        if( isItPassable !== null ) return isItPassable;
 
-            // ⤿ ESS
+        // ⤿ ESS
+        const isESSPassable = () => {
             if( halfPos === 1 ) {
                 if( d === 4 && isThisUndulation( ESS ) ) return true;
             } else if( halfPos === 3 ) {
                 if( d === 6 && getUndulation( x + 1, y ) === ESS ) return true;
             }
-
             return null;
         };
-
-        // ⤾ WS
-        isItPassable = isWSPassable();
+        isItPassable = isESSPassable();
         if( isItPassable !== null ) return isItPassable;
 
-        // ⤿ ES
-        isItPassable = isESPassable();
-        if( isItPassable !== null ) return isItPassable;
 
         // CENTER_LINE
-        if( halfPos === 0 || halfPos === 2 ) {
-            if( d === 4 ) {
-                if( getUndulation( x - 1, y ) === CENTER_LINE ) return false;
-            } else if( d === 6 ) {
-                if( isThisUndulation( CENTER_LINE ) ) return false;
+        const isCenterLinePassable = () => {
+            if( halfPos === 0 || halfPos === 2 ) {
+                if( d === 4 ) {
+                    if( getUndulation( x - 1, y ) === CENTER_LINE ) return false;
+                } else if( d === 6 ) {
+                    if( isThisUndulation( CENTER_LINE ) ) return false;
+                }
+            } else if( halfPos === 1 ) {
+                if( d === 8 && getUndulation( x, y - 1 ) === CENTER_LINE ) return false;
+            } else if( halfPos === 3 ) {
+                if( d === 2 && getUndulation( x, y + 1 ) === CENTER_LINE ) return false;
             }
-        } else if( halfPos === 1 ) {
-            if( d === 8 && getUndulation( x, y - 1 ) === CENTER_LINE ) return false;
-        } else if( halfPos === 3 ) {
-            if( d === 2 && getUndulation( x, y + 1 ) === CENTER_LINE ) return false;
+            return null;
         }
-
+        isItPassable = isCenterLinePassable();
+        if( isItPassable !== null ) return isItPassable;
 
         // ＼ W27S
-        if( d === 2 ) {
-            if( halfPos === 0 ) {
-                if( isTileLayoutSouth( W27S, 5 ) ) return false;
-            } else if( halfPos === 2 ) {
-                if( isTileLayoutNorth( W27S, 1 ) || isTileLayoutNorth( W27S, 2 ) || isTileLayoutSouth( W27S, 4 ) ) return false;
-                if( isTileLayoutSouth( W27S, 2 ) ) return true;
-            } else if( halfPos === 3 ) {
-                if( isTileLayoutNorth( W27S, 2 ) ) return false;
+        const isW27SPassable = () => {
+            if( d === 2 ) {
+                if( halfPos === 0 ) {
+                    if( isTileLayoutSouth( W27S, 5 ) ) return false;
+                } else if( halfPos === 2 ) {
+                    if( isTileLayoutNorth( W27S, 1 ) || isTileLayoutNorth( W27S, 2 ) || isTileLayoutSouth( W27S, 4 ) ) return false;
+                    if( isTileLayoutSouth( W27S, 2 ) ) return true;
+                } else if( halfPos === 3 ) {
+                    if( isTileLayoutNorth( W27S, 2 ) ) return false;
+                }
+            } else if( d === 4 ) {
+                if( halfPos === 1 ) {
+                    if( isTileLayoutNorth( W27S, 4 ) ) return false;
+                } else if( halfPos === 3 ) {
+                    if( getTileLayout( W27S, 4 ) === LAYOUT_NORTH ) return false;
+                }
+            } else if( d === 6 ) {
+                if( halfPos === 1 ) {
+                    if( getTileLayout( W27S, 6 ) === LAYOUT_NORTH ) return false;
+                    if( isTileLayoutSouth( W27S, 6 ) ) return true;
+                }
+            } else if( d === 8 ) {
+                if( halfPos === 0 ) {
+                    if( isTileLayoutNorth( W27S, 7 ) || getTileLayout( W27S, 5 ) === LAYOUT_SINGLE ) return false;
+                    if( isTileLayoutSouth( W27S, 4 ) ) return true;
+                } else if( halfPos === 1 ) {
+                    if( isTileLayoutSouth( W27S, 8 ) ) return false;
+                } else if( halfPos === 2 ) {
+                    if( isTileLayoutNorth( W27S, 5 ) || getTileLayout( W27S, 4 ) === LAYOUT_SINGLE ) return false;
+                }
             }
-        } else if( d === 4 ) {
-            if( halfPos === 1 ) {
-                if( isTileLayoutNorth( W27S, 4 ) ) return false;
-            } else if( halfPos === 3 ) {
-                if( getTileLayout( W27S, 4 ) === LAYOUT_NORTH ) return false;
-            }
-        } else if( d === 6 ) {
-            if( halfPos === 1 ) {
-                if( getTileLayout( W27S, 6 ) === LAYOUT_NORTH ) return false;
-                if( isTileLayoutSouth( W27S, 6 ) ) return true;
-            }
-        } else if( d === 8 ) {
-            if( halfPos === 0 ) {
-                if( isTileLayoutNorth( W27S, 7 ) || getTileLayout( W27S, 5 ) === LAYOUT_SINGLE ) return false;
-                if( isTileLayoutSouth( W27S, 4 ) ) return true;
-            } else if( halfPos === 1 ) {
-                if( isTileLayoutSouth( W27S, 8 ) ) return false;
-            } else if( halfPos === 2 ) {
-                if( isTileLayoutNorth( W27S, 5 ) || getTileLayout( W27S, 4 ) === LAYOUT_SINGLE ) return false;
-            }
+            return null;
         }
+        isItPassable = isW27SPassable();
+        if( isItPassable !== null ) return isItPassable;
 
         // ＼ W27N
-        if( d === 2 ) {
-            if( halfPos === 0 ) {
-                if( isTileLayoutSouth( W27N, 4 ) ) return false;
-            } else if( halfPos === 2 ) {
-                if( getTileLayout( W27N, 1 ) === LAYOUT_SOUTH ) return true;
-                if( isTileLayoutNorth( W27N, 1 ) || isTileLayoutNorth( W27N, 2 ) ||
-                    isTileLayoutSouth( W27N, 2 ) || getTileLayout( W27N, 5 ) === LAYOUT_SINGLE ) return false;
-            } else if( halfPos === 3 ) {
-                if( isTileLayoutNorth( W27N, 2 ) ) return false;
+        const isW27NPassable = () => {
+            if( d === 2 ) {
+                if( halfPos === 0 ) {
+                    if( isTileLayoutSouth( W27N, 4 ) ) return false;
+                } else if( halfPos === 2 ) {
+                    if( getTileLayout( W27N, 1 ) === LAYOUT_SOUTH ) return true;
+                    if( isTileLayoutNorth( W27N, 1 ) || isTileLayoutNorth( W27N, 2 ) ||
+                        isTileLayoutSouth( W27N, 2 ) || getTileLayout( W27N, 5 ) === LAYOUT_SINGLE ) return false;
+                } else if( halfPos === 3 ) {
+                    if( isTileLayoutNorth( W27N, 2 ) ) return false;
+                }
+            } else if( d === 4 ) {
+                if( halfPos === 1 ) {
+                    if( isTileLayoutNorth( W27N, 4 ) ) return false;
+                } else if( halfPos === 3 ) {
+                    if( isTileLayoutSouth( W27N, 4 ) ) return false;
+                }
+            } else if( d === 6 ) {
+                if( ( halfPos === 1 || halfPos === 3 ) && getTileLayout( W27N, 6 ) === LAYOUT_SINGLE ) return true;
+            } else if( d === 8 ) {
+                if( halfPos === 0 ) {
+                    if( isTileLayoutNorth( W27N, 5 ) || isTileLayoutSouth( W27N, 7 ) ) return false;
+                    if( isTileLayoutSouth( W27N, 4 ) ) return true;
+                } else if( halfPos === 1 ) {
+                    if( isTileLayoutSouth( W27N, 8 ) ) return false;
+                } else if( halfPos === 2 ) {
+                    if( isTileLayoutNorth( W27N, 4 ) ) return false;
+                }
             }
-        } else if( d === 4 ) {
-            if( halfPos === 1 ) {
-                if( isTileLayoutNorth( W27N, 4 ) ) return false;
-            } else if( halfPos === 3 ) {
-                if( isTileLayoutSouth( W27N, 4 ) ) return false;
-            }
-        } else if( d === 6 ) {
-            if( ( halfPos === 1 || halfPos === 3 ) && getTileLayout( W27N, 6 ) === LAYOUT_SINGLE ) return true;
-        } else if( d === 8 ) {
-            if( halfPos === 0 ) {
-                if( isTileLayoutNorth( W27N, 5 ) || isTileLayoutSouth( W27N, 7 ) ) return false;
-                if( isTileLayoutSouth( W27N, 4 ) ) return true;
-            } else if( halfPos === 1 ) {
-                if( isTileLayoutSouth( W27N, 8 ) ) return false;
-            } else if( halfPos === 2 ) {
-                if( isTileLayoutNorth( W27N, 4 ) ) return false;
-            }
+            return null;
         }
+        isItPassable = isW27NPassable();
+        if( isItPassable !== null ) return isItPassable;
 
-
-        // ／ E27S
-        if( d === 2 ) {
-            if( halfPos === 0 ) {
-                if( isTileLayoutSouth( E27S, 4 ) ) return false;
-            } else if( halfPos === 2 ) {
-                if( isTileLayoutNorth( E27S, 1 ) || isTileLayoutNorth( E27S, 2 ) ||
-                    getTileLayout( E27S, 2 ) === LAYOUT_SINGLE ) return false;
-                if( isTileLayoutSouth( E27S, 1 ) ) return true;
-            } else if( halfPos === 3 ) {
-                if( isTileLayoutNorth( E27S, 2 ) ) return false;
+        // ╱ E27S
+        const isE27SPassable = () => {
+            if( d === 2 ) {
+                if( halfPos === 0 ) {
+                    if( isTileLayoutSouth( E27S, 4 ) ) return false;
+                } else if( halfPos === 2 ) {
+                    if( isTileLayoutNorth( E27S, 1 ) || isTileLayoutNorth( E27S, 2 ) ||
+                        getTileLayout( E27S, 2 ) === LAYOUT_SINGLE ) return false;
+                    if( isTileLayoutSouth( E27S, 1 ) ) return true;
+                } else if( halfPos === 3 ) {
+                    if( isTileLayoutNorth( E27S, 2 ) ) return false;
+                }
+            } else if( d === 4 ) {
+                if( halfPos === 1 ) {
+                    if( getTileLayout( E27S, 4 ) === LAYOUT_NORTH ) return false;
+                    if( isTileLayoutSouth( E27S, 4 ) ) return true;
+                }
+            } else if( d === 6 ) {
+                if( halfPos === 1 ) {
+                    if( isTileLayoutNorth( E27S, 6 ) ) return false;
+                } else if( halfPos === 3 ) {
+                    if( getTileLayout( E27S, 6 ) === LAYOUT_NORTH ) return false;
+                }
+            } else if( d === 8 ) {
+                if( halfPos === 0 ) {
+                    if( isTileLayoutNorth( E27S, 8 ) || getTileLayout( E27S, 4 ) === LAYOUT_SINGLE ) return false;
+                } else if( halfPos === 2 ) {
+                    if( isTileLayoutNorth( E27S, 4 ) || getTileLayout( E27S, 5 ) === LAYOUT_SINGLE ) return false;
+                }
             }
-        } else if( d === 4 ) {
-            if( halfPos === 1 ) {
-                if( getTileLayout( E27S, 4 ) === LAYOUT_NORTH ) return false;
-                if( isTileLayoutSouth( E27S, 4 ) ) return true;
-            }
-        } else if( d === 6 ) {
-            if( halfPos === 1 ) {
-                if( isTileLayoutNorth( E27S, 6 ) ) return false;
-            } else if( halfPos === 3 ) {
-                if( getTileLayout( E27S, 6 ) === LAYOUT_NORTH ) return false;
-            }
-        } else if( d === 8 ) {
-            if( halfPos === 0 ) {
-                if( isTileLayoutNorth( E27S, 8 ) || getTileLayout( E27S, 4 ) === LAYOUT_SINGLE ) return false;
-            } else if( halfPos === 2 ) {
-                if( isTileLayoutNorth( E27S, 4 ) || getTileLayout( E27S, 5 ) === LAYOUT_SINGLE ) return false;
-            }
+            return null;
         }
+        isItPassable = isE27SPassable();
+        if( isItPassable !== null ) return isItPassable;
 
-        // ／ E27N
-        if( d === 2 ) {
-            if( halfPos === 0 ) {
-                if( isTileLayoutSouth( E27N, 5 ) ) return false;
-            } else if( halfPos === 2 ) {
-                if( isTileLayoutNorth( E27N, 1 ) || isTileLayoutNorth( E27N, 2 ) ||
-                    getTileLayout( E27N, 4 ) === LAYOUT_SINGLE ) return false;
-            } else if( halfPos === 3 ) {
-                if( isTileLayoutNorth( E27N, 2 ) ) return false;
+        // ╱ E27N
+        const isE27NPassable = () => {
+            if( d === 2 ) {
+                if( halfPos === 0 ) {
+                    if( isTileLayoutSouth( E27N, 5 ) ) return false;
+                } else if( halfPos === 2 ) {
+                    if( isTileLayoutNorth( E27N, 1 ) || isTileLayoutNorth( E27N, 2 ) ||
+                        getTileLayout( E27N, 4 ) === LAYOUT_SINGLE ) return false;
+                } else if( halfPos === 3 ) {
+                    if( isTileLayoutNorth( E27N, 2 ) ) return false;
+                }
+            } else if( d === 4 ) {
+                if( ( halfPos === 1 || halfPos === 3 ) && getTileLayout( E27N, 4 ) === LAYOUT_SINGLE ) return true;
+            } else if( d === 6 ) {
+                if( halfPos === 1 ) {
+                    if( isTileLayoutNorth( E27N, 6 ) ) return false;
+                } else if( halfPos === 3 ) {
+                    if( isTileLayoutSouth( E27N, 6 ) ) return false;
+                }
+            } else if( d === 8 ) {
+                if( halfPos === 0 ) {
+                    if( isTileLayoutNorth( E27N, 4 ) || isTileLayoutSouth( E27N, 8 ) ) return false;
+                    if( isTileLayoutSouth( E27N, 5 ) ) return true;
+                } else if( halfPos === 1 ) {
+                    if( isTileLayoutSouth( E27N, 8 ) ) return false;
+                } else if( halfPos === 2 ) {
+                    if( isTileLayoutNorth( E27N, 5 ) ) return false;
+                }
             }
-        } else if( d === 4 ) {
-            if( ( halfPos === 1 || halfPos === 3 ) && getTileLayout( E27N, 4 ) === LAYOUT_SINGLE ) return true;
-        } else if( d === 6 ) {
-            if( halfPos === 1 ) {
-                if( isTileLayoutNorth( E27N, 6 ) ) return false;
-            } else if( halfPos === 3 ) {
-                if( isTileLayoutSouth( E27N, 6 ) ) return false;
-            }
-        } else if( d === 8 ) {
-            if( halfPos === 0 ) {
-                if( isTileLayoutNorth( E27N, 4 ) || isTileLayoutSouth( E27N, 8 ) ) return false;
-                if( isTileLayoutSouth( E27N, 5 ) ) return true;
-            } else if( halfPos === 1 ) {
-                if( isTileLayoutSouth( E27N, 8 ) ) return false;
-            } else if( halfPos === 2 ) {
-                if( isTileLayoutNorth( E27N, 5 ) ) return false;
-            }
+            return null;
         }
+        isItPassable = isE27NPassable();
+        if( isItPassable !== null ) return isItPassable;
 
-
-        // ＼ W45
-        if( d === 2 ) {
-            if( halfPos === 1 ) {
-                if( isTileLayoutSouth( W45, 5 ) ) return false;
-            } else if( halfPos === 2 ) {
-                if( isTileLayoutNorth( W45, 1 ) || isTileLayoutNorth( W45, 2 ) ) return false;
-                if( isTileLayoutSouth( W45, 1 ) ) return true;
-            } else if( halfPos === 3 ) {
-                if( isTileLayoutNorth( W45, 2 ) ) return false;
-                if( isTileLayoutSouth( W45, 2 ) ) return true;
+        // ╲ W45
+        const isW45Passable = () => {
+            if( d === 2 ) {
+                if( halfPos === 1 ) {
+                    if( isTileLayoutSouth( W45, 5 ) ) return false;
+                } else if( halfPos === 2 ) {
+                    if( isTileLayoutNorth( W45, 1 ) || isTileLayoutNorth( W45, 2 ) ) return false;
+                    if( isTileLayoutSouth( W45, 1 ) ) return true;
+                } else if( halfPos === 3 ) {
+                    if( isTileLayoutNorth( W45, 2 ) ) return false;
+                    if( isTileLayoutSouth( W45, 2 ) ) return true;
+                }
+            } else if( d === 4 ) {
+                if( halfPos === 1 ) {
+                    if( isTileLayoutNorth( W45, 4 ) ) return false;
+                    if( isTileLayoutSouth( W45, 5 ) ) return true;
+                } else if( halfPos === 3 ) {
+                    if( isTileLayoutNorth( W45, 4 ) ) return false;
+                }
+            } else if( d === 6 ) {
+                if( halfPos === 3 && isTileLayoutNorth( W45, 5 ) ) return true;
+            } else if( d === 8 ) {
+                if( halfPos === 0 ) {
+                    if( isTileLayoutNorth( W45, 5 ) || isTileLayoutNorth( W45, 7 ) ) return false;
+                    if( isTileLayoutSouth( W45, 4 ) ) return true;
+                } else if( halfPos === 1 ) {
+                    if( isTileLayoutSouth( W45, 5 ) ) return true;
+                } else if( halfPos === 3 ) {
+                    if( isTileLayoutNorth( W45, 5 ) ) return false;
+                }
             }
-        } else if( d === 4 ) {
-            if( halfPos === 1 ) {
-                if( isTileLayoutNorth( W45, 4 ) ) return false;
-                if( isTileLayoutSouth( W45, 5 ) ) return true;
-            } else if( halfPos === 3 ) {
-                if( isTileLayoutNorth( W45, 4 ) ) return false;
-            }
-        } else if( d === 6 ) {
-            if( halfPos === 3 && isTileLayoutNorth( W45, 5 ) ) return true;
-        } else if( d === 8 ) {
-            if( halfPos === 0 ) {
-                if( isTileLayoutNorth( W45, 5 ) || isTileLayoutNorth( W45, 7 ) ) return false;
-                if( isTileLayoutSouth( W45, 4 ) ) return true;
-            } else if( halfPos === 1 ) {
-                if( isTileLayoutSouth( W45, 5 ) ) return true;
-            } else if( halfPos === 3 ) {
-                if( isTileLayoutNorth( W45, 5 ) ) return false;
-            }
+            return null;
         }
+        isItPassable = isW45Passable();
+        if( isItPassable !== null ) return isItPassable;
 
-        // ／ E45
-        if( d === 2 ) {
-            if( halfPos === 1 ) {
-                if( isTileLayoutSouth( E45, 5 ) ) return false;
-            } else if( halfPos === 2 ) {
-                if( isTileLayoutNorth( E45, 1 ) || isTileLayoutNorth( E45, 2 ) ) return false;
-                if( isTileLayoutSouth( E45, 2 ) ) return true;
-            } else if( halfPos === 3 ) {
-                if( isTileLayoutNorth( E45, 2 ) ) return false;
-                if( isTileLayoutSouth( E45, 2 ) ) return true;
+        // ╱ E45
+        const isE45Passable = () => {
+            if( d === 2 ) {
+                if( halfPos === 1 ) {
+                    if( isTileLayoutSouth( E45, 5 ) ) return false;
+                } else if( halfPos === 2 ) {
+                    if( isTileLayoutNorth( E45, 1 ) || isTileLayoutNorth( E45, 2 ) ) return false;
+                    if( isTileLayoutSouth( E45, 2 ) ) return true;
+                } else if( halfPos === 3 ) {
+                    if( isTileLayoutNorth( E45, 2 ) ) return false;
+                    if( isTileLayoutSouth( E45, 2 ) ) return true;
+                }
+            } else if( d === 4 ) {
+                if( halfPos === 3 && isTileLayoutNorth( E45, 5 ) ) return true;
+            } else if( d === 6 ) {
+                if( halfPos === 1 ) {
+                    if( isTileLayoutNorth( E45, 6 ) ) return false;
+                    if( isTileLayoutSouth( E45, 5 ) ) return true;
+                } else if( halfPos === 3 ) {
+                    if( isTileLayoutNorth( E45, 6 ) ) return false;
+                }
+            } else if( d === 8 ) {
+                if( halfPos === 0 ) {
+                    if( isTileLayoutNorth( E45, 4 ) || isTileLayoutNorth( E45, 8 ) ) return false;
+                    if( isTileLayoutSouth( E45, 5 ) ) return true;
+                } else if( halfPos === 1 ) {
+                    if( isTileLayoutSouth( E45, 5 ) ) return true;
+                } else if( halfPos === 3 ) {
+                    if( isTileLayoutNorth( E45, 5 ) ) return false;
+                }
             }
-        } else if( d === 4 ) {
-            if( halfPos === 3 && isTileLayoutNorth( E45, 5 ) ) return true;
-        } else if( d === 6 ) {
-            if( halfPos === 1 ) {
-                if( isTileLayoutNorth( E45, 6 ) ) return false;
-                if( isTileLayoutSouth( E45, 5 ) ) return true;
-            } else if( halfPos === 3 ) {
-                if( isTileLayoutNorth( E45, 6 ) ) return false;
-            }
-        } else if( d === 8 ) {
-            if( halfPos === 0 ) {
-                if( isTileLayoutNorth( E45, 4 ) || isTileLayoutNorth( E45, 8 ) ) return false;
-                if( isTileLayoutSouth( E45, 5 ) ) return true;
-            } else if( halfPos === 1 ) {
-                if( isTileLayoutSouth( E45, 5 ) ) return true;
-            } else if( halfPos === 3 ) {
-                if( isTileLayoutNorth( E45, 5 ) ) return false;
-            }
+            return null;
         }
-
+        isItPassable = isE45Passable();
+        if( isItPassable !== null ) return isItPassable;
 
         // \  W63
-        if( d === 2 ) {
-            if( halfPos === 1 ) {
-                if( isTileLayoutNorth( W63, 5 ) ) return false;
-            } else if( halfPos === 2 ) {
-                if( isTileLayoutNorth( W63, 2 ) ) return false;
-            } else if( halfPos === 3 ) {
-                if( isTileLayoutNorth( W63, 2 ) ) return false;
-                if( isTileLayoutSouth( W63, 5 ) ) return false;
+        const isW63Passable = () => {
+            if( d === 2 ) {
+                if( halfPos === 1 ) {
+                    if( isTileLayoutNorth( W63, 5 ) ) return false;
+                } else if( halfPos === 2 ) {
+                    if( isTileLayoutNorth( W63, 2 ) ) return false;
+                } else if( halfPos === 3 ) {
+                    if( isTileLayoutNorth( W63, 2 ) ) return false;
+                    if( isTileLayoutSouth( W63, 5 ) ) return false;
+                }
+            } else if( d === 4 ) {
+                if( halfPos === 0 ) {
+                    if( isTileLayoutNorth( W63, 4 ) ) return false;
+                } else if( halfPos === 1 ) {
+                    if( isTileLayoutNorth( W63, 5 ) ) return false;
+                    if( isTileLayoutSouth( W63, 5 ) ) return true;
+                } else if( halfPos === 2 ) {
+                    if( isTileLayoutNorth( W63, 4 ) ) return false;
+                } else if( halfPos === 3 ) {
+                    if( isTileLayoutSouth( W63, 5 ) ) return true;
+                }
+            } else if( d === 8 ) {
+                if( halfPos === 0 ) {
+                    if( isTileLayoutNorth( W63, 5 ) || isTileLayoutSouth( W63, 8 ) ) return false;
+                } else if( halfPos === 1 ) {
+                    if( isTileLayoutNorth( W63, 8 ) || isTileLayoutSouth( W63, 8 ) ) return false;
+                }
             }
-        } else if( d === 4 ) {
-            if( halfPos === 0 ) {
-                if( isTileLayoutNorth( W63, 4 ) ) return false;
-            } else if( halfPos === 1 ) {
-                if( isTileLayoutNorth( W63, 5 ) ) return false;
-                if( isTileLayoutSouth( W63, 5 ) ) return true;
-            } else if( halfPos === 2 ) {
-                if( isTileLayoutNorth( W63, 4 ) ) return false;
-            } else if( halfPos === 3 ) {
-                if( isTileLayoutSouth( W63, 5 ) ) return true;
-            }
-        } else if( d === 8 ) {
-            if( halfPos === 0 ) {
-                if( isTileLayoutNorth( W63, 5 ) || isTileLayoutSouth( W63, 8 ) ) return false;
-            } else if( halfPos === 1 ) {
-                if( isTileLayoutNorth( W63, 8 ) || isTileLayoutSouth( W63, 8 ) ) return false;
-            }
+            return null;
         }
+        isItPassable = isW63Passable();
+        if( isItPassable !== null ) return isItPassable;
 
         //  / E63
-        if( d === 2 ) {
-            if( halfPos === 1 ) {
-                if( isTileLayoutNorth( E63, 5 ) ) return false;
-            } else if( halfPos === 2 ) {
-                if( isTileLayoutNorth( E63, 1 ) ) return false;
-            } else if( halfPos === 3 ) {
-                if( isTileLayoutNorth( E63, 2 ) ) return false;
-                if( isTileLayoutSouth( E63, 5 ) ) return false;
+        const isE63Passable = () => {
+            if( d === 2 ) {
+                if( halfPos === 1 ) {
+                    if( isTileLayoutNorth( E63, 5 ) ) return false;
+                } else if( halfPos === 2 ) {
+                    if( isTileLayoutNorth( E63, 1 ) ) return false;
+                } else if( halfPos === 3 ) {
+                    if( isTileLayoutNorth( E63, 2 ) ) return false;
+                    if( isTileLayoutSouth( E63, 5 ) ) return false;
+                }
+            } else if( d === 6 ) {
+                if( halfPos === 0 ) {
+                    if( isTileLayoutNorth( E63, 5 ) ) return false;
+                } else if( halfPos === 1 ) {
+                    if( isTileLayoutNorth( E63, 5 ) ) return false;
+                    if( isTileLayoutSouth( E63, 5 ) ) return true;
+                } else if( halfPos === 2 ) {
+                    if( isTileLayoutNorth( E63, 5 ) ) return false;
+                } else if( halfPos === 3 ) {
+                    if( isTileLayoutSouth( E63, 5 ) ) return true;
+                }
+            } else if( d === 8 ) {
+                if( halfPos === 0 ) {
+                    if( isTileLayoutNorth( E63, 4 ) ) return false;
+                } else if( halfPos === 1 ) {
+                    if( isTileLayoutNorth( E63, 8 ) || isTileLayoutSouth( E63, 8 ) ) return false;
+                }
             }
-        } else if( d === 6 ) {
-            if( halfPos === 0 ) {
-                if( isTileLayoutNorth( E63, 5 ) ) return false;
-            } else if( halfPos === 1 ) {
-                if( isTileLayoutNorth( E63, 5 ) ) return false;
-                if( isTileLayoutSouth( E63, 5 ) ) return true;
-            } else if( halfPos === 2 ) {
-                if( isTileLayoutNorth( E63, 5 ) ) return false;
-            } else if( halfPos === 3 ) {
-                if( isTileLayoutSouth( E63, 5 ) ) return true;
-            }
-        } else if( d === 8 ) {
-            if( halfPos === 0 ) {
-                if( isTileLayoutNorth( E63, 4 ) ) return false;
-            } else if( halfPos === 1 ) {
-                if( isTileLayoutNorth( E63, 8 ) || isTileLayoutSouth( E63, 8 ) ) return false;
-            }
+            return null;
         }
+        isItPassable = isE63Passable();
+        if( isItPassable !== null ) return isItPassable;
 
         return _Game_CharacterBase_isMapPassable.apply( this, arguments );
     };
