@@ -1,6 +1,6 @@
 //========================================
 // TF_TextWindowMenu.js
-// Version :0.2.0.0
+// Version :0.3.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -17,10 +17,15 @@
  * @author とんび@鳶嶋工房
  *
  * @param windowParams
- * @desc ウィンドウの設定
+ * @desc メニューとウィンドウの設定。
  * @type struct<WindowParamJa>[]
  * @default ["{\"menuLabel\":\"著作・製作\",\"lines\":\"12\",\"contents\":\"\\\"\\\\\\\\}(c)KADOKAWA CORPORATION\\\\\\\\{\\\"\"}"]
  *
+ * @param isAnimate
+ * @desc 開閉アニメーションをするか。
+ * @type boolean
+ * @default true
+ * 
  * @help
  * タイトル画面への著作権情報や操作説明の追加を想定したプラグインです。
  * 
@@ -55,15 +60,30 @@
 ( function() {
 	'use strict';
 	const TF_OPEN_WINDOW_COMMAND = 'TF_OPEN_WINDOW_COMMAND';
+	const PARAM_TRUE = 'true';
 
     /**
      * パラメータを受け取る
      */
 	const pluginParams = PluginManager.parameters( 'TF_TextWindowMenu' );
+    /**
+     * 指定したパラメータの真偽値を返す。
+     * @param {String} paramName パラメータ名
+     * @param {Number} defaultParam 規定値
+     * @returns {Boolean}
+     */
+	const getBooleanParam = ( paramName, defaultParam ) => {
+		return pluginParams[ paramName ] ? ( pluginParams[ paramName ].toLowerCase() == PARAM_TRUE ) : defaultParam;
+	};
+
+
 	let TF_windows = JsonEx.parse( pluginParams.windowParams );
 	TF_windows = TF_windows.map( value => JsonEx.parse( value ) );
 	let TF_topRows;
 	let TF_itemIndex;
+
+	const TF_isAnimate = getBooleanParam( 'isAnimate', true );
+
 
 
 	/*---- Window_TitleCommand ----*/
@@ -106,8 +126,11 @@
 			this.addWindow( this._singleWindow );
 			this._singleWindow.y = ( Graphics.boxHeight - this._singleWindow.height ) / 2;
 			this._singleWindow.pause = true;
-			this._singleWindow.openness = 0;
-			this._singleWindow.open();
+
+			if( TF_isAnimate ) {
+				this._singleWindow.openness = 0;
+				this._singleWindow.open();
+			}
 		}
 
 		update() {
@@ -125,7 +148,12 @@
 					Input.isTriggered( 'cancel' )
 				) {
 					SoundManager.playCursor();
-					this._singleWindow.close();
+
+					if( TF_isAnimate ) {
+						this._singleWindow.close();
+					} else {
+						SceneManager.pop();
+					}
 				}
 			} else if( this._singleWindow.isClosed() ) {
 				SceneManager.pop();
