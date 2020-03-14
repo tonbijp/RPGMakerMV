@@ -1,6 +1,6 @@
 //========================================
 // TF_TextWindowMenu.js
-// Version :0.3.0.0
+// Version :0.3.1.1
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -98,10 +98,19 @@
 		TF_windows.forEach( e => this.addCommand( e.menuLabel, TF_OPEN_WINDOW_COMMAND ) );
 	};
 	// 選択中の項目を記録
-	Window_TitleCommand.prototype.select = function( index ) {
-		Window_Command.prototype.select.apply( this, arguments );
-		TF_itemIndex = index - TF_topRows;
+	const _Window_TitleCommand_processOk = Window_TitleCommand.prototype.processOk;
+	Window_TitleCommand.prototype.processOk = function() {
+		_Window_TitleCommand_processOk.call( this );
+		TF_itemIndex = this.index();
 	}
+
+	Window_TitleCommand.prototype.selectLast = function() {
+		if( TF_itemIndex ) {
+			this.select( TF_itemIndex );
+		} else if( this.isContinueEnabled() ) {
+			this.selectSymbol( 'continue' );
+		}
+	};
 
 	/*---- Scene_Title ----*/
 	/**
@@ -122,7 +131,8 @@
 		create() {
 			super.create();
 
-			this._singleWindow = new Window_Help( parseInt( TF_windows[ TF_itemIndex ].lines, 10 ) );
+			const lines = parseInt( TF_windows[ TF_itemIndex - TF_topRows ].lines, 10 );
+			this._singleWindow = new Window_Help( lines );
 			this.addWindow( this._singleWindow );
 			this._singleWindow.y = ( Graphics.boxHeight - this._singleWindow.height ) / 2;
 			this._singleWindow.pause = true;
@@ -138,16 +148,18 @@
 
 			if( this._singleWindow.isOpen() ) {
 				if( !this._singleWindow._text ) {
-					const contents = JsonEx.parse( TF_windows[ TF_itemIndex ].contents );
+					const contents = JsonEx.parse( TF_windows[ TF_itemIndex - TF_topRows ].contents );
 					this._singleWindow.setText( contents );
 				}
 				// 入力のチェック
-				if( TouchInput.isTriggered() ||
-					TouchInput.isCancelled() ||
-					Input.isTriggered( 'ok' ) ||
-					Input.isTriggered( 'cancel' )
-				) {
-					SoundManager.playCursor();
+				const triggerType = ( TouchInput.isTriggered() || Input.isTriggered( 'ok' ) ) ? 'ok' :
+					( TouchInput.isCancelled() || Input.isTriggered( 'cancel' ) ) ? 'cancel' : '';
+				if( triggerType ) {
+					if( triggerType == 'ok' ) {
+						SoundManager.playOk();
+					} else {
+						SoundManager.playCancel();
+					}
 
 					if( TF_isAnimate ) {
 						this._singleWindow.close();
