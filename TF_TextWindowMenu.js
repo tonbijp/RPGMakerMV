@@ -1,6 +1,6 @@
 //========================================
 // TF_TextWindowMenu.js
-// Version :0.3.1.1
+// Version :0.3.1.2
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -60,6 +60,8 @@
 ( function() {
 	'use strict';
 	const TF_OPEN_WINDOW_COMMAND = 'TF_OPEN_WINDOW_COMMAND';
+	const TRIGGER_OK = 'ok';
+	const TRIGGER_CANCEL = 'cancel';
 	const PARAM_TRUE = 'true';
 
     /**
@@ -152,10 +154,10 @@
 					this._singleWindow.setText( contents );
 				}
 				// 入力のチェック
-				const triggerType = ( TouchInput.isTriggered() || Input.isTriggered( 'ok' ) ) ? 'ok' :
-					( TouchInput.isCancelled() || Input.isTriggered( 'cancel' ) ) ? 'cancel' : '';
+				const triggerType = ( TouchInput.isTriggered() || Input.isTriggered( TRIGGER_OK ) ) ? TRIGGER_OK :
+					( TouchInput.isCancelled() || Input.isTriggered( TRIGGER_CANCEL ) ) ? TRIGGER_CANCEL : '';
 				if( triggerType ) {
-					if( triggerType == 'ok' ) {
+					if( triggerType == TRIGGER_OK ) {
 						SoundManager.playOk();
 					} else {
 						SoundManager.playCancel();
