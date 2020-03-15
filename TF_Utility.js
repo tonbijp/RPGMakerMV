@@ -1,6 +1,6 @@
 //========================================
 // TF_Utility.js
-// Version :0.6.0.0
+// Version :0.7.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019-2020
@@ -21,8 +21,41 @@
 ( function() {
 	'use strict';
 	const PARAM_TRUE = 'true';
+
+	// 画面周り
 	const SCREEN_WIDTH = 1280;
 	const SCREEN_HEIGHT = 720;
+	const INTERFACE_WIDTH = 1080;
+	const INTERFACE_HEIGHT = 720;
+	// ウィンドウ周り
+	const STANDARD_FONT_SIZE = 40;
+	const STANDARD_BACK_OPACITY = 104;
+	const STANDARD_PADDING = 18;
+	const STANDARD_MARGIN = 16;
+	const TEXT_PADDING = 8;
+	const NAME_FONT_SIZE = 24;
+	const FACE_WIDTH = 208;
+	const NUM_VISIBLE_ROWS = 3;
+	const ALIGN_LEFTR = 'left';
+	const ALIGN_CENTER = 'center';
+	const ALIGN_RIGHT = 'right';
+
+	const VOLUME_OFFSET = 5;	//オプション: 音量の最小変更数を5に。
+
+
+	// イベントコマンドの番号
+	const COMMAND_END = 0;
+	const TRANSFER_PLAYER = 201;
+	const SET_MOVEMENT_ROUTE = 205;
+	const CHANGE_PLAYER_FOLLOWERS = 216;
+	const FADEOUT_SCREEN = 221;
+	const FADEIN_SCREEN = 222;
+	const WAIT_FOR = 230;
+	const PLAY_SE = 250;
+	const TF_PATTERN = 'TF_pattern';
+
+	const PLAYER_CHARACTER = -1;
+	const gc = Game_Character;
 
 	/**
 	 * データベースにオリジナルのJSONを追加する
@@ -32,10 +65,6 @@
 	// 	{ name: '$myJson', src: '$myJson.json' }
 	// );
 
-	SceneManager._screenWidth = SCREEN_WIDTH;
-	SceneManager._screenHeight = SCREEN_HEIGHT;
-	SceneManager._boxWidth = SCREEN_WIDTH;
-	SceneManager._boxHeight = SCREEN_HEIGHT;
 
 	/**
 	 * @method parseIntStrict
@@ -51,20 +80,6 @@
 		if( isNaN( result ) ) throw Error( '指定した値[' + value + ']が数値ではありません。' );
 		return result;
 	};
-
-	// イベントコマンドの番号
-	const COMMAND_END = 0;
-	const TRANSFER_PLAYER = 201;
-	const SET_MOVEMENT_ROUTE = 205;
-	const CHANGE_PLAYER_FOLLOWERS = 216;
-	const FADEOUT_SCREEN = 221;
-	const FADEIN_SCREEN = 222;
-	const WAIT_FOR = 230;
-	const PLAY_SE = 250;
-	const TF_PATTERN = 'TF_pattern';
-
-	const PLAYER_CHARACTER = -1;
-	const gc = Game_Character;
 
 
 	/**
@@ -208,42 +223,95 @@
 		return this.value( i );
 	};
 
-	/*--- Window_Options ---*/
-	/**
-	 * オプション: 音量の最小変更数を5に。
-	 */
-	Window_Options.prototype.volumeOffset = function() {
-		return 5;
+
+	/*==== 画面設定 ====*/
+	/*--- SceneManager ---*/
+	const _SceneManager_initialize = SceneManager.initialize;
+	SceneManager.initialize = function() {
+		this._screenWidth = SCREEN_WIDTH;
+		this._screenHeight = SCREEN_HEIGHT;
+		this._boxWidth = INTERFACE_WIDTH;
+		this._boxHeight = INTERFACE_HEIGHT;
+		_SceneManager_initialize.call( this );
 	};
 
-	/*--- Window_Message ---*/
+
+	/*--- Spriteset_Base ---*/
 	/**
-	 * ウィンドウ幅:1000px
+	 * setFrameで表示位置を原点からずらさないように
 	 */
-	Window_Message.prototype.windowWidth = function() {
-		return 1000;
+	const _Spriteset_Base_createPictures = Spriteset_Base.prototype.createPictures;
+	Spriteset_Base.prototype.createPictures = function() {
+		_Spriteset_Base_createPictures.call( this );
+		this._pictureContainer.setFrame( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT );
 	};
-	/**
-	 * フォントサイズ:40px
-	 */
-	Window_Message.prototype.standardFontSize = function() {
-		return 40;
+
+
+	/*--- Window ---*/
+	const _Window_initialize = Window.prototype.initialize;
+	Window.prototype.initialize = function() {
+		_Window_initialize.call( this );
+		this._margin = STANDARD_MARGIN;
+		this._windowBackSprite.alpha = STANDARD_BACK_OPACITY / 255
 	};
-	/**
-	 * 行数:3行
-	 */
-	Window_Message.prototype.numVisibleRows = function() {
-		return 3;
+	// _windowBackSprite は alpha を保持するだけで描画はしない
+	Window.prototype._refreshBack = function() { };
+	Window.prototype._refreshFrame = function() {
+		const m = this._margin;
+
+		const bitmap = new Bitmap( this._width, this._height );
+
+		this._windowFrameSprite.bitmap = bitmap;
+		this._windowFrameSprite.setFrame( 0, 0, this._width, this._height + 12 );
+
+		const ctx = bitmap.context;
+		ctx.fillStyle = `rgba(0,0,0,${this._windowBackSprite.alpha})`;
+		ctx.lineWidth = 6;
+		ctx.strokeStyle = '#fff';
+
+		function roundRect( ctx, x, y, w, h, r ) {
+			ctx.moveTo( x + r, y );
+			ctx.arcTo( x + w, y, x + w, y + r, r );// ─╮
+			ctx.arcTo( x + w, y + h, x + w - r, y + h, r );//│ ╯
+			ctx.arcTo( x, y + h, x, y + h - r, r );//╰─
+			ctx.arcTo( x, y, x + r, y, r );// │╭
+			ctx.closePath();
+			ctx.shadowBlur = 8;
+			ctx.shadowColor = 'black';
+			ctx.shadowOffsetX = 0;
+			ctx.shadowOffsetY = 6;
+			ctx.fill();
+			ctx.shadowBlur = 3;
+			ctx.shadowOffsetY = 0;
+			ctx.stroke();
+		}
+		roundRect( ctx, 8, 8, this._width - 16, this._height - 16, m );
 	};
-	/**
-	 * 行高さ:+8px
-	 */
-	Window_Message.prototype.calcTextHeight = function( textState, all ) {
-		return Window_Base.prototype.calcTextHeight.apply( this, arguments ) + 8;
+
+	/*--- Window_Base ---*/
+	Window_Base.prototype.standardFontSize = () => STANDARD_FONT_SIZE;
+	Window_Base.prototype.standardPadding = () => STANDARD_PADDING;
+	Window_Base.prototype.textPadding = () => TEXT_PADDING;
+	Window_Base.prototype.standardBackOpacity = () => STANDARD_BACK_OPACITY;
+
+	Window_Base.prototype.lineHeight = function() {
+		return this.standardFontSize() + this.textPadding() * 2;
+	};
+
+	const _Window_Base_calcTextHeight = Window_Base.prototype.calcTextHeight;
+	Window_Base.prototype.calcTextHeight = function( textState, all ) {
+		const baseLines = _Window_Base_calcTextHeight.apply( this, arguments );
+		const length = textState.text.slice( textState.index ).split( '\n' ).length;
+		const maxLines = all ? length : 1;
+		return baseLines + maxLines * ( this.textPadding() * 2 - 8 );
 	}
-	Window_Message.prototype.lineHeight = function() {
-		return 56;
-	};
+
+	/*--- Window_Options ---*/
+	Window_Options.prototype.volumeOffset = () => VOLUME_OFFSET;
+
+	/*--- Window_Message ---*/
+	Window_Message.prototype.standardFontSize = () => STANDARD_FONT_SIZE;
+	Window_Message.prototype.numVisibleRows = () => NUM_VISIBLE_ROWS;
 
 	/**
 	 * 顔画像に名前を追加。
@@ -265,16 +333,30 @@
 			}
 		};
 		const tempFontSize = this.contents.fontSize;
-		this.contents.fontSize = 24;
-		this.drawText( getActorName(), 0, this.contentsHeight() - 40, 144, 'center' );
+		this.contents.fontSize = NAME_FONT_SIZE;
+		this.drawText( getActorName(), 0, this.contentsHeight() - 40, 144, ALIGN_CENTER );
 		this.contents.fontSize = tempFontSize;
-	}
+	};
 
 	/**
-	 * 顔グラに用意する画面幅を大きめに設定。
+	 * 顔グラの有無に応じて、行頭位置を設定。
 	 */
 	Window_Message.prototype.newLineX = function() {
-		return $gameMessage.faceName() === '' ? 0 : ( 168 + 40 );
+		if( $gameMessage.faceName() ) {
+			return FACE_WIDTH;
+		} else {
+			return this.textPadding();
+		}
+	};
+
+	/**
+	 * サーラ先生の顔を変更する特殊処理。
+	 */
+	Game_Message.prototype.faceIndex = function() {
+		if( this.faceName() === 'Shara' && $gameSwitches.getValueByName( 'equipMinoHead' ) ) {
+			return 1;
+		}
+		return this._faceIndex;
 	};
 
 
@@ -303,11 +385,37 @@
 		_Scene_Battle_changeInputWindow.call( this );
 	};
 
+	/*--- Window_ActorCommand ---*/
+	/**
+	 * [スキル][防御][アイテム]コマンドを削除。
+	 */
+	Window_ActorCommand.prototype.addSkillCommands = function() { };
+	Window_ActorCommand.prototype.addGuardCommand = function() { };
+	Window_ActorCommand.prototype.addItemCommand = function() { };
+
+
+	/*--- Window_TitleCommand ---*/
+	/**
+	 * コンティニューを削除。
+	 */
+	Window_TitleCommand.prototype.makeCommandList = function() {
+		this.addCommand( TextManager.newGame, 'newGame' );
+		this.addCommand( TextManager.options, 'options' );
+	};
+	/**
+	 * 表示位置の設定
+	 */
+	Window_TitleCommand.prototype.updatePlacement = function() {
+		this.x = 40;
+		this.y = 340;
+	};
 
 	/*--- Spriteset_Battle ---*/
+	const TYPE_STAGE = 1;
+	const TYPE_SET = 2;
 	Spriteset_Battle.prototype.createBattleback = function() {
-		this._back1Sprite = new Sprite_Battleback( this.battleback1Name(), 1 );
-		this._back2Sprite = new Sprite_Battleback( this.battleback2Name(), 2 );
+		this._back1Sprite = new Sprite_Battleback( this.battleback1Name(), TYPE_STAGE );
+		this._back2Sprite = new Sprite_Battleback( this.battleback2Name(), TYPE_SET );
 		this._battleField.addChild( this._back1Sprite );
 		this._battleField.addChild( this._back2Sprite );
 	};
@@ -315,69 +423,84 @@
 
 
 	/*--- Sprite_Battleback ---*/
-	function Sprite_Battleback() {
-		this.initialize.apply( this, arguments );
-	}
+	class Sprite_Battleback extends Sprite {
+		constructor( bitmapName, type ) {
+			super();
+			this._bitmapName = bitmapName;
+			this._battlebackType = type;
+			this.createBitmap();
+		}
 
-	Sprite_Battleback.prototype = Object.create( Sprite.prototype );
-	Sprite_Battleback.prototype.constructor = Sprite_Battleback;
+		/**
+		 * 背景画像の生成・読み込み
+		 */
+		createBitmap() {
+			if( this._bitmapName === '' ) {
+				this.bitmap = new Bitmap( Graphics.width, Graphics.height );
+				return;
+			}
 
-	Sprite_Battleback.prototype.initialize = function( bitmapName, type ) {
-		Sprite.prototype.initialize.call( this );
-		this._bitmapName = bitmapName;
-		this._battlebackType = type;
-		this.createBitmap();
-	};
-
-	Sprite_Battleback.prototype.createBitmap = function() {
-		if( this._bitmapName === '' ) {
-			this.bitmap = new Bitmap( Graphics.boxWidth, Graphics.boxHeight );
-		} else {
-			if( this._battlebackType === 1 ) {
+			if( this._battlebackType === TYPE_STAGE ) {
 				this.bitmap = ImageManager.loadBattleback1( this._bitmapName );
 			} else {
+				;
 				this.bitmap = ImageManager.loadBattleback2( this._bitmapName );
 			}
 			this.scaleSprite();
 		}
-	};
 
-	Sprite_Battleback.prototype.scaleSprite = function() {
-		if( this.bitmap.width <= 0 ) return setTimeout( this.scaleSprite.bind( this ), 5 );
-		var width = Graphics.boxWidth;
-		var height = Graphics.boxHeight;
-		if( this.bitmap.width < width ) {
-			this.scale.x = width / this.bitmap.width;
+		/**
+		 * 画面サイズに合わせて戦闘背景を拡大
+		 */
+		scaleSprite() {
+			if( this.bitmap.width <= 0 ) return setTimeout( this.scaleSprite.bind( this ), 5 );
+			const w = Graphics.width;
+			const h = Graphics.height;
+			if( this.bitmap.width < w ) this.scale.x = w / this.bitmap.width;
+			if( this.bitmap.height < h ) this.scale.y = h / this.bitmap.height;
+
+			this.anchor.x = 0.5;
+			this.x = w / 2;
+			if( $gameSystem.isSideView() ) {
+				this.anchor.y = 1;
+				this.y = h;
+			} else {
+				this.anchor.y = 0.5;
+				this.y = h / 2;
+			}
 		}
-		if( this.bitmap.height < height ) {
-			this.scale.y = height / this.bitmap.height;
-		}
-		this.anchor.x = 0.5;
-		this.x = Graphics.boxWidth / 2;
-		if( $gameSystem.isSideView() ) {
-			this.anchor.y = 1;
-			this.y = Graphics.boxHeight;
-		} else {
-			this.anchor.y = 0.5;
-			this.y = Graphics.boxHeight / 2;
-		}
-	};
+	}
+
 
 	/*--- Sprite_Enemy ---*/
+	const DEFAULT_SCREEN_WIDTH = 816;
+	const DEFAULT_SCREEN_HEIGHT = 624;
+	/**
+	 * 敵位置をスクリーンサイズに合わせて調整
+	 */
 	const _Sprite_Enemy_setBattler = Sprite_Enemy.prototype.setBattler;
 	Sprite_Enemy.prototype.setBattler = function( battler ) {
 		_Sprite_Enemy_setBattler.call( this, battler );
+
 		if( !this._enemy._alteredScreenY ) {
-			this._homeY += Math.floor( ( Graphics.boxHeight - 624 ) / 2 );
+			this._homeY += Math.floor( ( Graphics.height - DEFAULT_SCREEN_HEIGHT ) / 2 );
 			this._enemy._screenY = this._homeY;
 			this._enemy._alteredScreenY = true;
 		}
-		if( $gameSystem.isSideView() ) return;
-		if( !this._enemy._alteredScreenX ) {
-			this._homeX += ( Graphics.boxWidth - 816 ) / 2;
-			this._enemy._screenX = this._homeX;
-			this._enemy._alteredScreenX = true;
-		}
+		if( $gameSystem.isSideView() || this._enemy._alteredScreenX ) return;
+
+		this._homeX += ( Graphics.width - DEFAULT_SCREEN_WIDTH ) / 2;
+		this._enemy._screenX = this._homeX;
+		this._enemy._alteredScreenX = true;
 	};
 
+	// 追加キー設定
+	const KEY_BS = 8;
+	const KEY_DEL = 46;
+	const KEY_M = 77;
+	const ACTION_MENU = 'menu';
+	const ACTION_CANCEL = 'cancel';
+	Input.keyMapper[ KEY_M ] = ACTION_MENU;
+	Input.keyMapper[ KEY_BS ] = ACTION_CANCEL;
+	Input.keyMapper[ KEY_DEL ] = ACTION_CANCEL;
 } )();
