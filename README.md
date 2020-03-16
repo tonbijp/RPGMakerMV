@@ -15,3 +15,4 @@
 |[TF_BalloonEx.js](https://raw.githubusercontent.com/tonbijp/RPGMakerMV/master/TF_BalloonEx.js)| フキダシアイコン拡張 | リリース済 | [日本語](https://forum.tkool.jp/index.php?threads/3795/) / [English](https://forums.rpgmakerweb.com/index.php?threads/118212/) | [●](https://plugin.fungamemake.com/archives/23210) |
 |[TF_CharEx.js](https://raw.githubusercontent.com/tonbijp/RPGMakerMV/master/TF_CharEx.js)| キャラ表示拡張 | α版 | |
 |[TF_TextWindowMenu.js](https://raw.githubusercontent.com/tonbijp/RPGMakerMV/master/TF_TextWindowMenu.js)| タイトルに1枚ウィンドウを追加 | α版 |[日本語](https://forum.tkool.jp/index.php?threads/3888/) |
+|[TF_VectorWindow.js](https://raw.githubusercontent.com/tonbijp/RPGMakerMV/master/TF_VectorWindow.js)| ウィンドウをベクター描画 | α版 | |
