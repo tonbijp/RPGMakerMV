@@ -10,13 +10,13 @@
 // http://opensource.org/licenses/mit-license.php
 //========================================
 /*:ja
-* @plugindesc [スクリプト]から使いやすいコマンド集
-* @author とんび@鳶嶋工房
-* 
-* @help
-* イベントコマンドの[スクリプト]から使いやすいようにラッピング。
-* TkoolMV_PluginCommandBook.js 必須。
-*/
+ * @plugindesc [スクリプト]から使いやすいコマンド集
+ * @author とんび@鳶嶋工房
+ * 
+ * @help
+ * イベントコマンドの[スクリプト]から使いやすいようにラッピング。
+ * TkoolMV_PluginCommandBook.js 必須。
+ */
 
 ( function() {
 	'use strict';
@@ -27,18 +27,6 @@
 	const SCREEN_HEIGHT = 720;
 	const INTERFACE_WIDTH = 1080;
 	const INTERFACE_HEIGHT = 720;
-	// ウィンドウ周り
-	const STANDARD_FONT_SIZE = 40;
-	const STANDARD_BACK_OPACITY = 104;
-	const STANDARD_PADDING = 18;
-	const STANDARD_MARGIN = 16;
-	const TEXT_PADDING = 8;
-	const NAME_FONT_SIZE = 24;
-	const FACE_WIDTH = 208;
-	const NUM_VISIBLE_ROWS = 3;
-	const ALIGN_LEFTR = 'left';
-	const ALIGN_CENTER = 'center';
-	const ALIGN_RIGHT = 'right';
 
 	const VOLUME_OFFSET = 5;	//オプション: 音量の最小変更数を5に。
 
@@ -66,20 +54,41 @@
 	// );
 
 
+
+	/**
+	 * 与えられた文字列に変数が指定されていたら、変数の内容に変換して返す。
+	 * @param {String} value 変換元の文字列( v[n]形式を含む )
+	 * @return {String} 変換後の文字列
+	 */
+	function treatValue( value ) {
+		if( value === undefined || value === '' ) return '0';
+		if( value[ 0 ] === 'V' || value[ 0 ] === 'v' ) {
+			return value.replace( /[Vv]\[([0-9]+)\]/, ( match, p1 ) => $gameVariables.value( parseInt( p1, 10 ) ) );
+		}
+		return value;
+	}
+
 	/**
 	 * @method parseIntStrict
 	 * @param {String} value
 	 * @return {Number} 数値に変換した結果
 	 */
 	function parseIntStrict( value ) {
-		if( value === undefined || value === '' ) return 0;
-		if( value[ 0 ] === 'V' || value[ 0 ] === 'v' ) {
-			value = value.replace( /[Vv]\[([0-9]+)\]/, ( match, p1 ) => $gameVariables.value( parseInt( p1, 10 ) ) );
-		}
-		const result = parseInt( value, 10 );
+		const result = parseInt( treatValue( value ), 10 );
 		if( isNaN( result ) ) throw Error( '指定した値[' + value + ']が数値ではありません。' );
 		return result;
 	};
+
+	/**
+	 * @method parseFloatStrict
+	 * @param {String} value
+	 * @return {Number} 数値に変換した結果
+	 */
+	function parseFloatStrict( value ) {
+		const result = parseFloat( treatValue( value ) );
+		if( isNaN( result ) ) throw Error( '指定した値[' + value + ']が数値ではありません。' );
+		return result;
+	}
 
 
 	/**
@@ -223,6 +232,10 @@
 		return this.value( i );
 	};
 
+	/*==== 音設定 ====*/
+	/*--- Window_Options ---*/
+	Window_Options.prototype.volumeOffset = () => VOLUME_OFFSET;
+
 
 	/*==== 画面設定 ====*/
 	/*--- SceneManager ---*/
@@ -247,75 +260,14 @@
 	};
 
 
-	/*--- Window ---*/
-	const _Window_initialize = Window.prototype.initialize;
-	Window.prototype.initialize = function() {
-		_Window_initialize.call( this );
-		this._margin = STANDARD_MARGIN;
-		this._windowBackSprite.alpha = STANDARD_BACK_OPACITY / 255
-	};
-	// _windowBackSprite は alpha を保持するだけで描画はしない
-	Window.prototype._refreshBack = function() { };
-	Window.prototype._refreshFrame = function() {
-		const m = this._margin;
-
-		const bitmap = new Bitmap( this._width, this._height );
-
-		this._windowFrameSprite.bitmap = bitmap;
-		this._windowFrameSprite.setFrame( 0, 0, this._width, this._height + 12 );
-
-		const ctx = bitmap.context;
-		ctx.fillStyle = `rgba(0,0,0,${this._windowBackSprite.alpha})`;
-		ctx.lineWidth = 6;
-		ctx.strokeStyle = '#fff';
-
-		function roundRect( ctx, x, y, w, h, r ) {
-			ctx.moveTo( x + r, y );
-			ctx.arcTo( x + w, y, x + w, y + r, r );// ─╮
-			ctx.arcTo( x + w, y + h, x + w - r, y + h, r );//│ ╯
-			ctx.arcTo( x, y + h, x, y + h - r, r );//╰─
-			ctx.arcTo( x, y, x + r, y, r );// │╭
-			ctx.closePath();
-			ctx.shadowBlur = 8;
-			ctx.shadowColor = 'black';
-			ctx.shadowOffsetX = 0;
-			ctx.shadowOffsetY = 6;
-			ctx.fill();
-			ctx.shadowBlur = 3;
-			ctx.shadowOffsetY = 0;
-			ctx.stroke();
-		}
-		roundRect( ctx, 8, 8, this._width - 16, this._height - 16, m );
-	};
-
-	/*--- Window_Base ---*/
-	Window_Base.prototype.standardFontSize = () => STANDARD_FONT_SIZE;
-	Window_Base.prototype.standardPadding = () => STANDARD_PADDING;
-	Window_Base.prototype.textPadding = () => TEXT_PADDING;
-	Window_Base.prototype.standardBackOpacity = () => STANDARD_BACK_OPACITY;
-
-	Window_Base.prototype.lineHeight = function() {
-		return this.standardFontSize() + this.textPadding() * 2;
-	};
-
-	const _Window_Base_calcTextHeight = Window_Base.prototype.calcTextHeight;
-	Window_Base.prototype.calcTextHeight = function( textState, all ) {
-		const baseLines = _Window_Base_calcTextHeight.apply( this, arguments );
-		const length = textState.text.slice( textState.index ).split( '\n' ).length;
-		const maxLines = all ? length : 1;
-		return baseLines + maxLines * ( this.textPadding() * 2 - 8 );
-	}
-
-	/*--- Window_Options ---*/
-	Window_Options.prototype.volumeOffset = () => VOLUME_OFFSET;
-
-	/*--- Window_Message ---*/
-	Window_Message.prototype.standardFontSize = () => STANDARD_FONT_SIZE;
-	Window_Message.prototype.numVisibleRows = () => NUM_VISIBLE_ROWS;
-
 	/**
 	 * 顔画像に名前を追加。
 	 */
+	const FACE_WIDTH = 208;
+	const ALIGN_LEFTR = 'left';
+	const ALIGN_CENTER = 'center';
+	const ALIGN_RIGHT = 'right';
+	const NAME_FONT_SIZE = 24;
 	const _Window_Message_drawMessageFace = Window_Message.prototype.drawMessageFace;
 	Window_Message.prototype.drawMessageFace = function() {
 		_Window_Message_drawMessageFace.call( this );
@@ -323,18 +275,13 @@
 
 		const getActorName = () => {
 			const faceName = $gameMessage.faceName();
-			// $dataActors[ 0 ] は null なので、1から検索
-			const actorList = $dataActors.slice( 1 );
-			const resultIndex = actorList.findIndex( e => e.faceName === faceName );
-			if( resultIndex === -1 ) {
-				return '';
-			} else {
-				return $dataActors[ resultIndex + 1 ].name;
-			}
+			// $dataActors[ 0 ] は null なのでオブジェクトの有無を確認( e && )している
+			const resultIndex = $dataActors.findIndex( e => e && e.faceName === faceName );
+			return ( resultIndex === -1 ) ? '' : $dataActors[ resultIndex ].name;
 		};
 		const tempFontSize = this.contents.fontSize;
 		this.contents.fontSize = NAME_FONT_SIZE;
-		this.drawText( getActorName(), 0, this.contentsHeight() - 40, 144, ALIGN_CENTER );
+		this.contents.drawText( getActorName(), 0, 146, 144, NAME_FONT_SIZE, ALIGN_CENTER );// ここのNAME_FONT_SIZE は height の指定
 		this.contents.fontSize = tempFontSize;
 	};
 
@@ -342,21 +289,7 @@
 	 * 顔グラの有無に応じて、行頭位置を設定。
 	 */
 	Window_Message.prototype.newLineX = function() {
-		if( $gameMessage.faceName() ) {
-			return FACE_WIDTH;
-		} else {
-			return this.textPadding();
-		}
-	};
-
-	/**
-	 * サーラ先生の顔を変更する特殊処理。
-	 */
-	Game_Message.prototype.faceIndex = function() {
-		if( this.faceName() === 'Shara' && $gameSwitches.getValueByName( 'equipMinoHead' ) ) {
-			return 1;
-		}
-		return this._faceIndex;
+		return $gameMessage.faceName() ? FACE_WIDTH : ( this.standardPadding() - this._margin );
 	};
 
 
@@ -406,9 +339,10 @@
 	 * 表示位置の設定
 	 */
 	Window_TitleCommand.prototype.updatePlacement = function() {
-		this.x = 40;
+		this.x = 46;
 		this.y = 340;
 	};
+
 
 	/*--- Spriteset_Battle ---*/
 	const TYPE_STAGE = 1;
