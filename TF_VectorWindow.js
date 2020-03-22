@@ -1,6 +1,6 @@
 //========================================
 // TF_VectorWindow.js
-// Version :0.3.0.0
+// Version :0.3.1.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -188,9 +188,24 @@
 		_Window_initialize.call( this );
 		this._margin = pluginParams.preset[ TF_windowType ].margin;
 	};
-	// _windowBackSprite は alpha を保持するだけで描画はしない
-	Window.prototype._refreshBack = function() { };
+
+	// _refreshFrameは機能しない。
+	const _Window__refreshFrame = Window.prototype._refreshFrame;
 	Window.prototype._refreshFrame = function() {
+		// SceneCustomMenu.js のスキンの設定があれば、通常の描画に渡す。
+		if( this._data && this._data.WindowSkin ) {
+			_Window__refreshFrame.call( this );
+		}
+	};
+
+	// _colorTone を反映させるため、_refreshBack の方で描画。
+	const _Window__refreshBack = Window.prototype._refreshBack;
+	Window.prototype._refreshBack = function() {
+		// SceneCustomMenu.js のスキンの設定があれば、通常の描画に渡す。
+		if( this._data && this._data.WindowSkin ) {
+			_Window__refreshBack.call( this );
+		}
+
 		const shape = pluginParams.preset[ TF_windowType ].shape;
 		if( shape === 'none' ) return;
 
@@ -203,16 +218,18 @@
 		this._windowFrameSprite.setFrame( 0, 0, this._width, this._height + 12 );
 
 		const ctx = bitmap.context;
-
-
 		switch( shape ) {
 			case 'roundrect': drawRoundrect( ctx, m, this._width, this._height, r ); break;
 			case 'octagon': drawOctagon( ctx, m, this._width, this._height, r ); break;
 			case 'spike': drawSpike( ctx, m, this._width, this._height, r ); break;
 		}
 		dropShadow( ctx );
+
 		ctx.fillStyle = pluginParams.preset[ TF_windowType ].bgColor;
 		ctx.fill();
+		const tone = this._colorTone; // [ r, g, b ];
+		bitmap.adjustTone( tone[ 0 ], tone[ 1 ], tone[ 2 ] );
+
 		drawBorder( ctx );
 
 		function dropShadow( ctx ) {
@@ -244,7 +261,7 @@
 			const iRect = { l: m, r: w - m, u: m, d: h - m };// 内側座標
 			const cRect = { l: m + r, r: w - ( m + r ), u: m + r, d: h - ( m + r ) };// 角を除く内側座標
 
-			ctx.beginPath()
+			ctx.beginPath();
 			ctx.moveTo( cRect.l, iRect.u );
 			ctx.arcTo( iRect.r, iRect.u, iRect.r, cRect.u, r );// ─╮
 			ctx.arcTo( iRect.r, iRect.d, cRect.r, iRect.d, r );//│ ╯
@@ -265,7 +282,7 @@
 			const iRect = { l: m, r: w - m, u: m, d: h - m };// 内側座標
 			const cRect = { l: m + r, r: w - ( m + r ), u: m + r, d: h - ( m + r ) };// 角を除く内側座標
 
-			ctx.beginPath()
+			ctx.beginPath();
 			ctx.moveTo( cRect.l, iRect.u );
 			ctx.lineTo( cRect.r, iRect.u );//─
 			ctx.lineTo( iRect.r, cRect.u );// ╲
@@ -295,7 +312,7 @@
 			const rndDiff = () => ( Math.random() - 0.5 ) * r * 0.4; // 中央値からの差、辺に使う
 			const rndPosi = () => Math.random() * m * 0.6; // 正の値、角に使う
 
-			ctx.beginPath()
+			ctx.beginPath();
 			ctx.moveTo( oRect.l + rndPosi(), oRect.u + rndPosi() );//┌
 			const hNum = Math.floor( w / ( r * 1.2 ) );
 			const hUnit = w / hNum;
@@ -343,7 +360,7 @@
 		const length = textState.text.slice( textState.index ).split( '\n' ).length;
 		const maxLines = all ? length : 1;
 		return baseLines + maxLines * ( this.textPadding() * 2 - 8 );// 8はコアスクリプトが固定で入れている数値
-	}
+	};
 
 
 	/*--- Window_Message ---*/
@@ -361,7 +378,7 @@
 
 	function setWindowType( messageWindow, windowType ) {
 		TF_windowType = windowType;
-		const margin = pluginParams.preset[ windowType ].margin
+		const margin = pluginParams.preset[ windowType ].margin;
 
 		messageWindow._margin = margin;
 		// RPGツクールMVの padding は CSS と違い「box の一番外から contents までの距離」なので変換
