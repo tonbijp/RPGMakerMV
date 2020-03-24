@@ -1,6 +1,6 @@
 //========================================
 // TF_VectorWindow.js
-// Version :0.3.1.0
+// Version :0.4.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -16,7 +16,12 @@
  * @param preset
  * @desc ウィンドウの設定(1が規定)
  * @type struct<WindowParamJa>[]
- * @default ["{\"shape\":\"roundrect\",\"margin\":\"8\",\"borderWidth\":\"6\",\"borderColor\":\"#fff\",\"decorSize\":\"20\",\"padding\":\"14\",\"bgColor\":\"#0006\"}","{\"shape\":\"roundrect\",\"margin\":\"6\",\"borderWidth\":\"2\",\"borderColor\":\"#666\",\"decorSize\":\"100\",\"padding\":\"16\",\"bgColor\":\"#000a\"}","{\"shape\":\"spike\",\"margin\":\"60\",\"borderWidth\":\"6\",\"borderColor\":\"#fff\",\"decorSize\":\"80\",\"padding\":\"14\",\"bgColor\":\"#0006\"}"]
+ * @default ["{\"shape\":\"roundrect\",\"margin\":\"6\",\"borderWidth\":\"6\",\"borderColor\":\"#0ee\",\"decorSize\":\"20\",\"padding\":\"14\",\"bgColor\":\"[\\\"#0008\\\"]\"}","{\"shape\":\"roundrect\",\"margin\":\"6\",\"borderWidth\":\"2\",\"borderColor\":\"#666\",\"decorSize\":\"100\",\"padding\":\"16\",\"bgColor\":\"[\\\"#000a\\\"]\"}","{\"shape\":\"spike\",\"margin\":\"60\",\"borderWidth\":\"6\",\"borderColor\":\"#fff\",\"decorSize\":\"80\",\"padding\":\"14\",\"bgColor\":\"[\\\"#0006\\\"]\"}"]
+ * 
+ * @param dropShadow
+ * @desc ウィンドウの影を落とすか
+ * @type boolean
+ * @default true
  * 
  * @param lineHeight
  * @desc 標準文字サイズを基準とした行の高さ(%)
@@ -25,16 +30,16 @@
  * @default 140
  * 
  * @param systemFontSize
- * @desc フォントサイズ
+ * @desc システムフォントサイズ
  * @type number
  * @min 8
- * @default 40
+ * @default 24
  *
  * @param messageFontSize
- * @desc フォントサイズ
+ * @desc メッセージフォントサイズ
  * @type number
  * @min 8
- * @default 40
+ * @default 30
  * 
  * @param messageLines
  * @desc メッセージに表示する行数
@@ -44,7 +49,7 @@
  * 
  * @help
  * ウィンドウをPNG画像を使わずに描画する。
- * 特にメリットはないけど、将来的に便利なことになるはず。
+ * グラデーション、ドロップシャドウ、の指定が可能。
  */
 /*~struct~WindowParamJa:
  *
@@ -91,22 +96,35 @@
  * @default 18
  * 
  * @param bgColor
- * @desc 背景色(CSS形式)
- * @type string
- * @default #0008
+ * @desc 背景色(CSS形式)複数指定すると縦のグラデーションとして描画
+ * @type string[]
+ * @default ["#0086"]
  */
 
 ( function() {
 	'use strict';
 	const TF_SET_WINDOW = 'TF_SET_WINDOW';
-	const FRAME_ROUNDRECT = 'roundrect';
-	const FRAME_SPIKE = 'spike';
+	const SHAPE_ROUNDRECT = 'roundrect';
+	const SHAPE_SPIKE = 'spike';
+	const SHAPE_OCTAGON = 'octagon';
+	const SHAPE_NONE = 'none';
 	const PARAM_TRUE = 'true';
+	const workBitmap = new Bitmap( 1, 1 );
+	const workCtx = workBitmap.context;
 
     /**
      * パラメータを受け取る
      */
 	const pluginParams = PluginManager.parameters( 'TF_VectorWindow' );
+    /**
+     * 指定したパラメータの真偽値を返す。
+     * @param {String} paramName パラメータ名
+     * @param {Number} defaultParam 規定値
+     * @returns {Boolean}
+     */
+	const getBooleanParam = ( paramName, defaultParam ) => {
+		return pluginParams[ paramName ] ? ( pluginParams[ paramName ].toLowerCase() === PARAM_TRUE ) : defaultParam;
+	};
 
 	// プリセット設定
 	const presetList = JsonEx.parse( pluginParams.preset );
@@ -117,7 +135,7 @@
 		params.borderColor = params.borderColor;
 		params.decorSize = parseFloatStrict( params.decorSize );
 		params.padding = parseFloatStrict( params.padding );
-		params.bgColor = params.bgColor;
+		params.bgColor = JsonEx.parse( params.bgColor );
 		return params;
 	} );
 
@@ -126,6 +144,7 @@
 	const MESSAGE_FONT_SIZE = parseFloatStrict( pluginParams.messageFontSize );
 	const LINE_HEIGHT = parseFloatStrict( pluginParams.lineHeight ) / 100;
 	const MESSAGE_LINES = parseIntStrict( pluginParams.messageLines );
+	const DROP_SHADOW = getBooleanParam( 'dropShadow', true );
 	let TF_windowType = 0;
 
 
@@ -207,7 +226,7 @@
 		}
 
 		const shape = pluginParams.preset[ TF_windowType ].shape;
-		if( shape === 'none' ) return;
+		if( shape === SHAPE_NONE ) return;
 
 		const m = this.margin;
 		const r = pluginParams.preset[ TF_windowType ].decorSize;
@@ -219,17 +238,38 @@
 
 		const ctx = bitmap.context;
 		switch( shape ) {
-			case 'roundrect': drawRoundrect( ctx, m, this._width, this._height, r ); break;
-			case 'octagon': drawOctagon( ctx, m, this._width, this._height, r ); break;
-			case 'spike': drawSpike( ctx, m, this._width, this._height, r ); break;
+			case SHAPE_ROUNDRECT: drawRoundrect( ctx, m, this._width, this._height, r ); break;
+			case SHAPE_OCTAGON: drawOctagon( ctx, m, this._width, this._height, r ); break;
+			case SHAPE_SPIKE: drawSpike( ctx, m, this._width, this._height, r ); break;
 		}
-		dropShadow( ctx );
 
-		ctx.fillStyle = pluginParams.preset[ TF_windowType ].bgColor;
+		let bgColor = pluginParams.preset[ TF_windowType ].bgColor;
+		const tintColor = ( bgColor ) => {
+			const colorArray = cssColor2Array( bgColor );
+			colorArray[ 0 ] += this._colorTone[ 0 ];
+			colorArray[ 1 ] += this._colorTone[ 1 ];
+			colorArray[ 2 ] += this._colorTone[ 2 ];
+
+			return array2CssColor( colorArray );
+		}
+
+
+		if( bgColor.length === 1 ) {
+			ctx.fillStyle = tintColor( bgColor[ 0 ] );
+		} else {
+			const grad = ctx.createLinearGradient( 0, 0, 0, this._height );
+			const l = bgColor.length;
+			const interval = 1.0 / ( l - 1 )
+			bgColor.forEach( ( e, i ) => {
+				grad.addColorStop( i * interval, tintColor( e ) );
+			} );
+			ctx.fillStyle = grad
+		}
+
+		if( DROP_SHADOW ) dropShadow( ctx );
 		ctx.fill();
-		const tone = this._colorTone; // [ r, g, b ];
-		bitmap.adjustTone( tone[ 0 ], tone[ 1 ], tone[ 2 ] );
 
+		if( !DROP_SHADOW ) dropShadow( ctx );
 		drawBorder( ctx );
 
 		function dropShadow( ctx ) {
@@ -385,5 +425,25 @@
 		messageWindow._padding = pluginParams.preset[ windowType ].padding + margin;
 		messageWindow._height = messageWindow.windowHeight();
 		messageWindow._refreshAllParts();
+	}
+
+	/**
+	 * 配列からCSS color文字列を返す。
+	 * @param {Array} colorList [ r, g, b, a ] の配列
+	 * @returns {String} 'rgb(r,g,b)' か 'rgba(r,g,b,a)'の文字列
+	 */
+	function array2CssColor( colorList ) {
+		if( colorList.length === 3 ) {
+			return `rgb(${colorList[ 0 ]},${colorList[ 1 ]},${colorList[ 2 ]})`;
+		} else {
+			return `rgba(${colorList[ 0 ]},${colorList[ 1 ]},${colorList[ 2 ]},${colorList[ 3 ] / 255})`;
+		}
+	}
+
+	function cssColor2Array( CssColor ) {
+		workCtx.clearRect( 0, 0, 1, 1 );
+		workCtx.fillStyle = CssColor;
+		workCtx.fillRect( 0, 0, 1, 1 );
+		return workCtx.getImageData( 0, 0, 1, 1 ).data;
 	}
 } )();
