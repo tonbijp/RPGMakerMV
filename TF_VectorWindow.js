@@ -223,6 +223,7 @@
 		// SceneCustomMenu.js のスキンの設定があれば、通常の描画に渡す。
 		if( this._data && this._data.WindowSkin ) {
 			_Window__refreshBack.call( this );
+			return;
 		}
 
 		const shape = pluginParams.preset[ TF_windowType ].shape;
@@ -231,16 +232,16 @@
 		const m = this.margin;
 		const r = pluginParams.preset[ TF_windowType ].decorSize;
 
-		const bitmap = new Bitmap( this._width, this._height );
+		const bitmap = new Bitmap( this._width, this._height + 4 );// +4 はdrop shadow用
 
 		this._windowFrameSprite.bitmap = bitmap;
 		this._windowFrameSprite.setFrame( 0, 0, this._width, this._height + 12 );
 
-		const ctx = bitmap.context;
+		let path2d;
 		switch( shape ) {
-			case SHAPE_ROUNDRECT: drawRoundrect( ctx, m, this._width, this._height, r ); break;
-			case SHAPE_OCTAGON: drawOctagon( ctx, m, this._width, this._height, r ); break;
-			case SHAPE_SPIKE: drawSpike( ctx, m, this._width, this._height, r ); break;
+			case SHAPE_ROUNDRECT: path2d = drawRoundrect( m, this._width, this._height, r ); break;
+			case SHAPE_OCTAGON: path2d = drawOctagon( m, this._width, this._height, r ); break;
+			case SHAPE_SPIKE: path2d = drawSpike( m, this._width, this._height, r ); break;
 		}
 
 		let bgColor = pluginParams.preset[ TF_windowType ].bgColor;
@@ -253,7 +254,7 @@
 			return array2CssColor( colorArray );
 		}
 
-
+		const ctx = bitmap.context;
 		if( bgColor.length === 1 ) {
 			ctx.fillStyle = tintColor( bgColor[ 0 ] );
 		} else {
@@ -266,127 +267,137 @@
 			ctx.fillStyle = grad
 		}
 
-		if( DROP_SHADOW ) dropShadow( ctx );
-		ctx.fill();
+		if( DROP_SHADOW ) setShadowParam( ctx );
+		ctx.fill( path2d );// 'nonzero'  'evenodd'
 
-		if( !DROP_SHADOW ) dropShadow( ctx );
-		drawBorder( ctx );
-
-		function dropShadow( ctx ) {
-			ctx.shadowBlur = 8;
-			ctx.shadowColor = 'black';
-			ctx.shadowOffsetX = 0;
-			ctx.shadowOffsetY = 6;
-		}
-
-		function drawBorder( ctx ) {
-			if( !pluginParams.preset[ TF_windowType ].borderWidth ) return;
-
-			ctx.lineWidth = pluginParams.preset[ TF_windowType ].borderWidth;
-			ctx.strokeStyle = pluginParams.preset[ TF_windowType ].borderColor;
-			ctx.shadowBlur = 3;
-			ctx.shadowOffsetY = 0;
-			ctx.stroke();
-		}
-
-		/**
-		 * 角丸の矩形を描く
-		 * @param {*} ctx CanvasRenderingContext2D
-		 * @param {*} m 枠外のマージン
-		 * @param {*} w ウィンドウ描画領域の幅
-		 * @param {*} h ウィンドウ描画領域の高さ
-		 * @param {*} r 角丸の半径
-		 */
-		function drawRoundrect( ctx, m, w, h, r ) {
-			const iRect = { l: m, r: w - m, u: m, d: h - m };// 内側座標
-			const cRect = { l: m + r, r: w - ( m + r ), u: m + r, d: h - ( m + r ) };// 角を除く内側座標
-
-			ctx.beginPath();
-			ctx.moveTo( cRect.l, iRect.u );
-			ctx.arcTo( iRect.r, iRect.u, iRect.r, cRect.u, r );// ─╮
-			ctx.arcTo( iRect.r, iRect.d, cRect.r, iRect.d, r );//│ ╯
-			ctx.arcTo( iRect.l, iRect.d, iRect.l, cRect.d, r );//╰─
-			ctx.arcTo( iRect.l, iRect.u, cRect.l, iRect.u, r );// │╭
-			ctx.closePath();
-		}
-
-		/**
-		 * 8角形を描く
-		 * @param {*} ctx CanvasRenderingContext2D
-		 * @param {*} m 枠外のマージン
-		 * @param {*} w ウィンドウ描画領域の幅
-		 * @param {*} h ウィンドウ描画領域の高さ
-		 * @param {*} r √r*r = 角の斜め線の長さ
-		 */
-		function drawOctagon( ctx, m, w, h, r ) {
-			const iRect = { l: m, r: w - m, u: m, d: h - m };// 内側座標
-			const cRect = { l: m + r, r: w - ( m + r ), u: m + r, d: h - ( m + r ) };// 角を除く内側座標
-
-			ctx.beginPath();
-			ctx.moveTo( cRect.l, iRect.u );
-			ctx.lineTo( cRect.r, iRect.u );//─
-			ctx.lineTo( iRect.r, cRect.u );// ╲
-			ctx.lineTo( iRect.r, cRect.d );// │ 
-			ctx.lineTo( cRect.r, iRect.d );// ╱
-			ctx.lineTo( cRect.l, iRect.d );// ─
-			ctx.lineTo( iRect.l, cRect.d );// ╲
-			ctx.lineTo( iRect.l, cRect.u );// │
-			ctx.closePath();
-		}
-
-		/**
-		 * トゲ型装飾枠を描く
-		 * @param {*} ctx CanvasRenderingContext2D
-		 * @param {*} m トゲの長さ
-		 * @param {*} w ウィンドウ描画領域の幅
-		 * @param {*} h ウィンドウ描画領域の高さ
-		 * @param {*} r トゲの(おおよその)横幅
-		 */
-		function drawSpike( ctx, m, w, h, r ) {
-
-			const bw = pluginParams.preset[ TF_windowType ].borderWidth;
-
-			const iRect = { l: m, r: w - m, u: m, d: h - m };// 内側座標
-			const oRect = { l: bw, r: w - bw, u: bw, d: h - bw };// 内側座標
-
-			const rndDiff = () => ( Math.random() - 0.5 ) * r * 0.4; // 中央値からの差、辺に使う
-			const rndPosi = () => Math.random() * m * 0.6; // 正の値、角に使う
-
-			ctx.beginPath();
-			ctx.moveTo( oRect.l + rndPosi(), oRect.u + rndPosi() );//┌
-			const hNum = Math.floor( w / ( r * 1.2 ) );
-			const hUnit = w / hNum;
-
-			for( let i = 1; i < hNum - 2; i++ ) {
-				ctx.lineTo( iRect.l + i * hUnit + rndDiff(), iRect.u );
-				ctx.lineTo( iRect.l + ( i + 0.5 ) * hUnit + rndDiff(), oRect.u );// 人
-			}
-			ctx.lineTo( iRect.r - hUnit / 2 + rndDiff(), iRect.u );
-
-			ctx.lineTo( oRect.r - rndPosi(), oRect.u + rndPosi() );//┐
-
-			ctx.lineTo( iRect.r, ( h + rndDiff() ) / 2 - r / 3 );
-			ctx.lineTo( iRect.r + m / 2, ( h + rndDiff() ) / 2 );// >
-			ctx.lineTo( iRect.r, ( h + rndDiff() ) / 2 + r / 3 );
-
-			ctx.lineTo( oRect.r - rndPosi(), oRect.d - rndPosi() );// ┘
-
-			for( let i = 1; i < hNum - 2; i++ ) {
-				ctx.lineTo( iRect.r - i * hUnit + rndDiff(), iRect.d );
-				ctx.lineTo( iRect.r - ( i + 0.5 ) * hUnit + rndDiff(), oRect.d );// Ｙ
-			}
-			ctx.lineTo( iRect.l + hUnit / 2 + rndDiff(), iRect.d );
-
-			ctx.lineTo( oRect.l + rndPosi(), oRect.d - rndPosi() );//└
-
-			// <
-			ctx.lineTo( iRect.l, ( h + rndDiff() ) / 2 + r / 3 );
-			ctx.lineTo( iRect.l - m / 2, ( h + rndDiff() ) / 2 );
-			ctx.lineTo( iRect.l, ( h + rndDiff() ) / 2 - r / 3 );
-
-			ctx.closePath();
-		}
+		if( !DROP_SHADOW ) setShadowParam( ctx );
+		setBorderParam( ctx );
+		ctx.stroke( path2d );
 	};
+
+	/**
+	 * ドロップシャドウの設定
+	 * @param {*} ctx 
+	 */
+	function setShadowParam( ctx ) {
+		ctx.shadowBlur = 4;
+		ctx.shadowColor = 'black';
+		ctx.shadowOffsetX = 0;
+		ctx.shadowOffsetY = 6;
+	}
+
+	/**
+	 * 枠の設定をする
+	 * @param {*} ctx 
+	 */
+	function setBorderParam( ctx ) {
+		if( !pluginParams.preset[ TF_windowType ].borderWidth ) return;
+
+		ctx.lineWidth = pluginParams.preset[ TF_windowType ].borderWidth;
+		ctx.strokeStyle = pluginParams.preset[ TF_windowType ].borderColor;
+		ctx.shadowBlur = 3;
+		ctx.shadowOffsetY = 0;
+	}
+	/**
+	 * 角丸の矩形を描く
+	 * @param {*} ctx CanvasRenderingContext2D
+	 * @param {*} m 枠外のマージン
+	 * @param {*} w ウィンドウ描画領域の幅
+	 * @param {*} h ウィンドウ描画領域の高さ
+	 * @param {*} r 角丸の半径
+	 */
+	function drawRoundrect( m, w, h, r ) {
+		const iRect = { l: m, r: w - m, u: m, d: h - m };// 内側座標
+		const cRect = { l: m + r, r: w - ( m + r ), u: m + r, d: h - ( m + r ) };// 角を除く内側座標
+
+		const path = new Path2D();
+		path.moveTo( cRect.l, iRect.u );
+		path.arcTo( iRect.r, iRect.u, iRect.r, cRect.u, r );// ─╮
+		path.arcTo( iRect.r, iRect.d, cRect.r, iRect.d, r );//│ ╯
+		path.arcTo( iRect.l, iRect.d, iRect.l, cRect.d, r );//╰─
+		path.arcTo( iRect.l, iRect.u, cRect.l, iRect.u, r );// │╭
+		path.closePath();
+		return path;
+	}
+
+	/**
+	 * 8角形を描く
+	 * @param {*} ctx CanvasRenderingContext2D
+	 * @param {*} m 枠外のマージン
+	 * @param {*} w ウィンドウ描画領域の幅
+	 * @param {*} h ウィンドウ描画領域の高さ
+	 * @param {*} r √r*r = 角の斜め線の長さ
+	 */
+	function drawOctagon( m, w, h, r ) {
+		const iRect = { l: m, r: w - m, u: m, d: h - m };// 内側座標
+		const cRect = { l: m + r, r: w - ( m + r ), u: m + r, d: h - ( m + r ) };// 角を除く内側座標
+
+		const path = new Path2D();
+		path.moveTo( cRect.l, iRect.u );
+		path.lineTo( cRect.r, iRect.u );//─
+		path.lineTo( iRect.r, cRect.u );// ╲
+		path.lineTo( iRect.r, cRect.d );// │ 
+		path.lineTo( cRect.r, iRect.d );// ╱
+		path.lineTo( cRect.l, iRect.d );// ─
+		path.lineTo( iRect.l, cRect.d );// ╲
+		path.lineTo( iRect.l, cRect.u );// │
+		path.closePath();
+		return path;
+	}
+
+	/**
+	 * トゲ型装飾枠を描く
+	 * @param {*} ctx CanvasRenderingContext2D
+	 * @param {*} m トゲの長さ
+	 * @param {*} w ウィンドウ描画領域の幅
+	 * @param {*} h ウィンドウ描画領域の高さ
+	 * @param {*} r トゲの(おおよその)横幅
+	 */
+	function drawSpike( m, w, h, r ) {
+		const bw = pluginParams.preset[ TF_windowType ].borderWidth;
+
+		const iRect = { l: m, r: w - m, u: m, d: h - m };// 内側座標
+		const oRect = { l: bw, r: w - bw, u: bw, d: h - bw };// 内側座標
+
+		const rndDiff = () => ( Math.random() - 0.5 ) * r * 0.4; // 中央値からの差、辺に使う
+		const rndPosi = () => Math.random() * m * 0.6; // 正の値、角に使う
+
+		const path = new Path2D();
+		path.beginPath();
+		path.moveTo( oRect.l + rndPosi(), oRect.u + rndPosi() );//┌
+		const hNum = Math.floor( w / ( r * 1.2 ) );
+		const hUnit = w / hNum;
+
+		for( let i = 1; i < hNum - 2; i++ ) {
+			path.lineTo( iRect.l + i * hUnit + rndDiff(), iRect.u );
+			path.lineTo( iRect.l + ( i + 0.5 ) * hUnit + rndDiff(), oRect.u );// 人
+		}
+		path.lineTo( iRect.r - hUnit / 2 + rndDiff(), iRect.u );
+
+		path.lineTo( oRect.r - rndPosi(), oRect.u + rndPosi() );//┐
+
+		path.lineTo( iRect.r, ( h + rndDiff() ) / 2 - r / 3 );
+		path.lineTo( iRect.r + m / 2, ( h + rndDiff() ) / 2 );// >
+		path.lineTo( iRect.r, ( h + rndDiff() ) / 2 + r / 3 );
+
+		path.lineTo( oRect.r - rndPosi(), oRect.d - rndPosi() );// ┘
+
+		for( let i = 1; i < hNum - 2; i++ ) {
+			path.lineTo( iRect.r - i * hUnit + rndDiff(), iRect.d );
+			path.lineTo( iRect.r - ( i + 0.5 ) * hUnit + rndDiff(), oRect.d );// Ｙ
+		}
+		path.lineTo( iRect.l + hUnit / 2 + rndDiff(), iRect.d );
+
+		path.lineTo( oRect.l + rndPosi(), oRect.d - rndPosi() );//└
+
+		// <
+		path.lineTo( iRect.l, ( h + rndDiff() ) / 2 + r / 3 );
+		path.lineTo( iRect.l - m / 2, ( h + rndDiff() ) / 2 );
+		path.lineTo( iRect.l, ( h + rndDiff() ) / 2 - r / 3 );
+
+		path.closePath();
+		return path;
+	}
 
 	/*--- Window_Base ---*/
 	Window_Base.prototype.standardFontSize = () => SYSTEM_FONT_SIZE;
