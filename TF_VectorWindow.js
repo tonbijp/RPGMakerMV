@@ -1,6 +1,6 @@
 //========================================
 // TF_VectorWindow.js
-// Version :0.4.0.0
+// Version :0.4.0.1
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -231,7 +231,6 @@
 
 		const m = this.margin;
 		const r = pluginParams.preset[ TF_windowType ].decorSize;
-
 		const bitmap = new Bitmap( this._width, this._height + 4 );// +4 はdrop shadow用
 
 		this._windowFrameSprite.bitmap = bitmap;
@@ -243,28 +242,83 @@
 			case SHAPE_OCTAGON: path2d = drawOctagon( m, this._width, this._height, r ); break;
 			case SHAPE_SPIKE: path2d = drawSpike( m, this._width, this._height, r ); break;
 		}
+		drawWindow.call( this, bitmap.context, path2d );
+	};
 
-		let bgColor = pluginParams.preset[ TF_windowType ].bgColor;
-		const tintColor = ( bgColor ) => {
-			const colorArray = cssColor2Array( bgColor );
-			colorArray[ 0 ] += this._colorTone[ 0 ];
-			colorArray[ 1 ] += this._colorTone[ 1 ];
-			colorArray[ 2 ] += this._colorTone[ 2 ];
 
-			return array2CssColor( colorArray );
+	/*--- Window_Base ---*/
+	Window_Base.prototype.standardFontSize = () => SYSTEM_FONT_SIZE;
+	Window_Base.prototype.standardPadding = () => pluginParams.preset[ TF_windowType ].padding + pluginParams.preset[ TF_windowType ].margin;
+	Window_Base.prototype.textPadding = () => ( SYSTEM_FONT_SIZE * LINE_HEIGHT - SYSTEM_FONT_SIZE ) / 2;
+	Window_Base.prototype.lineHeight = () => Math.ceil( SYSTEM_FONT_SIZE * LINE_HEIGHT );
+
+	const _Window_Base_calcTextHeight = Window_Base.prototype.calcTextHeight;
+	Window_Base.prototype.calcTextHeight = function( textState, all ) {
+		const baseLines = _Window_Base_calcTextHeight.apply( this, arguments );
+		const length = textState.text.slice( textState.index ).split( '\n' ).length;
+		const maxLines = all ? length : 1;
+		return baseLines + maxLines * ( this.textPadding() * 2 - 8 );// 8はコアスクリプトが固定で入れている数値
+	};
+
+	/*--- Window_Message ---*/
+	Window_Message.prototype.standardFontSize = () => MESSAGE_FONT_SIZE;
+	Window_Message.prototype.numVisibleRows = () => MESSAGE_LINES;
+	Window_Message.prototype.textPadding = () => ( MESSAGE_FONT_SIZE * LINE_HEIGHT - MESSAGE_FONT_SIZE ) / 2;
+	Window_Message.prototype.lineHeight = () => MESSAGE_FONT_SIZE * LINE_HEIGHT;
+	Window_Message.prototype.updateClose = function() {
+		const preClosing = this._closing;
+		Window_Base.prototype.updateClose.call( this );
+		if( preClosing !== this._closing && TF_windowType ) {
+			setWindowType( this, 0 );
 		}
+	};
 
-		const ctx = bitmap.context;
+	function setWindowType( messageWindow, windowType ) {
+		TF_windowType = windowType;
+		const margin = pluginParams.preset[ windowType ].margin;
+
+		messageWindow._margin = margin;
+		// RPGツクールMVの padding は CSS と違い「box の一番外から contents までの距離」なので変換
+		messageWindow._padding = pluginParams.preset[ windowType ].padding + margin;
+		messageWindow._height = messageWindow.windowHeight();
+		messageWindow._refreshAllParts();
+	}
+
+
+	/*--- 関数 ---*/
+	/**
+	 * 配列からCSS color文字列を返す。
+	 * @param {Array} colorList [ r, g, b, a ] の配列
+	 * @returns {String} 'rgb(r,g,b)' か 'rgba(r,g,b,a)'の文字列
+	 */
+	function array2CssColor( colorList ) {
+		if( colorList.length === 3 ) {
+			return `rgb(${colorList[ 0 ]},${colorList[ 1 ]},${colorList[ 2 ]})`;
+		} else {
+			return `rgba(${colorList[ 0 ]},${colorList[ 1 ]},${colorList[ 2 ]},${colorList[ 3 ] / 255})`;
+		}
+	}
+
+	function cssColor2Array( CssColor ) {
+		workCtx.clearRect( 0, 0, 1, 1 );
+		workCtx.fillStyle = CssColor;
+		workCtx.fillRect( 0, 0, 1, 1 );
+		return workCtx.getImageData( 0, 0, 1, 1 ).data;
+	}
+
+	function drawWindow( ctx, path2d ) {
+		let bgColor = pluginParams.preset[ TF_windowType ].bgColor;
+
 		if( bgColor.length === 1 ) {
-			ctx.fillStyle = tintColor( bgColor[ 0 ] );
+			ctx.fillStyle = tintColor( bgColor[ 0 ], this._colorTone );
 		} else {
 			const grad = ctx.createLinearGradient( 0, 0, 0, this._height );
 			const l = bgColor.length;
 			const interval = 1.0 / ( l - 1 )
 			bgColor.forEach( ( e, i ) => {
-				grad.addColorStop( i * interval, tintColor( e ) );
+				grad.addColorStop( i * interval, tintColor( e, this._colorTone ) );
 			} );
-			ctx.fillStyle = grad
+			ctx.fillStyle = grad;
 		}
 
 		if( DROP_SHADOW ) setShadowParam( ctx );
@@ -273,8 +327,21 @@
 		if( !DROP_SHADOW ) setShadowParam( ctx );
 		setBorderParam( ctx );
 		ctx.stroke( path2d );
-	};
+	}
 
+	/**
+	 * 
+	 * @param {*} bgColor 
+	 * @param {*} colorTone 
+	 */
+	function tintColor( bgColor, colorTone ) {
+		const colorArray = cssColor2Array( bgColor );
+		colorArray[ 0 ] += colorTone[ 0 ];
+		colorArray[ 1 ] += colorTone[ 1 ];
+		colorArray[ 2 ] += colorTone[ 2 ];
+
+		return array2CssColor( colorArray );
+	}
 	/**
 	 * ドロップシャドウの設定
 	 * @param {*} ctx 
@@ -298,6 +365,33 @@
 		ctx.shadowBlur = 3;
 		ctx.shadowOffsetY = 0;
 	}
+
+	/**
+	 * 角丸の矩形トゲ付きを描く
+	 * @param {*} ctx CanvasRenderingContext2D
+	 * @param {*} m 枠外のマージン
+	 * @param {*} w ウィンドウ描画領域の幅
+	 * @param {*} h ウィンドウ描画領域の高さ
+	 * @param {*} r 角丸の半径
+	 */
+	function drawBalloon( m, w, h, r ) {
+		const dy = 40;
+		const iRect = { l: m, r: w - m, u: m + dy, d: h - m };// 内側座標
+		const cRect = { l: m + r, r: w - ( m + r ), u: m + r + dy, d: h - ( m + r ) };// 角を除く内側座標
+
+		const path = new Path2D();
+		path.moveTo( cRect.l, iRect.u );
+		path.lineTo( cRect.r - 270, iRect.u );
+		path.lineTo( cRect.r - 230, iRect.u - 30 );
+		path.lineTo( cRect.r - 250, iRect.u );
+		path.arcTo( iRect.r, iRect.u, iRect.r, cRect.u, r );// ─╮
+		path.arcTo( iRect.r, iRect.d, cRect.r, iRect.d, r );//│ ╯
+		path.arcTo( iRect.l, iRect.d, iRect.l, cRect.d, r );//╰─
+		path.arcTo( iRect.l, iRect.u, cRect.l, iRect.u, r );// │╭
+		path.closePath();
+		return path;
+	}
+
 	/**
 	 * 角丸の矩形を描く
 	 * @param {*} ctx CanvasRenderingContext2D
@@ -397,64 +491,5 @@
 
 		path.closePath();
 		return path;
-	}
-
-	/*--- Window_Base ---*/
-	Window_Base.prototype.standardFontSize = () => SYSTEM_FONT_SIZE;
-	Window_Base.prototype.standardPadding = () => pluginParams.preset[ TF_windowType ].padding + pluginParams.preset[ TF_windowType ].margin;
-	Window_Base.prototype.textPadding = () => ( SYSTEM_FONT_SIZE * LINE_HEIGHT - SYSTEM_FONT_SIZE ) / 2;
-	Window_Base.prototype.lineHeight = () => Math.ceil( SYSTEM_FONT_SIZE * LINE_HEIGHT );
-
-	const _Window_Base_calcTextHeight = Window_Base.prototype.calcTextHeight;
-	Window_Base.prototype.calcTextHeight = function( textState, all ) {
-		const baseLines = _Window_Base_calcTextHeight.apply( this, arguments );
-		const length = textState.text.slice( textState.index ).split( '\n' ).length;
-		const maxLines = all ? length : 1;
-		return baseLines + maxLines * ( this.textPadding() * 2 - 8 );// 8はコアスクリプトが固定で入れている数値
-	};
-
-
-	/*--- Window_Message ---*/
-	Window_Message.prototype.standardFontSize = () => MESSAGE_FONT_SIZE;
-	Window_Message.prototype.numVisibleRows = () => MESSAGE_LINES;
-	Window_Message.prototype.textPadding = () => ( MESSAGE_FONT_SIZE * LINE_HEIGHT - MESSAGE_FONT_SIZE ) / 2;
-	Window_Message.prototype.lineHeight = () => MESSAGE_FONT_SIZE * LINE_HEIGHT;
-	Window_Message.prototype.updateClose = function() {
-		const preClosing = this._closing;
-		Window_Base.prototype.updateClose.call( this );
-		if( preClosing !== this._closing && TF_windowType ) {
-			setWindowType( this, 0 );
-		}
-	};
-
-	function setWindowType( messageWindow, windowType ) {
-		TF_windowType = windowType;
-		const margin = pluginParams.preset[ windowType ].margin;
-
-		messageWindow._margin = margin;
-		// RPGツクールMVの padding は CSS と違い「box の一番外から contents までの距離」なので変換
-		messageWindow._padding = pluginParams.preset[ windowType ].padding + margin;
-		messageWindow._height = messageWindow.windowHeight();
-		messageWindow._refreshAllParts();
-	}
-
-	/**
-	 * 配列からCSS color文字列を返す。
-	 * @param {Array} colorList [ r, g, b, a ] の配列
-	 * @returns {String} 'rgb(r,g,b)' か 'rgba(r,g,b,a)'の文字列
-	 */
-	function array2CssColor( colorList ) {
-		if( colorList.length === 3 ) {
-			return `rgb(${colorList[ 0 ]},${colorList[ 1 ]},${colorList[ 2 ]})`;
-		} else {
-			return `rgba(${colorList[ 0 ]},${colorList[ 1 ]},${colorList[ 2 ]},${colorList[ 3 ] / 255})`;
-		}
-	}
-
-	function cssColor2Array( CssColor ) {
-		workCtx.clearRect( 0, 0, 1, 1 );
-		workCtx.fillStyle = CssColor;
-		workCtx.fillRect( 0, 0, 1, 1 );
-		return workCtx.getImageData( 0, 0, 1, 1 ).data;
 	}
 } )();
