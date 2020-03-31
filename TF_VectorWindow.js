@@ -1,6 +1,6 @@
 //========================================
 // TF_VectorWindow.js
-// Version :0.4.0.1
+// Version :0.5.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -14,7 +14,7 @@
  * @author とんび@鳶嶋工房
  *
  * @param preset
- * @desc ウィンドウの設定(1が規定)
+ * @desc ウィンドウ設定のプリセット(1が規定)
  * @type struct<WindowParamJa>[]
  * @default ["{\"shape\":\"roundrect\",\"margin\":\"6\",\"borderWidth\":\"6\",\"borderColor\":\"#0ee\",\"decorSize\":\"20\",\"padding\":\"14\",\"bgColor\":\"[\\\"#0008\\\"]\"}","{\"shape\":\"roundrect\",\"margin\":\"6\",\"borderWidth\":\"2\",\"borderColor\":\"#666\",\"decorSize\":\"100\",\"padding\":\"16\",\"bgColor\":\"[\\\"#000a\\\"]\"}","{\"shape\":\"spike\",\"margin\":\"60\",\"borderWidth\":\"6\",\"borderColor\":\"#fff\",\"decorSize\":\"80\",\"padding\":\"14\",\"bgColor\":\"[\\\"#0006\\\"]\"}"]
  * 
@@ -49,7 +49,12 @@
  * 
  * @help
  * ウィンドウをPNG画像を使わずに描画する。
- * グラデーション、ドロップシャドウ、の指定が可能。
+ * グラデーション、ドロップシャドウ、フキダシの指定が可能。
+ * 
+ * TF_SET_WINDOW [プリセット番号]
+ * 
+ * [プリセット番号] : preset プラグインパラメータで設定した番号
+ * 
  */
 /*~struct~WindowParamJa:
  *
@@ -58,8 +63,10 @@
  * @type select
  * @option 角丸(decorSize:0 で長方形)
  * @value roundrect
- * @option トゲトゲ
+ * @option 破裂型(叫び)
  * @value spike
+ * @option フキダシ(シッポつき角丸)
+ * @value balloon
  * @option 8角形
  * @value octagon
  * @option なし
@@ -107,10 +114,20 @@
 	const SHAPE_ROUNDRECT = 'roundrect';
 	const SHAPE_SPIKE = 'spike';
 	const SHAPE_OCTAGON = 'octagon';
+	const SHAPE_BALLOON = 'balloon';
 	const SHAPE_NONE = 'none';
 	const PARAM_TRUE = 'true';
 	const workBitmap = new Bitmap( 1, 1 );
 	const workCtx = workBitmap.context;
+
+	// $gameMessage.positionType()
+	const POSITION_UP = 0;
+	const POSITION_MIDDLE = 1;
+	const POSITION_DOWN = 2;
+
+	const POSITION_LEFT = 'left';
+	const POSITION_CENTER = 'center';
+	const POSITION_RIGHT = 'right';
 
     /**
      * パラメータを受け取る
@@ -145,7 +162,6 @@
 	const LINE_HEIGHT = parseFloatStrict( pluginParams.lineHeight ) / 100;
 	const MESSAGE_LINES = parseIntStrict( pluginParams.messageLines );
 	const DROP_SHADOW = getBooleanParam( 'dropShadow', true );
-	let TF_windowType = 0;
 
 
 	/**
@@ -195,17 +211,25 @@
 		if( commandStr === TF_SET_WINDOW ) {
 			const messageWindow = SceneManager._scene._messageWindow;
 			if( messageWindow ) {
-				setWindowType( messageWindow, parseIntStrict( args[ 0 ] ) );
+				const newWindowType = parseIntStrict( args[ 0 ] ) - 1;
+				if( newWindowType !== messageWindow.TF_windowType ) {
+					messageWindow.TF_refleshWindow = true;
+					messageWindow.TF_windowType = newWindowType;
+				}
 			}
 		}
 	};
 
-
 	/*--- Window ---*/
 	const _Window_initialize = Window.prototype.initialize;
 	Window.prototype.initialize = function() {
+		this.TF_refleshWindow = true;
+		this.TF_windowType = 0;
+		this.TF_shape = pluginParams.preset[ this.TF_windowType ].shape;
+
 		_Window_initialize.call( this );
-		this._margin = pluginParams.preset[ TF_windowType ].margin;
+
+		this._margin = pluginParams.preset[ this.TF_windowType ].margin;
 	};
 
 	// _refreshFrameは機能しない。
@@ -225,22 +249,20 @@
 			_Window__refreshBack.call( this );
 			return;
 		}
-
-		const shape = pluginParams.preset[ TF_windowType ].shape;
-		if( shape === SHAPE_NONE ) return;
+		if( this.TF_shape === SHAPE_NONE ) return;
 
 		const m = this.margin;
-		const r = pluginParams.preset[ TF_windowType ].decorSize;
+		const r = pluginParams.preset[ this.TF_windowType ].decorSize;
 		const bitmap = new Bitmap( this._width, this._height + 4 );// +4 はdrop shadow用
 
 		this._windowFrameSprite.bitmap = bitmap;
 		this._windowFrameSprite.setFrame( 0, 0, this._width, this._height + 12 );
 
 		let path2d;
-		switch( shape ) {
+		switch( this.TF_shape ) {
 			case SHAPE_ROUNDRECT: path2d = drawRoundrect( m, this._width, this._height, r ); break;
 			case SHAPE_OCTAGON: path2d = drawOctagon( m, this._width, this._height, r ); break;
-			case SHAPE_SPIKE: path2d = drawSpike( m, this._width, this._height, r ); break;
+			case SHAPE_SPIKE: path2d = drawSpike( m, this._width, this._height, r, pluginParams.preset[ this.TF_windowType ].borderWidth ); break;
 		}
 		drawWindow.call( this, bitmap.context, path2d );
 	};
@@ -248,7 +270,13 @@
 
 	/*--- Window_Base ---*/
 	Window_Base.prototype.standardFontSize = () => SYSTEM_FONT_SIZE;
-	Window_Base.prototype.standardPadding = () => pluginParams.preset[ TF_windowType ].padding + pluginParams.preset[ TF_windowType ].margin;
+	Window_Base.prototype.standardPadding = function() {
+		// Window_Command の initialize が Window_Base の initialize より先に standardPadding を呼ぶので
+		// その際、this.TF_windowType が空になってしまう。以下の if はその対策。
+		if( this.TF_windowType === undefined ) this.TF_windowType = 0;
+		const preset = pluginParams.preset[ this.TF_windowType ];
+		return preset.padding + preset.margin;
+	};
 	Window_Base.prototype.textPadding = () => ( SYSTEM_FONT_SIZE * LINE_HEIGHT - SYSTEM_FONT_SIZE ) / 2;
 	Window_Base.prototype.lineHeight = () => Math.ceil( SYSTEM_FONT_SIZE * LINE_HEIGHT );
 
@@ -261,31 +289,98 @@
 	};
 
 	/*--- Window_Message ---*/
+	const TF_TAIL_HEIGHT = 40;// フキダシのシッポの高さ
+	const TF_TAIL_POSISION = POSITION_LEFT;// フキダシのシッポの左右位置
+	// $gameMessage.positionType() で上下位置は決まる
 	Window_Message.prototype.standardFontSize = () => MESSAGE_FONT_SIZE;
 	Window_Message.prototype.numVisibleRows = () => MESSAGE_LINES;
 	Window_Message.prototype.textPadding = () => ( MESSAGE_FONT_SIZE * LINE_HEIGHT - MESSAGE_FONT_SIZE ) / 2;
-	Window_Message.prototype.lineHeight = () => MESSAGE_FONT_SIZE * LINE_HEIGHT;
-	Window_Message.prototype.updateClose = function() {
-		const preClosing = this._closing;
-		Window_Base.prototype.updateClose.call( this );
-		if( preClosing !== this._closing && TF_windowType ) {
-			setWindowType( this, 0 );
+	Window_Message.prototype.lineHeight = () => Math.ceil( MESSAGE_FONT_SIZE * LINE_HEIGHT );
+
+	/**
+	 * メッセージウィンドウに限りフキダシ表示を可能にする
+	 */
+	const _Window_Message_initialize = Window_Message.prototype.initialize;
+	Window_Message.prototype.initialize = function() {
+		this._positionType = 2;	// 先に位置を指定しておかないと、ウィンドウ生成時に形がおかしくなる
+		_Window_Message_initialize.call( this );
+	};
+
+	const _Window_Message_startMessage = Window_Message.prototype.startMessage;
+	Window_Message.prototype.startMessage = function() {
+		if( this.TF_refleshWindow ) {
+			this.TF_refleshWindow = false;
+			refreshWindowFrame( this );
+		}
+		_Window_Message_startMessage.call( this );
+	}
+
+	/**
+	 * フキダシ型(balloon)のみ、Window_Message に設定できる。
+	 */
+	Window_Message.prototype._refreshBack = function() {
+		if( this.TF_shape !== SHAPE_BALLOON ) {
+			Window.prototype._refreshBack.call( this );
+			return;
+		}
+
+		const m = this.margin;
+		const r = pluginParams.preset[ this.TF_windowType ].decorSize;
+		const bitmap = new Bitmap( this._width, this._height + 4 );// +4 はdrop shadow用
+		this._windowFrameSprite.bitmap = bitmap;
+		this._windowFrameSprite.setFrame( 0, 0, this._width, this._height + 12 );
+		const path2d = drawBalloon( m, this._width, this._height, r, this._positionType );
+		drawWindow.call( this, bitmap.context, path2d );
+	}
+
+	const _Window_Message_updatePlacement = Window_Message.prototype.updatePlacement;
+	Window_Message.prototype.updatePlacement = function() {
+		const isChange = ( this._positionType !== $gameMessage.positionType() );
+		this._positionType = $gameMessage.positionType();
+		this._height = this.windowHeight();
+
+		_Window_Message_updatePlacement.call( this );
+
+		if( !isChange ) return;
+		this._refreshAllParts();
+		if( this.TF_shape === SHAPE_BALLOON && this._positionType === POSITION_UP ) {
+			this._windowPauseSignSprite.y = this._height - TF_TAIL_HEIGHT;
 		}
 	};
 
-	function setWindowType( messageWindow, windowType ) {
-		TF_windowType = windowType;
-		const margin = pluginParams.preset[ windowType ].margin;
-
-		messageWindow._margin = margin;
-		// RPGツクールMVの padding は CSS と違い「box の一番外から contents までの距離」なので変換
-		messageWindow._padding = pluginParams.preset[ windowType ].padding + margin;
-		messageWindow._height = messageWindow.windowHeight();
-		messageWindow._refreshAllParts();
+	/**
+	 * コンテンツ位置を、尻尾の高さに合わせて調整。
+	 */
+	Window_Message.prototype._refreshContents = function() {
+		if( this.TF_shape === SHAPE_BALLOON && this._positionType === POSITION_DOWN ) {
+			this._windowContentsSprite.move( this.padding, this.padding + TF_TAIL_HEIGHT );
+		} else {
+			this._windowContentsSprite.move( this.padding, this.padding );
+		}
+	};
+	const _Window_Message_windowHeight = Window_Message.prototype.windowHeight;
+	Window_Message.prototype.windowHeight = function() {
+		if( this.TF_shape !== SHAPE_BALLOON || this._positionType === POSITION_MIDDLE ) {
+			return _Window_Message_windowHeight.call( this );
+		} else {
+			return _Window_Message_windowHeight.call( this ) + TF_TAIL_HEIGHT;
+		}
 	}
 
-
 	/*--- 関数 ---*/
+	/**
+	 * ウィンドウ枠の再描画。
+	 * @param {Window_Message} targetWindow 対象ウィンドウ
+	 */
+	function refreshWindowFrame( targetWindow ) {
+		const preset = pluginParams.preset[ targetWindow.TF_windowType ];
+		targetWindow.TF_shape = preset.shape;
+		targetWindow._margin = preset.margin;
+		// RPGツクールMVの padding は CSS と違い「box の一番外から contents までの距離」なので変換
+		targetWindow._padding = preset.padding + preset.margin;
+		targetWindow._height = targetWindow.windowHeight();
+		targetWindow._refreshAllParts();
+	}
 	/**
 	 * 配列からCSS color文字列を返す。
 	 * @param {Array} colorList [ r, g, b, a ] の配列
@@ -293,8 +388,9 @@
 	 */
 	function array2CssColor( colorList ) {
 		if( colorList.length === 3 ) {
-			return `rgb(${colorList[ 0 ]},${colorList[ 1 ]},${colorList[ 2 ]})`;
+			return Utils.rgbToCssColor( ...colorList );
 		} else {
+			// Utils.rgbToCssColor( r, g, b ) は a を扱ってくれないので。
 			return `rgba(${colorList[ 0 ]},${colorList[ 1 ]},${colorList[ 2 ]},${colorList[ 3 ] / 255})`;
 		}
 	}
@@ -307,7 +403,7 @@
 	}
 
 	function drawWindow( ctx, path2d ) {
-		let bgColor = pluginParams.preset[ TF_windowType ].bgColor;
+		let bgColor = pluginParams.preset[ this.TF_windowType ].bgColor;
 
 		if( bgColor.length === 1 ) {
 			ctx.fillStyle = tintColor( bgColor[ 0 ], this._colorTone );
@@ -325,7 +421,7 @@
 		ctx.fill( path2d );// 'nonzero'  'evenodd'
 
 		if( !DROP_SHADOW ) setShadowParam( ctx );
-		setBorderParam( ctx );
+		setBorderParam( ctx, this.TF_windowType );
 		ctx.stroke( path2d );
 	}
 
@@ -357,35 +453,60 @@
 	 * 枠の設定をする
 	 * @param {*} ctx 
 	 */
-	function setBorderParam( ctx ) {
-		if( !pluginParams.preset[ TF_windowType ].borderWidth ) return;
+	function setBorderParam( ctx, type ) {
+		if( !pluginParams.preset[ type ].borderWidth ) return;
 
-		ctx.lineWidth = pluginParams.preset[ TF_windowType ].borderWidth;
-		ctx.strokeStyle = pluginParams.preset[ TF_windowType ].borderColor;
+		ctx.lineWidth = pluginParams.preset[ type ].borderWidth;
+		ctx.strokeStyle = pluginParams.preset[ type ].borderColor;
 		ctx.shadowBlur = 3;
 		ctx.shadowOffsetY = 0;
 	}
 
 	/**
-	 * 角丸の矩形トゲ付きを描く
-	 * @param {*} ctx CanvasRenderingContext2D
-	 * @param {*} m 枠外のマージン
-	 * @param {*} w ウィンドウ描画領域の幅
-	 * @param {*} h ウィンドウ描画領域の高さ
-	 * @param {*} r 角丸の半径
+	 * フキダシ(角丸の矩形シッポ付き)を描く
+	 * @param {CanvasRenderingContext2D} ctx コンテキスト
+	 * @param {Number} m 枠外のマージン
+	 * @param {Number} w ウィンドウ描画領域の幅
+	 * @param {Number} h ウィンドウ描画領域の高さ
+	 * @param {Number} r 角丸の半径
 	 */
-	function drawBalloon( m, w, h, r ) {
-		const dy = 40;
-		const iRect = { l: m, r: w - m, u: m + dy, d: h - m };// 内側座標
-		const cRect = { l: m + r, r: w - ( m + r ), u: m + r + dy, d: h - ( m + r ) };// 角を除く内側座標
+	function drawBalloon( m, w, h, r, vPos ) {
+		const hPos = TF_TAIL_POSISION;
+		const dy = ( vPos === POSITION_UP ) ? TF_TAIL_HEIGHT : 0;	// 上位置表示の場合の下のシッポ高さ
+		const uy = ( vPos === POSITION_DOWN ) ? TF_TAIL_HEIGHT : 0;	// 下位置表示の場合の上のシッポ高さ
+		const iRect = { l: m, r: w - m, u: m + uy, d: h - m - dy };// 内側座標
+		const cRect = { l: m + r, r: w - ( m + r ), u: m + r + uy, d: h - ( m + r ) - dy };// 角を除く内側座標
 
 		const path = new Path2D();
 		path.moveTo( cRect.l, iRect.u );
-		path.lineTo( cRect.r - 270, iRect.u );
-		path.lineTo( cRect.r - 230, iRect.u - 30 );
-		path.lineTo( cRect.r - 250, iRect.u );
+		if( vPos === POSITION_DOWN ) {
+			if( hPos === POSITION_LEFT ) {
+				// 左上にシッポ
+				path.lineTo( cRect.l + 250, iRect.u );
+				path.lineTo( cRect.l + 230, iRect.u - TF_TAIL_HEIGHT + m );
+				path.lineTo( cRect.l + 270, iRect.u );
+			} else if( hPos === POSITION_RIGHT ) {
+				// 右上にシッポ
+				path.lineTo( cRect.r - 270, iRect.u );
+				path.lineTo( cRect.r - 230, iRect.u - TF_TAIL_HEIGHT + m );
+				path.lineTo( cRect.r - 250, iRect.u );
+			}
+		}
 		path.arcTo( iRect.r, iRect.u, iRect.r, cRect.u, r );// ─╮
 		path.arcTo( iRect.r, iRect.d, cRect.r, iRect.d, r );//│ ╯
+		if( vPos === POSITION_UP ) {
+			if( hPos === POSITION_LEFT ) {
+				// 左下にシッポ
+				path.lineTo( cRect.l + 270, iRect.d );
+				path.lineTo( cRect.l + 230, iRect.d + TF_TAIL_HEIGHT + m );
+				path.lineTo( cRect.l + 250, iRect.d );
+			} else if( hPos === POSITION_RIGHT ) {
+				// 右下にシッポ
+				path.lineTo( cRect.r - 250, iRect.d );
+				path.lineTo( cRect.r - 230, iRect.d + TF_TAIL_HEIGHT - m );
+				path.lineTo( cRect.r - 270, iRect.d );
+			}
+		}
 		path.arcTo( iRect.l, iRect.d, iRect.l, cRect.d, r );//╰─
 		path.arcTo( iRect.l, iRect.u, cRect.l, iRect.u, r );// │╭
 		path.closePath();
@@ -394,11 +515,11 @@
 
 	/**
 	 * 角丸の矩形を描く
-	 * @param {*} ctx CanvasRenderingContext2D
-	 * @param {*} m 枠外のマージン
-	 * @param {*} w ウィンドウ描画領域の幅
-	 * @param {*} h ウィンドウ描画領域の高さ
-	 * @param {*} r 角丸の半径
+	 * @param {CanvasRenderingContext2D} ctx コンテキスト
+	 * @param {Number} m 枠外のマージン
+	 * @param {Number} w ウィンドウ描画領域の幅
+	 * @param {Number} h ウィンドウ描画領域の高さ
+	 * @param {Number} r 角丸の半径
 	 */
 	function drawRoundrect( m, w, h, r ) {
 		const iRect = { l: m, r: w - m, u: m, d: h - m };// 内側座標
@@ -416,11 +537,11 @@
 
 	/**
 	 * 8角形を描く
-	 * @param {*} ctx CanvasRenderingContext2D
-	 * @param {*} m 枠外のマージン
-	 * @param {*} w ウィンドウ描画領域の幅
-	 * @param {*} h ウィンドウ描画領域の高さ
-	 * @param {*} r √r*r = 角の斜め線の長さ
+	 * @param {CanvasRenderingContext2D} ctx コンテキスト
+	 * @param {Number} m 枠外のマージン
+	 * @param {Number} w ウィンドウ描画領域の幅
+	 * @param {Number} h ウィンドウ描画領域の高さ
+	 * @param {Number} r  √r*r = 角の斜め線の長さ
 	 */
 	function drawOctagon( m, w, h, r ) {
 		const iRect = { l: m, r: w - m, u: m, d: h - m };// 内側座標
@@ -441,23 +562,22 @@
 
 	/**
 	 * トゲ型装飾枠を描く
-	 * @param {*} ctx CanvasRenderingContext2D
-	 * @param {*} m トゲの長さ
-	 * @param {*} w ウィンドウ描画領域の幅
-	 * @param {*} h ウィンドウ描画領域の高さ
-	 * @param {*} r トゲの(おおよその)横幅
+	 * @param {CanvasRenderingContext2D} ctx コンテキスト
+	 * @param {Number} m トゲの長さ
+	 * @param {Number} w ウィンドウ描画領域の幅
+	 * @param {Number} h ウィンドウ描画領域の高さ
+	 * @param {Number} r トゲの(おおよその)横幅
 	 */
-	function drawSpike( m, w, h, r ) {
-		const bw = pluginParams.preset[ TF_windowType ].borderWidth;
+	function drawSpike( m, w, h, r, bw ) {
 
 		const iRect = { l: m, r: w - m, u: m, d: h - m };// 内側座標
-		const oRect = { l: bw, r: w - bw, u: bw, d: h - bw };// 内側座標
+		const oRect = { l: bw, r: w - bw, u: bw, d: h - bw };// 外側座標
 
 		const rndDiff = () => ( Math.random() - 0.5 ) * r * 0.4; // 中央値からの差、辺に使う
 		const rndPosi = () => Math.random() * m * 0.6; // 正の値、角に使う
 
 		const path = new Path2D();
-		path.beginPath();
+		// path.beginPath();
 		path.moveTo( oRect.l + rndPosi(), oRect.u + rndPosi() );//┌
 		const hNum = Math.floor( w / ( r * 1.2 ) );
 		const hUnit = w / hNum;
