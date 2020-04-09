@@ -1,6 +1,6 @@
 //========================================
 // TF_Utility.js
-// Version :0.7.0.0
+// Version :0.8.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019-2020
@@ -22,14 +22,7 @@
 	'use strict';
 	const PARAM_TRUE = 'true';
 
-	// 画面周り
-	const SCREEN_WIDTH = 1280;
-	const SCREEN_HEIGHT = 720;
-	const INTERFACE_WIDTH = 1080;
-	const INTERFACE_HEIGHT = 720;
-
 	const VOLUME_OFFSET = 5;	//オプション: 音量の最小変更数を5に。
-
 
 	// イベントコマンドの番号
 	const COMMAND_END = 0;
@@ -52,7 +45,6 @@
 	// DataManager._databaseFiles.push(
 	// 	{ name: '$myJson', src: '$myJson.json' }
 	// );
-
 
 
 	/**
@@ -237,27 +229,6 @@
 	Window_Options.prototype.volumeOffset = () => VOLUME_OFFSET;
 
 
-	/*==== 画面設定 ====*/
-	/*--- SceneManager ---*/
-	const _SceneManager_initialize = SceneManager.initialize;
-	SceneManager.initialize = function() {
-		this._screenWidth = SCREEN_WIDTH;
-		this._screenHeight = SCREEN_HEIGHT;
-		this._boxWidth = INTERFACE_WIDTH;
-		this._boxHeight = INTERFACE_HEIGHT;
-		_SceneManager_initialize.call( this );
-	};
-
-
-	/*--- Spriteset_Base ---*/
-	/**
-	 * setFrameで表示位置を原点からずらさないように
-	 */
-	const _Spriteset_Base_createPictures = Spriteset_Base.prototype.createPictures;
-	Spriteset_Base.prototype.createPictures = function() {
-		_Spriteset_Base_createPictures.call( this );
-		this._pictureContainer.setFrame( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT );
-	};
 
 
 	/**
@@ -318,115 +289,17 @@
 		_Scene_Battle_changeInputWindow.call( this );
 	};
 
-	/*--- Window_ActorCommand ---*/
-	/**
-	 * [スキル][防御][アイテム]コマンドを削除。
-	 */
-	Window_ActorCommand.prototype.addSkillCommands = function() { };
-	Window_ActorCommand.prototype.addGuardCommand = function() { };
-	Window_ActorCommand.prototype.addItemCommand = function() { };
-
 
 	/*--- Window_TitleCommand ---*/
 	/**
-	 * コンティニューを削除。
-	 */
-	Window_TitleCommand.prototype.makeCommandList = function() {
-		this.addCommand( TextManager.newGame, 'newGame' );
-		this.addCommand( TextManager.options, 'options' );
-	};
-	/**
 	 * 表示位置の設定
 	 */
-	Window_TitleCommand.prototype.updatePlacement = function() {
-		this.x = 46;
-		this.y = 340;
-	};
+	// Window_TitleCommand.prototype.updatePlacement = function() {
+	// 	this.x = ( Graphics.boxWidth - this.width ) / 2;
+	// 	this.y = ( Graphics.boxHeight - this.height ) / 2;
+	// };
 
 
-	/*--- Spriteset_Battle ---*/
-	const TYPE_STAGE = 1;
-	const TYPE_SET = 2;
-	Spriteset_Battle.prototype.createBattleback = function() {
-		this._back1Sprite = new Sprite_Battleback( this.battleback1Name(), TYPE_STAGE );
-		this._back2Sprite = new Sprite_Battleback( this.battleback2Name(), TYPE_SET );
-		this._battleField.addChild( this._back1Sprite );
-		this._battleField.addChild( this._back2Sprite );
-	};
-	Spriteset_Battle.prototype.updateBattleback = function() { };
-
-
-	/*--- Sprite_Battleback ---*/
-	class Sprite_Battleback extends Sprite {
-		constructor( bitmapName, type ) {
-			super();
-			this._bitmapName = bitmapName;
-			this._battlebackType = type;
-			this.createBitmap();
-		}
-
-		/**
-		 * 背景画像の生成・読み込み
-		 */
-		createBitmap() {
-			if( this._bitmapName === '' ) {
-				this.bitmap = new Bitmap( Graphics.width, Graphics.height );
-				return;
-			}
-
-			if( this._battlebackType === TYPE_STAGE ) {
-				this.bitmap = ImageManager.loadBattleback1( this._bitmapName );
-			} else {
-				;
-				this.bitmap = ImageManager.loadBattleback2( this._bitmapName );
-			}
-			this.scaleSprite();
-		}
-
-		/**
-		 * 画面サイズに合わせて戦闘背景を拡大
-		 */
-		scaleSprite() {
-			if( this.bitmap.width <= 0 ) return setTimeout( this.scaleSprite.bind( this ), 5 );
-			const w = Graphics.width;
-			const h = Graphics.height;
-			if( this.bitmap.width < w ) this.scale.x = w / this.bitmap.width;
-			if( this.bitmap.height < h ) this.scale.y = h / this.bitmap.height;
-
-			this.anchor.x = 0.5;
-			this.x = w / 2;
-			if( $gameSystem.isSideView() ) {
-				this.anchor.y = 1;
-				this.y = h;
-			} else {
-				this.anchor.y = 0.5;
-				this.y = h / 2;
-			}
-		}
-	}
-
-
-	/*--- Sprite_Enemy ---*/
-	const DEFAULT_SCREEN_WIDTH = 816;
-	const DEFAULT_SCREEN_HEIGHT = 624;
-	/**
-	 * 敵位置をスクリーンサイズに合わせて調整
-	 */
-	const _Sprite_Enemy_setBattler = Sprite_Enemy.prototype.setBattler;
-	Sprite_Enemy.prototype.setBattler = function( battler ) {
-		_Sprite_Enemy_setBattler.call( this, battler );
-
-		if( !this._enemy._alteredScreenY ) {
-			this._homeY += Math.floor( ( Graphics.height - DEFAULT_SCREEN_HEIGHT ) / 2 );
-			this._enemy._screenY = this._homeY;
-			this._enemy._alteredScreenY = true;
-		}
-		if( $gameSystem.isSideView() || this._enemy._alteredScreenX ) return;
-
-		this._homeX += ( Graphics.width - DEFAULT_SCREEN_WIDTH ) / 2;
-		this._enemy._screenX = this._homeX;
-		this._enemy._alteredScreenX = true;
-	};
 
 	// 追加キー設定
 	const KEY_BS = 8;
