@@ -1,6 +1,6 @@
 //========================================
 // TF_TextWindowMenu.js
-// Version :0.3.1.2
+// Version :0.3.1.3
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -104,7 +104,7 @@
 	Window_TitleCommand.prototype.processOk = function() {
 		_Window_TitleCommand_processOk.call( this );
 		TF_itemIndex = this.index();
-	}
+	};
 
 	Window_TitleCommand.prototype.selectLast = function() {
 		if( TF_itemIndex ) {
@@ -145,30 +145,42 @@
 			}
 		}
 
+		getTriggerType() {
+			if( TouchInput.isTriggered() || Input.isTriggered( TRIGGER_OK ) ) return TRIGGER_OK;
+			if( TouchInput.isCancelled() || Input.isTriggered( TRIGGER_CANCEL ) ) return TRIGGER_CANCEL;
+			return '';
+		}
+
+		exitScene( triggerType ) {
+			if( triggerType === '' ) return;
+
+			if( triggerType == TRIGGER_OK ) {
+				SoundManager.playOk();
+			} else {
+				SoundManager.playCancel();
+			}
+
+			if( TF_isAnimate ) {
+				this._singleWindow.close();
+			} else {
+				SceneManager.pop();
+			}
+		}
+
+		setContents() {
+			if( this._singleWindow._text ) return;
+
+			const contents = JsonEx.parse( TF_windows[ TF_itemIndex - TF_topRows ].contents );
+			this._singleWindow.setText( contents );
+		}
+
 		update() {
 			super.update();
 
 			if( this._singleWindow.isOpen() ) {
-				if( !this._singleWindow._text ) {
-					const contents = JsonEx.parse( TF_windows[ TF_itemIndex - TF_topRows ].contents );
-					this._singleWindow.setText( contents );
-				}
-				// 入力のチェック
-				const triggerType = ( TouchInput.isTriggered() || Input.isTriggered( TRIGGER_OK ) ) ? TRIGGER_OK :
-					( TouchInput.isCancelled() || Input.isTriggered( TRIGGER_CANCEL ) ) ? TRIGGER_CANCEL : '';
-				if( triggerType ) {
-					if( triggerType == TRIGGER_OK ) {
-						SoundManager.playOk();
-					} else {
-						SoundManager.playCancel();
-					}
-
-					if( TF_isAnimate ) {
-						this._singleWindow.close();
-					} else {
-						SceneManager.pop();
-					}
-				}
+				this.setContents();
+				// 入力のチェック(Window_Help は addHandler を持たないので)
+				this.exitScene( this.getTriggerType() );
 			} else if( this._singleWindow.isClosed() ) {
 				SceneManager.pop();
 			}
