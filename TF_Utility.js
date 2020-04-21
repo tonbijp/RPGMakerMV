@@ -1,6 +1,6 @@
 //========================================
 // TF_Utility.js
-// Version :0.8.0.0
+// Version :0.8.1.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019-2020
@@ -116,13 +116,34 @@
 		}
 
 		// イベント名で指定できるようにする
-		const i = $gameMap._events.findIndex( event => {
-			if( event === undefined ) return false;	// _events[0] が undefined なので無視
+		const i = $gameMap._events.findIndex( e => {
+			if( e === undefined ) return false;	// _events[0] が undefined なので無視
 
-			const eventId = event._eventId;
-			return $dataMap.events[ eventId ].name === value
+			const eventId = e._eventId;
+			return $dataMap.events[ eventId ].name === value;
 		} );
 		if( i === -1 ) throw Error( `指定したイベント[${value}]がありません。` );
+		return i;
+	}
+
+	/**
+	 * 文字列をマップIDへ変換
+	 * @param {String} value マップIDの番号か識別子
+	 * @returns {Number} マップID
+	 */
+	function stringToMapId( value ) {
+		value = treatValue( value );
+		const result = parseInt( value, 10 );
+		if( !isNaN( result ) ) return result;
+
+		value = value.toLowerCase();
+		if( value === EVENT_THIS || value === EVENT_SELF ) return $gameMap.mapId();
+
+		const i = $dataMapInfos.findIndex( e => {
+			if( !e ) return false;
+			return e.name === value;
+		} );
+		if( i === -1 ) throw Error( `指定したマップ[${value}]がありません。` );
 		return i;
 	}
 
@@ -152,11 +173,16 @@
 	 * マップ移動前の処理。
 	 * 向きは省略可能で、規定値は現在の向き( 0 )が設定される。
 	 * TF_MOVE_BEFORE マップID x座標 y座標 向き
+	 * @param {Array} args [ mapId, x, y, d ]
+	 * @param {String} mapId マップID | マップ名 | self | this
+	 * @param {String} x x座標(タイル数)
+	 * @param {String} y y座標(タイル数)
+	 * @param {String} d 向き(テンキー対応 | 方向文字列)
 	 */
 	Game_Interpreter.prototype.pluginCommandBook_TF_MOVE_BEFORE = function( args ) {
-		const mapId = parseIntStrict( args[ 0 ] );
-		const x = parseIntStrict( args[ 1 ] );
-		const y = parseIntStrict( args[ 2 ] );
+		const mapId = stringToMapId( args[ 0 ] );
+		const x = parseFloatStrict( args[ 1 ] );
+		const y = parseFloatStrict( args[ 2 ] );
 		const d = stringToDirection( args[ 3 ] );
 		const commandList = [
 			{
@@ -181,14 +207,11 @@
 
 	/**
 	 * TF_MOVE_AFTER
+	 * 上向きは出現位置かい一歩移動
+	 * 横向きは出現位置から二歩移動
+	 * 下向きは0.5上から出現して一歩移動
 	 */
 	Game_Interpreter.prototype.pluginCommandBook_TF_MOVE_AFTER = function() {
-		const targetEvent = this.character( PLAYER_CHARACTER );
-		if( targetEvent.direction() === 2 ) {
-			// 下向きの際は、-0.5座標を移動する
-			targetEvent._realY = targetEvent._y -= 0.5;
-		}
-
 		const commandList = [
 			{ indent: 0, code: CHANGE_PLAYER_FOLLOWERS, parameters: [ 0 ] },
 			{ indent: 0, code: FADEIN_SCREEN },
@@ -198,7 +221,6 @@
 						repeat: false, skippable: true, wait: true, list: [
 							{ code: gc.ROUTE_THROUGH_ON },
 							{ code: gc.ROUTE_DIR_FIX_OFF },
-							{ code: gc.ROUTE_MOVE_FORWARD },
 							{ code: gc.ROUTE_MOVE_FORWARD },
 							{ code: gc.ROUTE_THROUGH_OFF },
 							{ code: gc.ROUTE_END }
