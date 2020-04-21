@@ -61,9 +61,8 @@
 	}
 
 	/**
-	 * @method parseIntStrict
-	 * @param {String} value
-	 * @return {Number} 数値に変換した結果
+	 * @param {String} value 変換元文字列
+	 * @return {Number} 整数値への変換結果
 	 */
 	function parseIntStrict( value ) {
 		const result = parseInt( treatValue( value ), 10 );
@@ -72,27 +71,93 @@
 	};
 
 	/**
-	 * @method parseFloatStrict
-	 * @param {String} value
-	 * @return {Number} 数値に変換した結果
+	 * @param {String} value 変換元文字列
+	 * @return {Number} 数値への変換結果
 	 */
 	function parseFloatStrict( value ) {
 		const result = parseFloat( treatValue( value ) );
 		if( isNaN( result ) ) throw Error( '指定した値[' + value + ']が数値ではありません。' );
 		return result;
 	}
+    /**
+     * @param {String} value 変換元文字列
+     * @returns {Boolean} 
+     */
+	function parseBooleanStrict( value ) {
+		const result = treatValue( value );
+		return ( result.toLowerCase() == PARAM_TRUE );
+	};
+
+
+	const EVENT_THIS = 'this';
+	const EVENT_SELF = 'self';
+	const EVENT_PLAYER = 'player';
+	const EVENT_FOLLOWER0 = 'follower0';
+	const EVENT_FOLLOWER1 = 'follower1';
+	const EVENT_FOLLOWER2 = 'follower2';
+	/**
+	 * 文字列をイベントIDへ変換
+	 * @param {String} value イベントIDの番号か識別子
+	 * @returns {Number} 拡張イベントID
+	 */
+	function stringToEventId( value ) {
+		value = treatValue( value );
+		const result = parseInt( value, 10 );
+		if( !isNaN( result ) ) return result;
+
+		value = value.toLowerCase();
+		switch( value ) {
+			case EVENT_THIS:
+			case EVENT_SELF: return 0;
+			case EVENT_PLAYER: return -1;
+			case EVENT_FOLLOWER0: return -2;
+			case EVENT_FOLLOWER1: return -3;
+			case EVENT_FOLLOWER2: return -4;
+		}
+
+		// イベント名で指定できるようにする
+		const i = $gameMap._events.findIndex( event => {
+			if( event === undefined ) return false;	// _events[0] が undefined なので無視
+
+			const eventId = event._eventId;
+			return $dataMap.events[ eventId ].name === value
+		} );
+		if( i === -1 ) throw Error( `指定したイベント[${value}]がありません。` );
+		return i;
+	}
+
+	const DIRECTION_UP = [ 'up', 'u', 'north', 'n', 'back', 'b' ];
+	const DIRECTION_LEFT = [ 'left', 'l', 'west', 'w' ];
+	const DIRECTION_RIGHT = [ 'right', 'r', 'east', 'e' ];
+	const DIRECTION_DOWN = [ 'down', 'd', 'south', 's', 'front', 'forward', 'f' ];
+	/**
+	 * 方向文字列をテンキー方向の数値に変換して返す
+	 * @param {String} value 方向た文字列
+	 * @returns {Number} テンキー方向の数値(変換できなかった場合:undefined)
+	 */
+	function stringToDirection( value ) {
+		value = treatValue( value );
+		const result = parseInt( value, 10 );
+		if( !isNaN( result ) ) return result;
+
+		value = value.toLowerCase();
+		if( DIRECTION_DOWN.includes( value ) ) return 2;
+		if( DIRECTION_LEFT.includes( value ) ) return 4;
+		if( DIRECTION_RIGHT.includes( value ) ) return 6;
+		if( DIRECTION_UP.includes( value ) ) return 8;
+	}
 
 
 	/**
 	 * マップ移動前の処理。
 	 * 向きは省略可能で、規定値は現在の向き( 0 )が設定される。
-	 * TF_moveBefore マップID x座標 y座標 向き
+	 * TF_MOVE_BEFORE マップID x座標 y座標 向き
 	 */
-	Game_Interpreter.prototype.pluginCommandBook_TF_moveBefore = function( args ) {
+	Game_Interpreter.prototype.pluginCommandBook_TF_MOVE_BEFORE = function( args ) {
 		const mapId = parseIntStrict( args[ 0 ] );
 		const x = parseIntStrict( args[ 1 ] );
 		const y = parseIntStrict( args[ 2 ] );
-		const d = parseIntStrict( args[ 3 ] );
+		const d = stringToDirection( args[ 3 ] );
 		const commandList = [
 			{
 				indent: 0, code: SET_MOVEMENT_ROUTE, parameters: [ PLAYER_CHARACTER,
@@ -115,9 +180,9 @@
 	};
 
 	/**
-	 * TF_moveAfter
+	 * TF_MOVE_AFTER
 	 */
-	Game_Interpreter.prototype.pluginCommandBook_TF_moveAfter = function() {
+	Game_Interpreter.prototype.pluginCommandBook_TF_MOVE_AFTER = function() {
 		const targetEvent = this.character( PLAYER_CHARACTER );
 		if( targetEvent.direction() === 2 ) {
 			// 下向きの際は、-0.5座標を移動する
@@ -161,7 +226,7 @@
 	/**
 	 * 
 	 */
-	Game_Interpreter.prototype.pluginCommandBook_TF_self = function() {
+	Game_Interpreter.prototype.pluginCommandBook_TF_SELF = function() {
 		return this.eventId();
 	};
 
@@ -169,37 +234,39 @@
 	 * 変数を名前の文字列で指定して値を ID1 の変数に代入
 	 * args[ 0 ] | String | 変数名
 	 */
-	Game_Interpreter.prototype.pluginCommandBook_TF_variable = function() {
+	Game_Interpreter.prototype.pluginCommandBook_TF_VARIABLE = function() {
 		$gameVariables.setValue( 1, $gameVariables.getValueByName( args[ 0 ] ) );
 	};
 	/**
 	 * スイッチを名前の文字列で指定して値を ID1 のスイッチに代入
 	 * args[ 0 ] | String | 変数名
 	 */
-	Game_Interpreter.prototype.pluginCommandBook_TF_switch = function() {
+	Game_Interpreter.prototype.pluginCommandBook_TF_SWITCH = function() {
 		$gameSwitches.setValue( 1, $gameSwitches.getValueByName( args[ 0 ] ) );
 	};
 
 
 	/**
 	 * [セルフスイッチ] を設定します
-	 * @param {Array} args [ type, isOn ]
+	 * @param {Array} args [ id, type, isOn ]
+	 * @param {String} id 対象イベント
 	 * @param {String} type A・B・C・D いずれかの文字
-	 * @param {String} isOn ON/OFF状態
+	 * @param {String} isOn ON/OFF状態(指定なしの場合get動作してスイッチID1に値を書き込む)
 	 */
-	Game_Interpreter.prototype.pluginCommandBook_TF_setSelfSw = function( args ) {
-		const type = args[ 0 ];
-		const isOn = args[ 1 ];
-		$gameSelfSwitches.setValue( [ $gameMap.mapId(), this.eventId(), type ], isOn );
-		return this;
-	};
-	Game_Interpreter.prototype.pluginCommandBook_TF_getSelfSw = function() {
-		$gameSelfSwitches.setValue( [ $gameMap.mapId(), this.eventId(), "A" ], true );
+	Game_Interpreter.prototype.pluginCommandBook_TF_SELF_SW = function( args ) {
+		const id = stringToEventId( args[ 0 ] );
+		const type = args[ 1 ] ? args[ 1 ].toUpperCase() : 'A';
+		const isOn = args[ 2 ];
+		if( isOn ) {
+			$gameSelfSwitches.setValue( [ $gameMap.mapId(), id, type ], parseBooleanStrict( isOn ) );
+		} else {
+			$gameSwitches.setValue( 1, $gameSelfSwitches.value( [ $gameMap.mapId(), id, type ] ) );
+		}
 		return this;
 	};
 
 	// 出現条件(アイテム)
-	Game_Interpreter.prototype.pluginCommandBook_TF_conditionItem = function() {
+	Game_Interpreter.prototype.pluginCommandBook_TF_CONDITION_ITEM = function() {
 		return $dataItems[ this.character( this.eventId() ).page().conditions.itemId ];
 	};
 
@@ -229,13 +296,11 @@
 	Window_Options.prototype.volumeOffset = () => VOLUME_OFFSET;
 
 
-
-
 	/**
 	 * 顔画像に名前を追加。
 	 */
 	const FACE_WIDTH = 208;
-	const ALIGN_LEFTR = 'left';
+	const ALIGN_LEFT = 'left';
 	const ALIGN_CENTER = 'center';
 	const ALIGN_RIGHT = 'right';
 	const NAME_FONT_SIZE = 24;
@@ -288,17 +353,6 @@
 		}
 		_Scene_Battle_changeInputWindow.call( this );
 	};
-
-
-	/*--- Window_TitleCommand ---*/
-	/**
-	 * 表示位置の設定
-	 */
-	// Window_TitleCommand.prototype.updatePlacement = function() {
-	// 	this.x = ( Graphics.boxWidth - this.width ) / 2;
-	// 	this.y = ( Graphics.boxHeight - this.height ) / 2;
-	// };
-
 
 
 	// 追加キー設定
