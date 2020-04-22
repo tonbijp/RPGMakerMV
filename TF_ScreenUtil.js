@@ -1,6 +1,6 @@
 //========================================
 // TF_ScreenUtil.js
-// Version :0.0.0.0
+// Version :0.0.1.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -135,7 +135,10 @@
 	* @param {Sprite} sprite スプライト
 	*/
 	function fitToScreen( sprite ) {
-		if( !sprite.bitmap || !sprite.bitmap.width ) return;
+		if( !sprite.bitmap ) return;
+		if( !sprite.bitmap.width ) {
+			return setTimeout( fitToScreen.bind( this, sprite ), 5 );	// ビットマップの読み込み確認
+		}
 
 		const scaleX = Graphics.width / sprite.bitmap.width;
 		const scaleY = Graphics.height / sprite.bitmap.height;
