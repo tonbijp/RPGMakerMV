@@ -1,6 +1,6 @@
 //========================================
 // TF_Utility.js
-// Version :0.9.0.0
+// Version :0.10.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019-2020
@@ -18,15 +18,29 @@
  * TkoolMV_PluginCommandBook.js 必須。
  *
  *------------------------------
+ * TF_VAR [変数ID] [変数への設定値]
+ * 　スイッチを設定
+ * 　[変数ID] 変数を ID、名前、変数V[n] のいずれかで指定
+ * 　[変数への設定値] 設定値がない場合、ID:1 の変数に代入
+ *
+ * 例: TF_VAR エピソード 4
+ *------------------------------
+ * TF_SW [スイッチID] [スイッチへの設定値]
+ * 　スイッチを設定
+ * 　[スイッチID] スイッチを ID、名前、変数V[n] のいずれかで指定
+ * 　[スイッチへの設定値] 設定値がない場合、ID:1 のスイッチに代入
+ *
+ * 例: TF_SW 賢者に会った
+ *------------------------------
  * TF_SELF_SW [イベントID] [スイッチタイプ] [状態]
- * 　イベントの[セルフスイッチ] を設定。
+ * 　同マップ内のイベントの[セルフスイッチ] を設定。
  * 　[イベントID] 0:このイベント、-1:プレイヤー、1〜:イベントID(規定値:0)
  * 　　this(またはself):このイベント、player:プレイヤー
  * 　　イベントの[名前]で指定(上記の数値や this などと同じ名前、およびスペースの入った名前は指定できません)
  * 　[スイッチタイプ]
- * 　[状態] true/false の状態
+ * 　[状態] true/false または ON/OFF で設定
  * 
- * 例: TF_SELF_SW スイッチ A true
+ * 例: TF_SELF_SW 1F:西スイッチ A true
  *------------------------------
  * TF_SELF_SW [イベントID] [スイッチタイプ]
  * 　イベントの[セルフスイッチ] の値を、指定ID(規定値:1)のスイッチに設定。
@@ -275,30 +289,83 @@
 	};
 
 
-	/**
-	 * 
-	 */
-	Game_Interpreter.prototype.pluginCommandBook_TF_SELF = function() {
-		return this.eventId();
-	};
-
-
-	/**
-	 * 変数を名前の文字列で指定して値を ID1 の変数に代入
-	 * args[ 0 ] | String | 変数名
-	 */
-	Game_Interpreter.prototype.pluginCommandBook_TF_VARIABLE = function() {
-		$gameVariables.setValue( 1, $gameVariables.getValueByName( args[ 0 ] ) );
+	/*--- Game_Variables ---*/
+	Game_Interpreter.prototype.pluginCommandBook_TF_VAR = function() {
+		if( args[ 1 ] === undefined ) {
+			$gameVariables.setValue( 1, $gameVariables.getValueByName( args[ 0 ] ) );
+		} else {
+			$gameVariables.setValueByName( args[ 0 ], args[ 1 ] );
+		}
 	};
 	/**
-	 * スイッチを名前の文字列で指定して値を ID1 のスイッチに代入
-	 * args[ 0 ] | String | 変数名
+	 * 変数の内容を文字列で指定して返す。
+	 * @param {String} name 変数(ID, 名前, V[n]による指定が可能)
 	 */
-	Game_Interpreter.prototype.pluginCommandBook_TF_SWITCH = function() {
-		$gameSwitches.setValue( 1, $gameSwitches.getValueByName( args[ 0 ] ) );
+	Game_Variables.prototype.getValueByName = function( name ) {
+		return this.value( stringToVariableId( name ) );
+	};
+	/**
+	 * 変数の内容を文字列で指定して返す。
+	 * @param {String} name 変数(ID, 名前, V[n]による指定が可能)
+	 * @param {String} value 設定する値
+	 */
+	Game_Variables.prototype.setValueByName = function( name, value ) {
+		this.setValue( stringToVariableId( name ), value );
 	};
 
+	/**
+	 * 指定された変数のIDを返す。
+	 * @param {String} name 変数(ID, 名前, V[n]による指定が可能)
+	 */
+	function stringToVariableId( name ) {
+		name = treatValue( name );
+		let i = $dataSystem.variables.findIndex( i => i === name );
+		if( 0 <= i ) return i;
+		i = parseInt( name, 10 );
+		if( isNaN( i ) ) throw new Error( `I can't find the variable '${name}'` );
+		return i;
+	}
 
+
+	/*--- Game_Switches ---*/
+	Game_Interpreter.prototype.pluginCommandBook_TF_SW = function() {
+		if( args[ 1 ] === undefined ) {
+			$gameSwitches.setValue( 1, $gameSwitches.setValueByName( args[ 0 ] ) );
+		} else {
+			$gameSwitches.setValueByName( args[ 0 ], args[ 1 ] );
+		}
+	};
+
+	/**
+	 * スイッチの内容を文字列で指定して返す
+	 * @param {String} name スイッチ(ID, 名前, V[n]による指定が可能)
+	 */
+	Game_Switches.prototype.getValueByName = function( name ) {
+		return this.value( stringToSwitchId( name ) );
+	};
+	/**
+	 * スイッチの内容を文字列で指定して設定
+	 * @param {String} name スイッチ(ID, 名前, V[n]による指定が可能)
+	 * @param {String} value 設定する値(
+	 */
+	Game_Switches.prototype.setValueByName = function( name, value ) {
+		this.setValue( stringToSwitchId( name ), value );
+	};
+	/**
+	 * 指定されたスイッチのIDを返す
+	 * @param {String} name スイッチ(ID, 名前, V[n]による指定が可能)
+	 */
+	function stringToSwitchId( name ) {
+		name = treatValue( name );
+		let i = $dataSystem.switches.findIndex( i => i === name );
+		if( 0 <= i ) return i;
+		i = parseInt( name, 10 );
+		if( isNaN( i ) ) throw new Error( `I can't find the switche '${name}'` );
+		return i;
+	}
+
+
+	/*--- SelfSwitche ---*/
 	/**
 	 * [セルフスイッチ] を設定します
 	 * @param {Array} args [ id, type, isOn ]
@@ -310,12 +377,20 @@
 		const id = stringToEventId( args[ 0 ] );
 		const type = args[ 1 ] ? args[ 1 ].toUpperCase() : 'A';
 		const isOn = args[ 2 ];
-		if( isOn ) {
-			$gameSelfSwitches.setValue( [ $gameMap.mapId(), id, type ], parseBooleanStrict( isOn ) );
-		} else {
+		if( isOn === undefined ) {
 			$gameSwitches.setValue( 1, $gameSelfSwitches.value( [ $gameMap.mapId(), id, type ] ) );
+		} else {
+			$gameSelfSwitches.setValue( [ $gameMap.mapId(), id, type ], parseBooleanStrict( isOn ) );
 		}
-		return this;
+	};
+
+
+	Game_Interpreter.prototype.pluginCommandBook_TF_CHECK_LOCATION = function() {
+		const x = parseFloatStrict( args[ 0 ] );
+		const y = parseFloatStrict( args[ 1 ] );
+		const d = stringToDirection( args[ 2 ] );
+		const item = treatValue( args[ 3 ] );
+		return
 	};
 
 	// 出現条件(アイテム)
@@ -324,25 +399,6 @@
 	};
 
 
-	/*--- Game_Variables ---*/
-	/**
-	 * 変数を文字列で指定して返す
-	 */
-	Game_Variables.prototype.getValueByName = function( name ) {
-		const i = $dataSystem.variables.findIndex( i => i === name );
-		if( i === -1 ) throw new Error( `I can't find the variable '${name}'` );
-		return this.value( i );
-	};
-
-	/*--- Game_Switches ---*/
-	/**
-	 * スイッチを文字列で指定して返す
-	 */
-	Game_Switches.prototype.getValueByName = function( name ) {
-		const i = $dataSystem.switches.findIndex( value => value === name );
-		if( i === -1 ) throw new Error( `I can't find the switch '${name}'` );
-		return this.value( i );
-	};
 
 	/*==== 音設定 ====*/
 	/*--- Window_Options ---*/
