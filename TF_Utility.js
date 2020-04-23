@@ -1,6 +1,6 @@
 //========================================
 // TF_Utility.js
-// Version :0.8.1.0
+// Version :0.9.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019-2020
@@ -16,11 +16,43 @@
  * @help
  * イベントコマンドの[スクリプト]から使いやすいようにラッピング。
  * TkoolMV_PluginCommandBook.js 必須。
+ *
+ *------------------------------
+ * TF_SELF_SW [イベントID] [スイッチタイプ] [状態]
+ * 　イベントの[セルフスイッチ] を設定。
+ * 　[イベントID] 0:このイベント、-1:プレイヤー、1〜:イベントID(規定値:0)
+ * 　　this(またはself):このイベント、player:プレイヤー
+ * 　　イベントの[名前]で指定(上記の数値や this などと同じ名前、およびスペースの入った名前は指定できません)
+ * 　[スイッチタイプ]
+ * 　[状態] true/false の状態
+ * 
+ * 例: TF_SELF_SW スイッチ A true
+ *------------------------------
+ * TF_SELF_SW [イベントID] [スイッチタイプ]
+ * 　イベントの[セルフスイッチ] の値を、指定ID(規定値:1)のスイッチに設定。
+ *------------------------------
+ * TF_BEFORE_MOVE [マップID] [x]] [y] [向き]
+ * 　一歩前進してフェードアウトを行い、マップを移動する。
+ * 　[マップID]  マップID(数値) か マップ名(文字列) か 現在のマップ: self, this
+ * 　[x] x位置(タイル数)
+ * 　[y] y位置(タイル数)
+ * 　[向き] 移動後のキャラの向き(規定値: 0 現在の向き)
+ * 　　上: 8, up, u, north, n, back, b
+ * 　　左: 4, left, l, west, w
+ * 　　右: 6, right, r, east, e
+ * 　　下: 2, down, d, south, s, front, forward, f
+ * 
+ * 例: TF_BEFORE_MOVE 砂漠の町 10.5 25 W
+ *------------------------------
+ * TF_AFTER_MOVE
+ * 　フェードインして一歩前進。
+ *------------------------------
  */
 
 ( function() {
 	'use strict';
 	const PARAM_TRUE = 'true';
+	const PARAM_ON = 'on';
 
 	const VOLUME_OFFSET = 5;	//オプション: 音量の最小変更数を5に。
 
@@ -84,8 +116,8 @@
      * @returns {Boolean} 
      */
 	function parseBooleanStrict( value ) {
-		const result = treatValue( value );
-		return ( result.toLowerCase() == PARAM_TRUE );
+		const result = treatValue( value ).toLowerCase();
+		return ( result === PARAM_TRUE || result === PARAM_ON );
 	};
 
 
@@ -102,11 +134,9 @@
 	 */
 	function stringToEventId( value ) {
 		value = treatValue( value );
-		const result = parseInt( value, 10 );
-		if( !isNaN( result ) ) return result;
 
-		value = value.toLowerCase();
-		switch( value ) {
+		const label = value.toLowerCase();
+		switch( label ) {
 			case EVENT_THIS:
 			case EVENT_SELF: return 0;
 			case EVENT_PLAYER: return -1;
@@ -114,16 +144,16 @@
 			case EVENT_FOLLOWER1: return -3;
 			case EVENT_FOLLOWER2: return -4;
 		}
-
 		// イベント名で指定できるようにする
 		const i = $gameMap._events.findIndex( e => {
 			if( e === undefined ) return false;	// _events[0] が undefined なので無視
-
-			const eventId = e._eventId;
-			return $dataMap.events[ eventId ].name === value;
+			return $dataMap.events[ e._eventId ].name === value;
 		} );
-		if( i === -1 ) throw Error( `指定したイベント[${value}]がありません。` );
-		return i;
+		if( i !== -1 ) return i;
+
+		const result = parseInt( value, 10 );
+		if( !isNaN( result ) ) return result;
+		throw Error( `指定したイベント[${value}]がありません。` );
 	}
 
 	/**
@@ -133,18 +163,18 @@
 	 */
 	function stringToMapId( value ) {
 		value = treatValue( value );
-		const result = parseInt( value, 10 );
-		if( !isNaN( result ) ) return result;
 
-		value = value.toLowerCase();
-		if( value === EVENT_THIS || value === EVENT_SELF ) return $gameMap.mapId();
+		const label = value.toLowerCase();
+		if( label === EVENT_THIS || label === EVENT_SELF ) return $gameMap.mapId();
 
 		const i = $dataMapInfos.findIndex( e => {
 			if( !e ) return false;
 			return e.name === value;
 		} );
-		if( i === -1 ) throw Error( `指定したマップ[${value}]がありません。` );
-		return i;
+		if( i !== -1 ) return i; // $dataMapInfos[ i ].id が正しい気がするが、実は使われていないようだ
+		const result = parseInt( value, 10 );
+		if( isNaN( result ) ) throw Error( `指定したマップ[${value}]がありません。` );
+		return result;
 	}
 
 	const DIRECTION_UP = [ 'up', 'u', 'north', 'n', 'back', 'b' ];
@@ -172,14 +202,14 @@
 	/**
 	 * マップ移動前の処理。
 	 * 向きは省略可能で、規定値は現在の向き( 0 )が設定される。
-	 * TF_MOVE_BEFORE マップID x座標 y座標 向き
+	 * @example TF_BEFORE_MOVE マップID x座標 y座標 向き
 	 * @param {Array} args [ mapId, x, y, d ]
 	 * @param {String} mapId マップID | マップ名 | self | this
 	 * @param {String} x x座標(タイル数)
 	 * @param {String} y y座標(タイル数)
 	 * @param {String} d 向き(テンキー対応 | 方向文字列)
 	 */
-	Game_Interpreter.prototype.pluginCommandBook_TF_MOVE_BEFORE = function( args ) {
+	Game_Interpreter.prototype.pluginCommandBook_TF_BEFORE_MOVE = function( args ) {
 		const mapId = stringToMapId( args[ 0 ] );
 		const x = parseFloatStrict( args[ 1 ] );
 		const y = parseFloatStrict( args[ 2 ] );
@@ -206,12 +236,9 @@
 	};
 
 	/**
-	 * TF_MOVE_AFTER
-	 * 上向きは出現位置かい一歩移動
-	 * 横向きは出現位置から二歩移動
-	 * 下向きは0.5上から出現して一歩移動
+	 * 移動後のフェードインおよび一歩前進処理を行う
 	 */
-	Game_Interpreter.prototype.pluginCommandBook_TF_MOVE_AFTER = function() {
+	Game_Interpreter.prototype.pluginCommandBook_TF_AFTER_MOVE = function() {
 		const commandList = [
 			{ indent: 0, code: CHANGE_PLAYER_FOLLOWERS, parameters: [ 0 ] },
 			{ indent: 0, code: FADEIN_SCREEN },
@@ -235,10 +262,13 @@
 
 
 	// Show Picture
-	Game_Interpreter.prototype.pluginCommandBook_TF_pict = function( args ) {
+	/**
+	 * 
+	 */
+	Game_Interpreter.prototype.pluginCommandBook_TF_PICT = function( args ) {
 		const x = args[ 0 ];
 		const y = args[ 1 ];
-		// 
+		// const align = args[  ]; 	// TODO: アラインメント設定を可能にする UL, UR, DL, DR, LOM(Left On Message), ROM(Right On Message)
 		$gameScreen.showPicture( this._params[ 0 ], this._params[ 1 ], this._params[ 2 ],
 			x, y, this._params[ 6 ], this._params[ 7 ], this._params[ 8 ], this._params[ 9 ] );
 		return true;
@@ -251,6 +281,7 @@
 	Game_Interpreter.prototype.pluginCommandBook_TF_SELF = function() {
 		return this.eventId();
 	};
+
 
 	/**
 	 * 変数を名前の文字列で指定して値を ID1 の変数に代入
