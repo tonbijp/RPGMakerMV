@@ -17,3 +17,4 @@
 |[TF_VectorWindow.js](https://raw.githubusercontent.com/tonbijp/RPGMakerMV/master/TF_VectorWindow.js)| ウィンドウをベクター描画 | α版 | |
 |[TF_ScreenUtil.js](https://raw.githubusercontent.com/tonbijp/RPGMakerMV/master/TF_ScreenUtil.js)| 画面サイズ設定など | α版 | |
 |[TF_FixedMap.js](https://raw.githubusercontent.com/tonbijp/RPGMakerMV/master/TF_FixedMap.js)| マップのスクロールを固定 | α版 | |
+|[TF_Condition.js](https://raw.githubusercontent.com/tonbijp/RPGMakerMV/master/TF_Condition.js)| 変数・スイッチ・判定など | α版 | |
