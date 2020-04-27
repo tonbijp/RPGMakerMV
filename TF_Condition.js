@@ -1,6 +1,6 @@
 //========================================
 // TF_Condition.js
-// Version :0.0.0.1
+// Version :0.1.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -27,12 +27,14 @@
  *
  * 例: TF_VAR シーン 10
  *------------------------------
-	[スクリプト] $gameVariables.setValueByName( [変数ID], [変数への設定値] );
+ * [スクリプト] $gameVariables.setValueByName( [変数ID], [変数への設定値] )
  *------------------------------
  * TF_VAR [変数ID]
  * 　変数の値を、指定ID(規定値:1)の変数に設定。
  *
  * 例: TF_VAR 石を叩いた回数
+ *------------------------------
+ * [スクリプト] $gameVariables.valueByName( [変数ID] )
  *------------------------------
  * TF_SW [スイッチID] [スイッチ状態]
  * 　スイッチを設定
@@ -41,12 +43,21 @@
  *
  * 例: TF_SW 賢者に会った ON
  *------------------------------
-	[スクリプト] $gameSwitches.setValueByName( [スイッチID], [スイッチ状態(真偽値)] );
+ * [スクリプト] $gameSwitches.setValueByName( [スイッチID], [スイッチ状態(真偽値)] )
  *------------------------------
  * TF_SW [スイッチID]
  * 　スイッチの値を、指定ID(規定値:1)のスイッチに設定。
  *
  * 例: TF_SW クイーンビーを倒した
+ *------------------------------
+ * [スクリプト] $gameSwitches.valueByName( [スイッチID] )
+ *------------------------------
+ * TF_SW_AND [スイッチID]...
+ * 　複数のスイッチの値の論理積(AND)の結果を、指定ID(規定値:1)のスイッチに設定。
+ * 
+ * 例: TF_SW 森の妖精 岩場の妖精 湖の妖精 丘の妖精
+ *------------------------------
+ * [スクリプト]  $gameSwitches.MultipleAnd( [スイッチID]... )
  *------------------------------
  * TF_SELF_SW [イベントID] [スイッチタイプ] [スイッチ状態]
  * 　同マップ内のイベントのセルフスイッチを設定。
@@ -68,7 +79,7 @@
  * 　[マップID]  マップID | マップ名 | self | this
  * 　[論理演算子] 指定ID(規定値:1)のスイッチ と比較する 論理演算子( logical operator )による接続( & | | | and | or )
  *------------------------------
- * [スクリプト] this.TF_frontEvent( [マップID], [イベントID], [論理演算子] );
+ * [スクリプト] this.TF_frontEvent( [マップID], [イベントID], [論理演算子] )
  *------------------------------
  * TF_CHECK_LOCATION [マップID] [x] [y] [向き] [論理演算子]
  * 　プレイヤーの座標位置と向きをチェックして合致して結果を、指定ID(規定値:1)のスイッチに設定。
@@ -77,7 +88,7 @@
  * 　[y] 対象y座標(タイル数)
  * 　[向き] プレイヤーの向き(テンキー対応 | 方向文字列)
  *------------------------------
- * [スクリプト] this.TF_checkLocation( [マップID], [x], [y], [向き], [論理演算子] );
+ * [スクリプト] this.TF_checkLocation( [マップID], [x], [y], [向き], [論理演算子] )
  *------------------------------
  */
 
@@ -85,7 +96,10 @@
 	'use strict';
 	const PARAM_TRUE = 'true';
 	const PARAM_ON = 'on';
-	const PLAYER_CHARACTER = -1;
+	const OPE_AND = 'and';
+	const OPE_OR = 'or';
+	const OPE_AND_MARK = '&';
+	const OPE_OR_MARK = '|';
 
 
 	/**
@@ -137,9 +151,9 @@
 		if( logope === undefined ) return;
 
 		logope = logope.toLowerCase();
-		if( logope === '&' || logope === 'and' ) {
+		if( logope === OPE_AND_MARK || logope === OPE_AND ) {
 			if( !$gameSwitches.value( 1 ) ) return false;
-		} else if( logope === '|' || logope === 'or' ) {
+		} else if( logope === OPE_OR_MARK || logope === OPE_OR ) {
 			if( $gameSwitches.value( 1 ) ) return true;
 		}
 	}
@@ -228,7 +242,7 @@
 	const TF_VAR = 'TF_VAR';
 	const TF_SW = 'TF_SW';
 	const TF_SELF_SW = 'TF_SELF_SW';
-	const TF_LOGOP_SW = 'TF_LOGOP_SW';
+	const TF_SW_AND = 'TF_SW_AND';
 	const TF_CHECK_LOCATION = 'TF_CHECK_LOCATION';
 	const TF_FRONT_EVENT = 'TF_FRONT_EVENT';
 
@@ -242,26 +256,24 @@
 		const commandStr = command.toUpperCase();
 		if( commandStr === TF_VAR ) {
 			if( args[ 1 ] === undefined ) {
-				$gameVariables.setValue( 1, $gameVariables.getValueByName( args[ 0 ] ) );
+				$gameVariables.setValue( 1, $gameVariables.valueByName( args[ 0 ] ) );
 			} else {
 				$gameVariables.setValueByName( args[ 0 ], args[ 1 ] );
 			}
 		} else if( commandStr === TF_SW ) {
 			if( args[ 1 ] === undefined ) {
-				$gameSwitches.setValue( 1, $gameSwitches.setValueByName( args[ 0 ] ) );
+				$gameSwitches.setValue( 1, $gameSwitches.valueByName( args[ 0 ] ) );
 			} else {
 				$gameSwitches.setValueByName( args[ 0 ], args[ 1 ] );
 			}
 		} else if( commandStr === TF_SELF_SW ) {
 			setSelfSwitch.apply( this, args );
-		} else if( commandStr === TF_LOGOP_SW ) {
-			/**
-			 * スイッチを & や | で繋いで、一度に判定させる予定のコマンド
-			 */
+		} else if( commandStr === TF_SW_AND ) {
+			$gameSwitches.setValue( 1, $gameSwitches.MultipleAnd( ...args ) );
 		} else if( commandStr === TF_FRONT_EVENT ) {
-			$gameSwitches.setValue( 1, this.TF_frontEvent.apply( this, args ) );
+			$gameSwitches.setValue( 1, this.TF_frontEvent( ...args ) );
 		} else if( commandStr === TF_CHECK_LOCATION ) {
-			$gameSwitches.setValue( 1, this.TF_checkLocation.apply( this, args ) );
+			$gameSwitches.setValue( 1, this.TF_checkLocation( ...args ) );
 		};
 	};
 
@@ -318,14 +330,14 @@
 
 	/*--- Game_Variables ---*/
 	/**
-	 * 変数の内容を文字列で指定して返す。
+	 * 変数を文字列で指定し、値を返す。
 	 * @param {String} name 変数(ID, 名前, V[n]による指定が可能)
 	 */
-	Game_Variables.prototype.getValueByName = function( name ) {
+	Game_Variables.prototype.valueByName = function( name ) {
 		return this.value( stringToVariableId( name ) );
 	};
 	/**
-	 * 変数の内容を文字列で指定して返す。
+	 * 変数を文字列で指定し、値を設定。
 	 * @param {String} name 変数(ID, 名前, V[n]による指定が可能)
 	 * @param {String} value 設定する値
 	 */
@@ -352,7 +364,7 @@
 	 * スイッチの内容を文字列で指定して返す
 	 * @param {String} name スイッチ(ID, 名前, V[n]による指定が可能)
 	 */
-	Game_Switches.prototype.getValueByName = function( name ) {
+	Game_Switches.prototype.valueByName = function( name ) {
 		return this.value( stringToSwitchId( name ) );
 	};
 	/**
@@ -374,6 +386,11 @@
 		i = parseInt( name, 10 );
 		if( isNaN( i ) ) throw new Error( `I can't find the switche '${name}'` );
 		return i;
+	}
+
+	Game_Switches.prototype.MultipleAnd = function( ...args ) {
+
+		return args.reduce( ( pre, curr ) => pre && $gameSwitches.valueByName( curr ), true );
 	}
 
 	/*--- SelfSwitche ---*/
