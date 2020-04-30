@@ -1,6 +1,6 @@
 //========================================
 // TF_Condition.js
-// Version :0.1.0.0
+// Version :0.2.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -101,6 +101,8 @@
 	const OPE_AND_MARK = '&';
 	const OPE_OR_MARK = '|';
 
+	// HalfMove.js の確認
+	const hasHalfMove = PluginManager._scripts.contains( 'HalfMove' );
 
 	/**
 	 * 与えられた文字列に変数が指定されていたら、変数の内容に変換して返す。
@@ -291,13 +293,17 @@
 		mapId = stringToMapId( mapId );
 		if( mapId !== $gameMap.mapId() ) return false;
 
+		let events;
+		if( hasHalfMove ) {//HalfMove.js を使っている場合
+			const x = $gameMap.roundHalfXWithDirection( $gamePlayer.x, $gamePlayer.direction() );
+			const y = $gameMap.roundHalfYWithDirection( $gamePlayer.y, $gamePlayer.direction() );
+			events = $gameMap.eventsXyUnitNt( x, y );
+		} else {
+			const x = $gameMap.roundXWithDirection( $gamePlayer.x, $gamePlayer.direction() );
+			const y = $gameMap.roundYWithDirection( $gamePlayer.y, $gamePlayer.direction() );
+			events = $gameMap.eventsXy( x, y );
+		}
 		eventId = stringToEventId( eventId );
-		// const x = $gameMap.roundXWithDirection( $gamePlayer.x, $gamePlayer.direction() );
-		// const y = $gameMap.roundYWithDirection( $gamePlayer.y, $gamePlayer.direction() );
-		//const events = $gameMap.eventsXy( x, y );
-		const x = $gameMap.roundHalfXWithDirection( $gamePlayer.x, $gamePlayer.direction() );//HalfMove.js のメソッド
-		const y = $gameMap.roundHalfYWithDirection( $gamePlayer.y, $gamePlayer.direction() );//HalfMove.js のメソッド
-		const events = $gameMap.eventsXyUnitNt( x, y );//HalfMove.js のメソッド
 		return events.some( e => e.eventId() === eventId );
 	};
 
