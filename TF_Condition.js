@@ -1,6 +1,6 @@
 //========================================
 // TF_Condition.js
-// Version :0.2.0.0
+// Version :0.2.1.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -410,7 +410,7 @@
 		eventId = stringToEventId( eventId );
 		type = type ? type.toUpperCase() : 'A';
 		if( isOn === undefined ) {
-			$gameSwitches.setValue( 1, $gameSelfSwitches.value( [ $gameMap.mapId(), id, type ] ) );
+			$gameSwitches.setValue( 1, $gameSelfSwitches.value( [ $gameMap.mapId(), eventId, type ] ) );
 		} else {
 			$gameSelfSwitches.setValue( [ $gameMap.mapId(), eventId, type ], parseBooleanStrict( isOn ) );
 		}
