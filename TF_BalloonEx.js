@@ -1,6 +1,6 @@
 //========================================
 // TF_BalloonEx.js
-// Version :1.1.0.1
+// Version :1.1.0.2
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -93,6 +93,11 @@
  * Released under the MIT License.
  */
 /*~struct~BalloonParam:
+ *
+ * @param name
+ * @desc  no function(for user detection)
+ * @type String
+ * @default ''
  *
  * @param dx
  * @desc difference x coordinate.
@@ -233,7 +238,11 @@
  */
 
 /*~struct~BalloonParamJa:
- *
+ * *
+ * @param name
+ * @desc  機能なし(ユーザがデータを見やすいように)
+ * @type String
+ * 
  * @param dx
  * @desc フキダシ表示座標のx差分。正の値で右に負の値で左にずれる。
  * @type Number
