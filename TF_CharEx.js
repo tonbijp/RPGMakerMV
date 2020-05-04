@@ -1,6 +1,6 @@
 //========================================
 // TF_CharEx.js
-// Version :0.5.3.0
+// Version :0.5.3.2
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -28,18 +28,20 @@
  *
  *------------------------------
  * TF_SET_CHAR [イベントID] [画像ファイル名] [キャラ番号] [歩行パターン] [向き]
- * 　[移動ルートの設定] の[画像の変更]と[○を向く]に加え歩行パターンも一度に指定。
+ * 　イベントコマンド[移動ルートの設定] の[画像の変更]と[○を向く]に加え歩行パターンも一度に指定。
  * 　[イベントID] 0:このイベント、-1:プレイヤー、-2〜-4:隊列メンバー、1〜:イベントID(規定値:0)
- * 　　this:このイベント、player:プレイヤー、follower0:隊列メンバー0、follower1:隊列メンバー1、follower2:隊列メンバー2
+ * 　　this(またはself):このイベント、player:プレイヤー、follower0:隊列メンバー0、follower1:隊列メンバー1、follower2:隊列メンバー2
  * 　　イベントの[名前]で指定(上記の数値や this などと同じ名前、およびスペースの入った名前は指定できません)
  * 　[画像ファイル名] .pngを除いた img/character/ フォルダのファイル名
- * 　[キャラ番号] 画像の上段左から 0,１, 2, 3 、下段目が 4, 5, 6, 7 となる番号
+ * 　[キャラ番号] 画像の上段左から 0,１, 2, 3 、下段が 4, 5, 6, 7 となる番号
  * 　[歩行パターン] 3パターンアニメの左から 0, 1, 2(規定値:現在値)
- * 　[向き] 4方向のキャラの向き、テンキーに対応した 2, 4, 6, 8 (規定値:2、[歩行パターン]の指定がない場合は現在値)
- * 　　数値の代わりに、2は down, d, south, s, front, forward, f、4は left, l, west, w
- * 　　6は right, r, east, e、8は up, u, north, n, back, b が使えます。
+ * 　[向き] 4方向のキャラの向き (規定値:2、[歩行パターン]の指定がない場合は現在値)
+ * 　　上: 8, up, u, north, n, back, b
+ * 　　左: 4, left, l, west, w
+ * 　　右: 6, right, r, east, e
+ * 　　下: 2, down, d, south, s, front, forward, f
  *
- * 　例: TF_SET_CHAR 2 !Door2 2 0 2
+ * 　例: TF_SET_CHAR self !Door 2 0 D
  *------------------------------
  * TF_SET_CHAR [イベントID] [画像ファイル名] [キャラ番号] [パターン]
  * 　[パターン] 一度に [歩行パターン] と [向き] を指定する番号(規定値:現在値)
@@ -49,6 +51,8 @@
  * 　　6, 7, 8		<= 右向き(テンキー6)
  * 　　9, 10, 11 <= 上向き(テンキー8)
  * 　TF_SET_CHAR 以外でも [歩行パターン] [向き] の代わりに [パターン] を指定できる。
+ * 
+ * 　例: TF_SET_CHAR player Animal 7 11
  *------------------------------
  * TF_LOCATE_CHAR [イベントID] [x] [y] [歩行パターン] [向き]
  * 　位置を設定。
@@ -158,16 +162,18 @@
 			return interpreter.character( id );			// プレイヤーキャラおよびイベント
 		}
 	}
+
+	const EVENT_THIS = 'this';
+	const EVENT_SELF = 'self';
+	const EVENT_PLAYER = 'player';
+	const EVENT_FOLLOWER0 = 'follower0';
+	const EVENT_FOLLOWER1 = 'follower1';
+	const EVENT_FOLLOWER2 = 'follower2';
 	/**
 	 * 文字列をイベントIDへ変換
 	 * @param {String} value イベントIDの番号か識別子
 	 * @returns {Number} 拡張イベントID
 	 */
-	const EVENT_THIS = 'this';
-	const EVENT_PLAYER = 'player';
-	const EVENT_FOLLOWER0 = 'follower0';
-	const EVENT_FOLLOWER1 = 'follower1';
-	const EVENT_FOLLOWER2 = 'follower2';
 	function stringToEventId( value ) {
 		value = treatValue( value );
 		const result = parseInt( value, 10 );
@@ -176,15 +182,11 @@
 		value = value.toLowerCase();
 		switch( value ) {
 			case EVENT_THIS:
-				return 0;
-			case EVENT_PLAYER:
-				return -1;
-			case EVENT_FOLLOWER0:
-				return -2;
-			case EVENT_FOLLOWER1:
-				return -3;
-			case EVENT_FOLLOWER2:
-				return -4;
+			case EVENT_SELF: return 0;
+			case EVENT_PLAYER: return -1;
+			case EVENT_FOLLOWER0: return -2;
+			case EVENT_FOLLOWER1: return -3;
+			case EVENT_FOLLOWER2: return -4;
 		}
 
 		// イベント名で指定できるようにする
@@ -198,25 +200,26 @@
 		return i;
 	}
 
+
 	const DIRECTION_UP = [ 'up', 'u', 'north', 'n', 'back', 'b' ];
 	const DIRECTION_LEFT = [ 'left', 'l', 'west', 'w' ];
 	const DIRECTION_RIGHT = [ 'right', 'r', 'east', 'e' ];
 	const DIRECTION_DOWN = [ 'down', 'd', 'south', 's', 'front', 'forward', 'f' ];
+	/**
+	 * 方向文字列をテンキー方向の数値に変換して返す
+	 * @param {String} value 方向た文字列
+	 * @returns {Number} テンキー方向の数値(変換できなかった場合:undefined)
+	 */
 	function stringToDirection( value ) {
 		value = treatValue( value );
 		const result = parseInt( value, 10 );
 		if( !isNaN( result ) ) return result;
 
 		value = value.toLowerCase();
-		if( DIRECTION_DOWN.includes( value ) ) {
-			return 2;
-		} else if( DIRECTION_LEFT.includes( value ) ) {
-			return 4;
-		} else if( DIRECTION_RIGHT.includes( value ) ) {
-			return 6;
-		} else if( DIRECTION_UP.includes( value ) ) {
-			return 8;
-		}
+		if( DIRECTION_DOWN.includes( value ) ) return 2;
+		if( DIRECTION_LEFT.includes( value ) ) return 4;
+		if( DIRECTION_RIGHT.includes( value ) ) return 6;
+		if( DIRECTION_UP.includes( value ) ) return 8;
 	}
 
 	// イベントコマンドの番号
@@ -237,32 +240,32 @@
 
 	/*---- Game_Interpreter ----*/
 	/**
-	 * プラグインコマンドの実行
+	 * プラグインコマンドの実行。
 	 */
 	const _Game_Interpreter_pluginCommand = Game_Interpreter.prototype.pluginCommand;
 	Game_Interpreter.prototype.pluginCommand = function( command, args ) {
 		_Game_Interpreter_pluginCommand.apply( this, arguments );
 
 		const commandStr = command.toUpperCase();
-		if( commandStr === TF_SET_CHAR ) {
-			setCharPattern.apply( this, args );
-		} else if( commandStr === TF_LOCATE_CHAR ) {
-			locateChar.apply( this, args );
-		} else if( commandStr === TF_START_ANIME ) {
-			startAnime.apply( this, args );
-		} else if( commandStr === TF_END_ANIME ) {
-			endAnime.apply( this, args );
-		} else if( commandStr === TF_ANIME ) {
-			anime.apply( this, args );
-		} else if( commandStr === TF_VD_ANIME ) {
-			vdAnime.apply( this, args );
-		} else if( commandStr === TF_VU_ANIME ) {
-			vuAnime.apply( this, args );
+		switch( commandStr ) {
+			case TF_SET_CHAR: setCharPattern.apply( this, args ); break;
+			case TF_LOCATE_CHAR: locateChar.apply( this, args ); break;
+			case TF_START_ANIME: startAnime.apply( this, args ); break;
+			case TF_END_ANIME: endAnime.apply( this, args ); break;
+			case TF_ANIME: anime.apply( this, args ); break;
+			case TF_VD_ANIME: vdAnime.apply( this, args ); break;
+			case TF_VU_ANIME: vuAnime.apply( this, args ); break;
 		}
 	};
 
 	/**
-	 * TF_SET_CHAR  の実行
+	 * TF_SET_CHAR  の実行。
+	 *
+	 * @param {String} eventId イベントIDかそれに替わる識別子の文字列
+	 * @param {String} fileName キャラクタファイル名( img/characters/ 以下)
+	 * @param {String} charaNo キャラクタ番号( 0~7 )
+	 * @param {String} patternNo パターン番号( 0~2 )
+	 * @param {String} d キャラの向き(テンキー対応)
 	 * @returns {Object} { id:{Number}, object:{Game_Character} }
 	 */
 	function setCharPattern( eventId, fileName, charaNo, patternNo, d ) {
@@ -310,7 +313,13 @@
 	}
 
 	/**
-	 * TF_LOCATE_CHAR  の実行
+	 * TF_LOCATE_CHAR  の実行。
+	 *
+	 * @param {String} eventId イベントIDかそれに替わる識別子の文字列
+	 * @param {String} x x座標(タイル数)
+	 * @param {String} y y座標(タイル数)
+	 * @param {String} patternNo パターン番号( 0~2 )
+	 * @param {String} d キャラの向き(テンキー対応)
 	 */
 	function locateChar( eventId, x, y, patternNo, d ) {
 		let targetEvent;
@@ -323,7 +332,9 @@
 	}
 
 	/**
-	 * TF_START_ANIME  の実行
+	 * TF_START_ANIME  の実行。
+	 *
+	 * @param {String} eventId イベントIDかそれに替わる識別子の文字列
 	 */
 	function startAnime( eventId ) {
 		const targetEvent = getEventById( this, stringToEventId( eventId ) );
@@ -332,7 +343,9 @@
 	}
 
 	/**
-	 * TF_END_ANIME  の実行
+	 * TF_END_ANIME  の実行。
+	 * 
+	 * @param {String} eventId イベントIDかそれに替わる識別子の文字列
 	 */
 	function endAnime( eventId ) {
 		const targetEvent = getEventById( this, stringToEventId( eventId ) );
@@ -355,7 +368,15 @@
 	}
 
 	/**
-	 * TF_ANIME  の実行
+	 * TF_ANIME  の実行。
+	 *
+	 * @param {String} eventId イベントIDかそれに替わる識別子の文字列
+	 * @param {String} mx x移動距離( 規定値: 0ピクセル )
+	 * @param {String} my y移動距離( 規定値: 0ピクセル )
+	 * @param {String} waitFrames 表示時間( 規定値: 3フレーム )
+	 * @param {String} charaNo キャラクタ番号( 0~7 )
+	 * @param {String} patternNo パターン番号( 0~2 )
+	 * @param {String} d キャラの向き(テンキー対応)
 	 */
 	function anime( eventId, mx, my, waitFrames, charaNo, patternNo, d ) {
 		const result = setCharPattern.call( this, eventId, undefined, charaNo, patternNo, d );
@@ -370,7 +391,13 @@
 	}
 
 	/**
-	 * TF_VD_ANIME  の実行
+	 * TF_VD_ANIME  の実行。
+	 * 
+	 * @param {String} eventId イベントIDかそれに替わる識別子の文字列
+	 * @param {String} fileName キャラクタファイル名( img/characters/ 以下)
+	 * @param {String} charaNo キャラクタ番号( 0~7 )
+	 * @param {String} patternNo パターン番号( 0~2 )
+	 * @param {String} waitFrames 待ちフレーム数
 	 */
 	function vdAnime( eventId, fileName, charaNo, patternNo, waitFrames ) {
 		waitFrames = ( waitFrames === undefined ) ? 3 : parseIntStrict( waitFrames );
@@ -392,7 +419,13 @@
 	}
 
 	/**
-	 * TF_VU_ANIME  の実行
+	 * TF_VU_ANIME  の実行。
+	 *
+	 * @param {String} eventId イベントIDかそれに替わる識別子の文字列
+	 * @param {String} fileName キャラクタファイル名( img/characters/ 以下)
+	 * @param {String} charaNo キャラクタ番号( 0~7 )
+	 * @param {String} patternNo パターン番号( 0~2 )
+	 * @param {String} waitFrames 待ちフレーム数
 	 */
 	function vuAnime( eventId, fileName, charaNo, patternNo, waitFrames ) {
 		waitFrames = ( waitFrames === undefined ) ? 3 : parseIntStrict( waitFrames );
@@ -427,9 +460,13 @@
 	 */
 	const _Game_CharacterBase_isMoving = Game_CharacterBase.prototype.isMoving;
 	Game_CharacterBase.prototype.isMoving = function() {
-		if( this.TF_isAnime ) return false;
+		if( this.TF_isAnime ) return false;	// TF_isAnime フラグが true の場合、規定の移動処理を行わない。
 		return _Game_CharacterBase_isMoving.call( this );
 	}
+
+
+	// Game_Event と同様に Game_Player・Game_Follower にオリジナルパターン( _originalPattern )の変更機能をつける。
+	// これにより歩行パターンを設定後、規定(1)のオリジナルパターンに戻ることを防ぐ。
 
 	/*---- Game_Player ----*/
 	const _Game_Player_initMembers = Game_Player.prototype.initMembers;
