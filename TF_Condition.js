@@ -1,6 +1,6 @@
 //========================================
 // TF_Condition.js
-// Version :0.2.1.0
+// Version :0.2.2.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -55,9 +55,9 @@
  * TF_SW_AND [スイッチID]...
  * 　複数のスイッチの値の論理積(AND)の結果を、指定ID(規定値:1)のスイッチに設定。
  * 
- * 例: TF_SW 森の妖精 岩場の妖精 湖の妖精 丘の妖精
+ * 例: TF_SW_AND 森の妖精 岩場の妖精 湖の妖精 丘の妖精
  *------------------------------
- * [スクリプト]  $gameSwitches.MultipleAnd( [スイッチID]... )
+ * [スクリプト]  $gameSwitches.multipleAnd( [スイッチID]... )
  *------------------------------
  * TF_SELF_SW [イベントID] [スイッチタイプ] [スイッチ状態]
  * 　同マップ内のイベントのセルフスイッチを設定。
@@ -271,7 +271,7 @@
 		} else if( commandStr === TF_SELF_SW ) {
 			setSelfSwitch.apply( this, args );
 		} else if( commandStr === TF_SW_AND ) {
-			$gameSwitches.setValue( 1, $gameSwitches.MultipleAnd( ...args ) );
+			$gameSwitches.setValue( 1, $gameSwitches.multipleAnd( ...args ) );
 		} else if( commandStr === TF_FRONT_EVENT ) {
 			$gameSwitches.setValue( 1, this.TF_frontEvent( ...args ) );
 		} else if( commandStr === TF_CHECK_LOCATION ) {
@@ -394,8 +394,7 @@
 		return i;
 	}
 
-	Game_Switches.prototype.MultipleAnd = function( ...args ) {
-
+	Game_Switches.prototype.multipleAnd = function( ...args ) {
 		return args.reduce( ( pre, curr ) => pre && $gameSwitches.valueByName( curr ), true );
 	}
 
