@@ -1,6 +1,6 @@
 //========================================
 // TF_CharEx.js
-// Version :0.5.3.2
+// Version :0.6.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -10,7 +10,7 @@
 // http://opensource.org/licenses/mit-license.php
 //========================================
 /*:ja
- * @plugindesc キャラのアニメを強化
+ * @plugindesc キャラのアニメや移動など強化
  * @author とんび@鳶嶋工房
  *
  * @param moveUnit
@@ -36,10 +36,11 @@
  * 　[キャラ番号] 画像の上段左から 0,１, 2, 3 、下段が 4, 5, 6, 7 となる番号
  * 　[歩行パターン] 3パターンアニメの左から 0, 1, 2(規定値:現在値)
  * 　[向き] 4方向のキャラの向き (規定値:2、[歩行パターン]の指定がない場合は現在値)
- * 　　上: 8, up, u, north, n, back, b
- * 　　左: 4, left, l, west, w
- * 　　右: 6, right, r, east, e
- * 　　下: 2, down, d, south, s, front, forward, f
+ * 　　上: 8, up, u, north, n, ↑
+ * 　　左: 4, left, l, west, w, ←
+ * 　　右: 6, right, r, east, e, →
+ * 　　下: 2, down, d, south, s, ↓
+ * 　　※[向き]は大文字小文字の区別をしません。
  *
  * 　例: TF_SET_CHAR self !Door 2 0 D
  *------------------------------
@@ -60,6 +61,28 @@
  * 　[y] y位置(タイル数)
  *
  * 　例: TF_LOCATE_CHAR モブおじさん 10 4 5
+ *------------------------------
+ * TF_MOVE_CHAR [イベントID] [向き] [移動距離]
+ * 　指定方向に指定タイル数移動。
+ * 　[移動距離] 移動距離(タイル数)
+ *
+ * 　例: TF_MOVE_CHAR self up 10
+ *------------------------------
+ * [スクリプト] this.TF_moveChar( [イベントID], [向き], [移動距離] );
+ * [移動ルートの設定][スクリプト] this.TF_moveChar(  [向き], [移動距離] );
+ *------------------------------
+ * TF_MOVE_ROUTE [イベントID] [移動指定文字列] [繰り返し] [飛ばす] [待つ]
+ * 　イベントコマンドの[ルートの設定]を一行で書く。
+ * 　[移動指定文字列] コマンド文字+数字を一単位とする文字列
+ * 　　移動 : ←↓↑→↘︎↙︎↗︎↖︎ (0の場合はその方向を向くだけで移動しない、[向き]の文字列も使える)
+ * 　　回転 : ⤹⤵︎ (0の場合ランダム、1の場合即時変更、2以降は歩行速度に応じて回転)
+ * 　　他に、乱, 近, 遠, 前, 後, 跳, 待, ス, 速, 頻, 歩, 踏, 固, 抜 を
+ * 　　一応実装していて英字による指定も可能。ただし、詳細は未決定。
+ * 　[繰り返し] 指定した動作を繰り返すか(規定値:false)
+ * 　[飛ばす] 移動できない場合は飛ばすか(規定値:true)
+ * 　[待つ] 待つか(規定値:true)
+ *
+ * 　例: TF_MOVE_ROUTE this ↑4⤵︎5→3 OFF ON OFF
  *------------------------------
  * TF_START_ANIME [イベントID]
  * 　アニメモードに変更(移動アニメ停止・[すり抜け]ON)。
@@ -100,12 +123,16 @@
 	'use strict';
 	const TF_SET_CHAR = 'TF_SET_CHAR';
 	const TF_LOCATE_CHAR = 'TF_LOCATE_CHAR';
+	const TF_MOVE_CHAR = 'TF_MOVE_CHAR';
+	const TF_MOVE_ROUTE = 'TF_MOVE_ROUTE';
 	const TF_START_ANIME = 'TF_START_ANIME';
 	const TF_ANIME = 'TF_ANIME';
 	const TF_END_ANIME = 'TF_END_ANIME';
 	const TF_VD_ANIME = 'TF_VD_ANIME';
 	const TF_VU_ANIME = 'TF_VU_ANIME';
+
 	const PARAM_TRUE = 'true';
+	const PARAM_ON = 'on';
 
     /**
      * パラメータを受け取る
@@ -122,7 +149,7 @@
 	function treatValue( value ) {
 		if( value === undefined || value === '' ) return '0';
 		if( value[ 0 ] === 'V' || value[ 0 ] === 'v' ) {
-			return value.replace( /[Vv]\[([0-9]+)\]/, ( match, p1 ) => $gameVariables.value( parseInt( p1, 10 ) ) );
+			return value.replace( /[v]\[([0-9]+)\]/i, ( match, p1 ) => $gameVariables.value( parseInt( p1, 10 ) ) );
 		}
 		return value;
 	}
@@ -136,7 +163,7 @@
 		const result = parseInt( treatValue( value ), 10 );
 		if( isNaN( result ) ) throw Error( '指定した値[' + value + ']が数値ではありません。' );
 		return result;
-	};
+	}
 
 	/**
 	 * @method parseFloatStrict
@@ -147,6 +174,16 @@
 		const result = parseFloat( treatValue( value ) );
 		if( isNaN( result ) ) throw Error( '指定した値[' + value + ']が数値ではありません。' );
 		return result;
+	}
+
+    /**
+     * @param {String} value 変換元文字列
+     * @returns {Boolean} 
+     */
+	function parseBooleanStrict( value ) {
+		value = treatValue( value );
+		const result = value.toLowerCase();
+		return ( result === PARAM_TRUE || result === PARAM_ON );
 	}
 
 	/**
@@ -179,8 +216,8 @@
 		const result = parseInt( value, 10 );
 		if( !isNaN( result ) ) return result;
 
-		value = value.toLowerCase();
-		switch( value ) {
+		const lowValue = value.toLowerCase();
+		switch( lowValue ) {
 			case EVENT_THIS:
 			case EVENT_SELF: return 0;
 			case EVENT_PLAYER: return -1;
@@ -194,17 +231,20 @@
 			if( event === undefined ) return false;	// _events[0] が undefined なので無視
 
 			const eventId = event._eventId;
-			return $dataMap.events[ eventId ].name === value
+			return $dataMap.events[ eventId ].name === value;
 		} );
 		if( i === -1 ) throw Error( `指定したイベント[${value}]がありません。` );
 		return i;
 	}
 
-
-	const DIRECTION_UP = [ 'up', 'u', 'north', 'n', 'back', 'b' ];
-	const DIRECTION_LEFT = [ 'left', 'l', 'west', 'w' ];
-	const DIRECTION_RIGHT = [ 'right', 'r', 'east', 'e' ];
-	const DIRECTION_DOWN = [ 'down', 'd', 'south', 's', 'front', 'forward', 'f' ];
+	const DIRECTION_DOWN_LEFT = [ 'downleft', 'dl', 'southwest', 'sw', '↙︎', '左下', '南西' ];
+	const DIRECTION_DOWN = [ 'down', 'd', 'south', 's', '↓', '下', '南' ];
+	const DIRECTION_DOWN_RIGHT = [ 'downright', 'dr', 'southeast', 'se', '↘︎', '右下', '南東' ];
+	const DIRECTION_LEFT = [ 'left', 'l', 'west', 'w', '←', '左', '西' ];
+	const DIRECTION_RIGHT = [ 'right', 'r', 'east', 'e', '→', '右', '東' ];
+	const DIRECTION_UP_LEFT = [ 'upleft', 'ul', 'northwest', 'nw', '↖︎', '左上', '北西' ];
+	const DIRECTION_UP = [ 'up', 'u', 'north', 'n', '↑', '上', '北' ];
+	const DIRECTION_UP_RIGHT = [ 'upright', 'ur', 'northeast', 'ne', '↗︎', '右上', '北東' ];
 	/**
 	 * 方向文字列をテンキー方向の数値に変換して返す
 	 * @param {String} value 方向た文字列
@@ -216,10 +256,14 @@
 		if( !isNaN( result ) ) return result;
 
 		value = value.toLowerCase();
+		if( DIRECTION_DOWN_LEFT.includes( value ) ) return 1;
 		if( DIRECTION_DOWN.includes( value ) ) return 2;
+		if( DIRECTION_DOWN_RIGHT.includes( value ) ) return 3;
 		if( DIRECTION_LEFT.includes( value ) ) return 4;
 		if( DIRECTION_RIGHT.includes( value ) ) return 6;
+		if( DIRECTION_UP_LEFT.includes( value ) ) return 7;
 		if( DIRECTION_UP.includes( value ) ) return 8;
+		if( DIRECTION_UP_RIGHT.includes( value ) ) return 9;
 	}
 
 	// イベントコマンドの番号
@@ -246,12 +290,15 @@
 	Game_Interpreter.prototype.pluginCommand = function( command, args ) {
 		_Game_Interpreter_pluginCommand.apply( this, arguments );
 
+		const idToEv = ( id ) => getEventById( this, stringToEventId( id ) );
 		const commandStr = command.toUpperCase();
 		switch( commandStr ) {
-			case TF_SET_CHAR: setCharPattern.apply( this, args ); break;
-			case TF_LOCATE_CHAR: locateChar.apply( this, args ); break;
-			case TF_START_ANIME: startAnime.apply( this, args ); break;
-			case TF_END_ANIME: endAnime.apply( this, args ); break;
+			case TF_SET_CHAR: setCharPattern( idToEv( args[ 0 ] ), args[ 1 ], args[ 2 ], args[ 3 ], args[ 4 ] ); break;
+			case TF_LOCATE_CHAR: locateChar( idToEv( args[ 0 ] ), args[ 1 ], args[ 2 ], args[ 3 ], args[ 4 ] ); break;
+			case TF_MOVE_CHAR: moveChar( idToEv( args[ 0 ] ), args[ 1 ], args[ 2 ] ); break;
+			case TF_MOVE_ROUTE: moveRoute.apply( this, args ); break;
+			case TF_START_ANIME: startAnime( idToEv( args[ 0 ] ) ); break;
+			case TF_END_ANIME: endAnime( idToEv( args[ 0 ] ) ); break;
 			case TF_ANIME: anime.apply( this, args ); break;
 			case TF_VD_ANIME: vdAnime.apply( this, args ); break;
 			case TF_VU_ANIME: vuAnime.apply( this, args ); break;
@@ -259,20 +306,28 @@
 	};
 
 	/**
+	 * moveChar() を呼び出す。
+	 */
+	Game_Interpreter.prototype.TF_moveChar = function( eventId, d, distance ) {
+		const targetEvent = getEventById( this, stringToEventId( eventId ) );
+		moveChar( targetEvent, d, distance );
+	};
+	Game_CharacterBase.prototype.TF_moveChar = function( d, distance ) {
+		moveChar( this, d, distance );
+	};
+
+
+	/**
 	 * TF_SET_CHAR  の実行。
 	 *
-	 * @param {String} eventId イベントIDかそれに替わる識別子の文字列
+	 * @param {Game_Character} targetEvent イベント・プレイヤー・フォロワーのいずれか
 	 * @param {String} fileName キャラクタファイル名( img/characters/ 以下)
 	 * @param {String} charaNo キャラクタ番号( 0~7 )
 	 * @param {String} patternNo パターン番号( 0~2 )
 	 * @param {String} d キャラの向き(テンキー対応)
 	 * @returns {Object} { id:{Number}, object:{Game_Character} }
 	 */
-	function setCharPattern( eventId, fileName, charaNo, patternNo, d ) {
-
-		// キャラクタオブジェクト(Game_Character)
-		const id = stringToEventId( eventId );
-		const targetEvent = getEventById( this, id );
+	function setCharPattern( targetEvent, fileName, charaNo, patternNo, d ) {
 
 		// 画像ファイル
 		if( fileName === undefined ) {
@@ -309,49 +364,266 @@
 			targetEvent.setDirectionFix( tmp );
 		}
 
-		return { id: id, object: targetEvent };
+		return targetEvent;
 	}
 
 	/**
 	 * TF_LOCATE_CHAR  の実行。
 	 *
-	 * @param {String} eventId イベントIDかそれに替わる識別子の文字列
+	 * @param {Game_Character} targetEvent イベント・プレイヤー・フォロワーのいずれか
 	 * @param {String} x x座標(タイル数)
 	 * @param {String} y y座標(タイル数)
 	 * @param {String} patternNo パターン番号( 0~2 )
 	 * @param {String} d キャラの向き(テンキー対応)
 	 */
-	function locateChar( eventId, x, y, patternNo, d ) {
-		let targetEvent;
+	function locateChar( targetEvent, x, y, patternNo, d ) {
 		if( patternNo ) {
-			targetEvent = setCharPattern.call( this, eventId, undefined, undefined, patternNo, d ).object;
-		} else {
-			targetEvent = getEventById( this, stringToEventId( eventId ) );
+			setCharPattern( targetEvent, undefined, undefined, patternNo, d );
 		}
 		targetEvent.setPosition( parseFloatStrict( x ), parseFloatStrict( y ) );// HalfMove.js 対応でparseFloatStrict()を使う
 	}
 
+
+	// ab_defg_ijkl_nopqrstu_wxyz&<>
+	乱, 近, 遠, 前, 後, 跳, 待, ス, 速, 頻, 歩, 踏, 固, 抜
+	const MOVE_RANDOM = [ 'random', '&', '＆', '乱' ]; // [ランダムに方向転換][ランダムに移動]
+	const MOVE_TWARD = [ 'tward', 't', '近' ]; // [プレイヤーの方を向く][プレイヤーに近づく]
+	const MOVE_AWAY = [ 'away', 'y', '遠' ]; // [プレイヤーの逆を向く][プレイヤーから遠ざかる]
+	const MOVE_FORWARD = [ 'front', 'forward', 'f', '前' ]; // [一歩前進]
+	const MOVE_BACKWARD = [ 'back', 'backward', 'b', '後' ]; // [180度回転][一歩後退]
+	const MOVE_JUMP = [ 'jump', 'j', '跳' ]; // [ジャンプ…]
+	const MOVE_WAIT = [ 'wait', 'z', '待' ]; // [ウェイト…]
+	const MOVE_TURN_90D_R = [ 'turnright', '>', '＞', '⤵︎' ]; // [ランダムに方向転換][右に90度回転]
+	const MOVE_TURN_90D_L = [ 'turnleft', '<', '＜', '⤹', '⤴' ]; // [右か左に90度回転][左に90度回転]
+	const MOVE_SWITCH = [ 'switch', 'o', 'ス' ]; // [スイッチON…][スイッチOFF…]
+	const MOVE_SPEED = [ 'speed', 'a', '速' ]; // [移動速度の変更…]
+	const MOVE_FREQ = [ 'freaqency', 'q', '頻' ]; // [移動頻度の変更…]
+	const MOVE_WALK = [ 'walk', 'k', '歩' ]; // [歩行アニメON][歩行アニメOFF]
+	const MOVE_STEP = [ 'step', 'p', '踏' ]; // [足踏みアニメON][足踏みアニメOFF]
+	const MOVE_DIR_FIX = [ 'fix', 'x', '固' ]; // [向き固定ON][向き固定OFF]
+	const MOVE_THROUGH = [ 'through', 'g', '抜' ]; // [すり抜けON][すり抜けOFF]
+	const MOVE_INVISIBLE = [ 'invisible', 'i', '透' ]; // [透明化ON][透明化OFF]
+	const MOVE_VISIBLE = [ 'visible', 'v', '示' ]; // 透明化の逆
+	// ROUTE_CHANGE_IMAGE
+	// ROUTE_CHANGE_OPACITY
+	// ROUTE_CHANGE_BLEND_MODE
+	// ROUTE_PLAY_SE
+	// ROUTE_SCRIPT
+
+	/**
+	 * 
+	 *	this が インタプリタである必要がある。
+	 * @param {String} eventId イベントIDかそれに替わる識別子の文字列
+	 * @param {String} mml MML(Moving Macro Language) の文字列
+	 * @param {String} repeat 繰り返すか(規定値:false)
+	 * @param {String} skippable 移動できない場合とばすか(規定値:true)
+	 * @param {String} wait 待つか(規定値:true)
+	 */
+	function moveRoute( eventId, mml, repeat, skippable, wait ) {
+		eventId = stringToEventId( eventId );
+		const targetEvent = getEventById( this, stringToEventId( eventId ) );
+		const mmlArray = mml.match( /[^0-9.,-]+[0-9.,-]+/ig );
+		repeat = parseBooleanStrict( repeat );
+		skippable = ( skippable === undefined ) ? true : parseBooleanStrict( skippable );
+		wait = ( wait === undefined ) ? true : parseBooleanStrict( wait );
+		let movementList = [];
+		let moveSpeed = targetEvent.moveSpeed();
+		mmlArray.forEach( ( code ) => {
+			const opcode = code.match( /[^0-9.,-]+/ )[ 0 ];
+			const opland = code.match( /[0-9.,-]+/ )[ 0 ];
+			const paramNo = parseInt( opland );
+			const d = stringToDirection( opcode );
+			if( d !== undefined ) {
+				const d4 = convertD8to4( d );
+				if( paramNo === 0 ) { // [下を向く][左を向く][右を向く][上を向く]
+					const moveCode = [ gc.ROUTE_TURN_DOWN,
+					gc.ROUTE_TURN_LEFT, gc.ROUTE_TURN_RIGHT,
+					gc.ROUTE_TURN_UP ][ d4 / 2 - 1 ];
+					movementList.push( { code: moveCode } );
+
+				} else { // [左下に移動][下に移動][右下に移動][左に移動][右に移動][左上に移動][上に移動][右上に移動]
+					const moveCode = [
+						gc.ROUTE_MOVE_LOWER_L, gc.ROUTE_MOVE_DOWN, gc.ROUTE_MOVE_LOWER_R,
+						gc.ROUTE_MOVE_LEFT, null, gc.ROUTE_MOVE_RIGHT,
+						gc.ROUTE_MOVE_UPPER_L, gc.ROUTE_MOVE_UP, gc.ROUTE_MOVE_UPPER_R,
+					][ d - 1 ];
+					for( let i = 0; i < paramNo; i++ ) {
+						movementList.push( { code: moveCode } );
+					}
+				}
+				return;
+			}
+
+
+			const value = opcode.toLowerCase();
+			if( MOVE_RANDOM.includes( value ) ) { // [ランダムに方向転換][ランダムに移動]
+				if( paramNo === 0 ) {
+					movementList.push( { code: gc.ROUTE_TURN_RANDOM } );
+				} else {
+					for( let i = 0; i < paramNo; i++ ) {
+						movementList.push( { code: gc.ROUTE_MOVE_RANDOM } );
+					}
+				}
+
+			} else if( MOVE_TWARD.includes( value ) ) { // [プレイヤーの方を向く][プレイヤーに近づく]
+				if( paramNo === 0 ) {
+					movementList.push( { code: gc.ROUTE_TURN_TOWARD } );
+				} else {
+					for( let i = 0; i < paramNo; i++ ) {
+						movementList.push( { code: gc.ROUTE_MOVE_TOWARD } );
+					}
+				}
+
+			} else if( MOVE_AWAY.includes( value ) ) { // [プレイヤーの逆を向く][プレイヤーから遠ざかる]
+				if( paramNo === 0 ) {
+					movementList.push( { code: gc.ROUTE_TURN_AWAY } );
+				} else {
+					for( let i = 0; i < paramNo; i++ ) {
+						movementList.push( { code: gc.ROUTE_MOVE_AWAY } );
+					}
+				}
+
+			} else if( MOVE_JUMP.includes( value ) ) { // [ジャンプ…]
+				const result = opland.match( /([0-9-]*),([0-9-]*)/ );
+				let x, y;
+				if( result === null ) {
+					x = 0;
+					y = 0;
+				} else {
+					x = Boolean( result[ 1 ] ) ? parseInt( result[ 1 ] ) : 0;
+					y = Boolean( result[ 2 ] ) ? parseInt( result[ 2 ] ) : 0;
+				}
+				movementList.push( { code: gc.ROUTE_JUMP, parameters: [ x, y ] } );
+
+			} else if( MOVE_INVISIBLE.includes( value ) ) { // [透明化ON][透明化OFF]
+				movementList.push( { code: paramNo ? gc.ROUTE_TRANSPARENT_ON : gc.ROUTE_TRANSPARENT_OFF } );
+
+			} else if( MOVE_VISIBLE.includes( value ) ) { // 透明化の逆
+				movementList.push( { code: paramNo ? gc.ROUTE_TRANSPARENT_OFF : gc.ROUTE_TRANSPARENT_ON } );
+
+			} else if( MOVE_SPEED.includes( value ) ) { // [移動速度の変更…]
+				movementList.push( { code: gc.ROUTE_CHANGE_SPEED, parameters: [ paramNo ] } );
+				moveSpeed = paramNo;	// 回転の速度に使っているので、定義時に速度がわかっている必要がある
+
+			} else if( MOVE_FREQ.includes( value ) ) { // [移動頻度の変更…]
+				movementList.push( { code: gc.ROUTE_CHANGE_FREQ, parameters: [ paramNo ] } );
+
+			} else if( MOVE_WALK.includes( value ) ) { // [歩行アニメON][歩行アニメOFF]
+				movementList.push( { code: paramNo ? gc.ROUTE_WALK_ANIME_ON : gc.ROUTE_WALK_ANIME_OFF } );
+
+			} else if( MOVE_STEP.includes( value ) ) { // [足踏みアニメON][足踏みアニメOFF]
+				movementList.push( { code: paramNo ? gc.ROUTE_STEP_ANIME_ON : gc.ROUTE_STEP_ANIME_OFF } );
+
+			} else if( MOVE_DIR_FIX.includes( value ) ) { // [向き固定ON][向き固定OFF]
+				movementList.push( { code: paramNo ? gc.ROUTE_DIR_FIX_ON : gc.ROUTE_DIR_FIX_OFF } );
+
+			} else if( MOVE_THROUGH.includes( value ) ) { // [すり抜けON][すり抜けOFF]
+				movementList.push( { code: paramNo ? gc.ROUTE_THROUGH_ON : gc.ROUTE_THROUGH_OFF } );
+
+			} else if( MOVE_TURN_90D_R.includes( value ) ) { // [ ランダムに方向転換 ][ 右に90度回転 ]
+				if( paramNo === 0 ) {
+					movementList.push( { code: gc.ROUTE_TURN_RANDOM } );
+				} else if( paramNo === 1 ) {
+					movementList.push( { code: gc.ROUTE_TURN_90D_R } );
+				} else {
+					const waitFrames = 128 >> moveSpeed; // 1: 1 / 8倍速, 2: 1 / 4倍速, 3: 1 / 2倍速, 4: 通常速, 5: 2倍速, 6: 4倍速
+					for( let i = 0; i < paramNo; i++ ) {
+						movementList.push( { code: gc.ROUTE_TURN_90D_R } );
+						movementList.push( { code: gc.ROUTE_WAIT, parameters: [ waitFrames ] } );
+					}
+				}
+
+			} else if( MOVE_TURN_90D_L.includes( value ) ) { // [右か左に90度回転][左に90度回転]
+				if( paramNo === 0 ) {
+					movementList.push( { code: gc.ROUTE_TURN_90D_R_L } );
+				} else if( paramNo === 1 ) {
+					movementList.push( { code: gc.ROUTE_TURN_90D_L } );
+				} else {
+					const waitFrames = 128 >> moveSpeed; // 1: 1 / 8倍速, 2: 1 / 4倍速, 3: 1 / 2倍速, 4: 通常速, 5: 2倍速, 6: 4倍速
+					for( let i = 0; i < paramNo; i++ ) {
+						movementList.push( { code: gc.ROUTE_TURN_90D_L } );
+						movementList.push( { code: gc.ROUTE_WAIT, parameters: [ waitFrames ] } );
+					}
+				}
+
+			} else if( MOVE_SWITCH.includes( value ) ) { // [スイッチON…][スイッチOFF…]
+				const result = opland.match( /([0-9-]*),([0-9-]*)/ );
+				let id, sw;
+				if( result === null ) {
+					id = paramNo;
+					sw = 1;
+				} else {
+					id = Boolean( result[ 1 ] ) ? parseInt( result[ 1 ] ) : 1;
+					sw = Boolean( result[ 2 ] ) ? parseInt( result[ 2 ] ) : 1;
+				}
+				if( sw ) {
+					movementList.push( { code: gc.ROUTE_SWITCH_ON, parameters: [ id ] } );
+				} else {
+					movementList.push( { code: gc.ROUTE_SWITCH_OFF, parameters: [ id ] } );
+				}
+
+			} else if( MOVE_FORWARD.includes( value ) ) { // [一歩前進]
+				for( let i = 0; i < paramNo; i++ ) {
+					movementList.push( { code: gc.ROUTE_MOVE_FORWARD, parameters: [ paramNo ] } );
+				}
+
+			} else if( MOVE_BACKWARD.includes( value ) ) { // [180度回転][一歩後退]
+				if( paramNo === 0 ) {
+					movementList.push( { code: gc.ROUTE_TURN_180D } );
+				} else {
+					for( let i = 0; i < paramNo; i++ ) {
+						movementList.push( { code: gc.ROUTE_MOVE_BACKWARD } );
+					}
+				}
+
+			} else if( MOVE_WAIT.includes( value ) ) { // [ウェイト]
+				movementList.push( { code: gc.ROUTE_WAIT, parameters: [ paramNo ] } );
+			}
+		} )
+
+		movementList.push( { code: gc.ROUTE_END } );
+		this._params = [ eventId, { repeat: repeat, skippable: skippable, wait: wait, list: movementList } ];
+		this.command205();	// SET_MOVEMENT_ROUTE
+	}
+
+
+	/**
+	 * TF_MOVE_CHAR  の実行。
+	 * 類似プラグイン
+	 * 　移動ルート＋(https://w.atwiki.jp/pokotan/pages/3.html)
+	 * 　移動ルート簡易記述関数プラグイン(https://ci-en.dlsite.com/creator/2449/article/122390)
+	 *
+	 * @param {Game_Character} targetEvent イベント・プレイヤー・フォロワーのいずれか
+	 * @param {String} d キャラの向き(テンキー対応)
+	 * @param {String} distance 移動距離(タイル数)
+	 */
+	function moveChar( targetEvent, d, distance ) {
+		distance = parseFloatStrict( distance );// HalfMove.js 対応でparseFloatStrict()を使う
+		d = stringToDirection( d );
+		targetEvent.setDirection( convertD8to4( d ) );
+		targetEvent._x = $gameMap.roundX( targetEvent._x + getDx( d ) * distance );
+		targetEvent._y = $gameMap.roundY( targetEvent._y + getDy( d ) * distance );
+	}
+
+
 	/**
 	 * TF_START_ANIME  の実行。
 	 *
-	 * @param {String} eventId イベントIDかそれに替わる識別子の文字列
+	 * @param {Game_Character} targetEvent イベント・プレイヤー・フォロワーのいずれか
 	 */
-	function startAnime( eventId ) {
-		const targetEvent = getEventById( this, stringToEventId( eventId ) );
+	function startAnime( targetEvent ) {
 		targetEvent.setThrough( true );
 		targetEvent.TF_isAnime = true;
 	}
 
 	/**
 	 * TF_END_ANIME  の実行。
-	 * 
-	 * @param {String} eventId イベントIDかそれに替わる識別子の文字列
+	 *
+	 * @param {Game_Character} targetEvent イベント・プレイヤー・フォロワーのいずれか
 	 */
-	function endAnime( eventId ) {
-		const targetEvent = getEventById( this, stringToEventId( eventId ) );
+	function endAnime( targetEvent ) {
 		targetEvent.setThrough( false );
 		targetEvent.TF_isAnime = false;
-
 
 		if( TF_moveUnit === 0 ) {
 			targetEvent._x = targetEvent._realX;
@@ -379,15 +651,17 @@
 	 * @param {String} d キャラの向き(テンキー対応)
 	 */
 	function anime( eventId, mx, my, waitFrames, charaNo, patternNo, d ) {
-		const result = setCharPattern.call( this, eventId, undefined, charaNo, patternNo, d );
-		result.object._realX += parseIntStrict( mx ) / $gameMap.tileWidth();
-		result.object._realY += parseIntStrict( my ) / $gameMap.tileHeight();
+		eventId = stringToEventId( eventId );
+		const targetEvent = getEventById( this, eventId );
+		setCharPattern( targetEvent, undefined, charaNo, patternNo, d );
+		targetEvent._realX += parseIntStrict( mx ) / $gameMap.tileWidth();
+		targetEvent._realY += parseIntStrict( my ) / $gameMap.tileHeight();
 		waitFrames = ( waitFrames === undefined ) ? 3 : parseIntStrict( waitFrames );
 		const commandList = [
 			{ indent: 0, code: WAIT_FOR, parameters: [ waitFrames ] },
 			{ indent: 0, code: COMMAND_END }
 		];
-		this.setupChild( commandList, result.id );
+		this.setupChild( commandList, eventId );
 	}
 
 	/**
@@ -400,11 +674,13 @@
 	 * @param {String} waitFrames 待ちフレーム数
 	 */
 	function vdAnime( eventId, fileName, charaNo, patternNo, waitFrames ) {
+		eventId = stringToEventId( eventId );
+		const targetEvent = getEventById( this, eventId );
 		waitFrames = ( waitFrames === undefined ) ? 3 : parseIntStrict( waitFrames );
-		const result = setCharPattern.call( this, eventId, fileName, charaNo, patternNo );
-		const tempDirectionFix = result.object.isDirectionFixed();
-		result.object.setDirectionFix( false );
-		this._params = [ result.id, {
+		setCharPattern( targetEvent, fileName, charaNo, patternNo );
+		const tempDirectionFix = targetEvent.isDirectionFixed();
+		targetEvent.setDirectionFix( false );
+		this._params = [ eventId, {
 			repeat: false, skippable: true, wait: true, list: [
 				{ code: gc.ROUTE_TURN_LEFT },
 				{ code: gc.ROUTE_WAIT, parameters: [ waitFrames ] },
@@ -428,11 +704,13 @@
 	 * @param {String} waitFrames 待ちフレーム数
 	 */
 	function vuAnime( eventId, fileName, charaNo, patternNo, waitFrames ) {
+		eventId = stringToEventId( eventId );
+		const targetEvent = getEventById( this, eventId );
 		waitFrames = ( waitFrames === undefined ) ? 3 : parseIntStrict( waitFrames );
-		const result = setCharPattern.call( this, eventId, fileName, charaNo, patternNo );
-		const tempDirectionFix = result.object.isDirectionFixed();
-		result.object.setDirectionFix( false );
-		this._params = [ result.id, {
+		setCharPattern( targetEvent, fileName, charaNo, patternNo );
+		const tempDirectionFix = targetEvent.isDirectionFixed();
+		targetEvent.setDirectionFix( false );
+		this._params = [ eventId, {
 			repeat: false, skippable: true, wait: true, list: [
 				{ code: gc.ROUTE_TURN_RIGHT },
 				{ code: gc.ROUTE_WAIT, parameters: [ waitFrames ] },
@@ -446,13 +724,6 @@
 		this.command205();	// SET_MOVEMENT_ROUTE
 	}
 
-	/**
-	 *  コマンドリストから呼ばれた場合。
-	 * @example { indent: 0, code: TF_PATTERN, parameters: [ 2, '!Door2', 2, 0, 2 ] },
-	 */
-	Game_Interpreter.prototype.commandTF_pattern = function() {
-		setCharPattern.apply( this, this._params );
-	}
 
 	/*---- Game_CharacterBase ----*/
 	/**
@@ -464,6 +735,16 @@
 		return _Game_CharacterBase_isMoving.call( this );
 	}
 
+
+	/*---- Game_Character ----*/
+	const _Game_Character_processMoveCommand = Game_Character.prototype.processMoveCommand;
+	Game_Character.prototype.processMoveCommand = function( command ) {
+		_Game_Character_processMoveCommand.apply( this, arguments );
+		const params = command.parameters;
+		if( command.code === TF_MOVE_CHAR ) {
+			this.TF_moveChar( ...params );
+		}
+	}
 
 	// Game_Event と同様に Game_Player・Game_Follower にオリジナルパターン( _originalPattern )の変更機能をつける。
 	// これにより歩行パターンを設定後、規定(1)のオリジナルパターンに戻ることを防ぐ。
@@ -487,4 +768,43 @@
 	Game_Follower.prototype.isOriginalPattern = function() {
 		return this.pattern() === this._originalPattern;
 	};
+
+
+	/**
+	 * 4方向を右回転90して返す。
+	 * @param {Number} d 方向(テンキー対応)
+	 */
+	function directionTurn90D_R( d ) {
+		return ( d < 5 ) ? d * 2 : d - ( 10 - d );
+	}
+	/**
+	 * 4方向を左回転90して返す。
+	 * @param {Number} d 方向(テンキー対応)
+	 */
+	function directionTurn90D_L( d ) {
+		return ( d < 5 ) ? d * 2 : d - ( 10 - d );
+	}
+	/**
+	 * 8方向を4方向にして返す。
+	 * @param {Number} d 方向(テンキー対応)
+	 */
+	function convertD8to4( d ) {
+		const dy = getDy( d );
+		return ( dy === -1 ) ? 8 : ( dy === 1 ) ? 2 : d;
+	}
+	/**
+	 * 指定方向のX要素を返す。
+	 * @param {Number} d 方向(テンキー対応)
+	 */
+	function getDx( d ) {
+		const sidePattern = d % 3;
+		return ( sidePattern === 0 ) ? 1 : ( sidePattern === 1 ) ? -1 : 0;
+	}
+	/**
+	 * 指定方向のY要素を返す。
+	 * @param {Number} d 方向(テンキー対応)
+	 */
+	function getDy( d ) {
+		return ( d < 4 ) ? 1 : ( 6 < d ) ? -1 : 0;
+	}
 } )();
