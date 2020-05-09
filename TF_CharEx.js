@@ -1,6 +1,6 @@
 //========================================
 // TF_CharEx.js
-// Version :0.6.0.0
+// Version :0.6.1.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -385,7 +385,7 @@
 
 
 	// ab_defg_ijkl_nopqrstu_wxyz&<>
-	乱, 近, 遠, 前, 後, 跳, 待, ス, 速, 頻, 歩, 踏, 固, 抜
+
 	const MOVE_RANDOM = [ 'random', '&', '＆', '乱' ]; // [ランダムに方向転換][ランダムに移動]
 	const MOVE_TWARD = [ 'tward', 't', '近' ]; // [プレイヤーの方を向く][プレイヤーに近づく]
 	const MOVE_AWAY = [ 'away', 'y', '遠' ]; // [プレイヤーの逆を向く][プレイヤーから遠ざかる]
