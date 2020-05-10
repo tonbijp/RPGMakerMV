@@ -1,6 +1,6 @@
 //========================================
 // TF_Utility.js
-// Version :0.11.0.0
+// Version :0.12.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2019-2020
@@ -24,10 +24,11 @@
  * 　[x] x位置(タイル数)
  * 　[y] y位置(タイル数)
  * 　[向き] 移動後のキャラの向き(規定値: 0 現在の向き)
- * 　　上: 8, up, u, north, n, back, b
- * 　　左: 4, left, l, west, w
- * 　　右: 6, right, r, east, e
- * 　　下: 2, down, d, south, s, front, forward, f
+ * 　　上: 8, up, u, north, n, ↑
+ * 　　左: 4, left, l, west, w, ←
+ * 　　右: 6, right, r, east, e, →
+ * 　　下: 2, down, d, south, s, ↓
+ * 　　※[向き]は大文字小文字の区別をしません。
  * 
  * 例: TF_BEFORE_MOVE 砂漠の町 10.5 25 W
  *------------------------------
@@ -164,25 +165,33 @@
 		return result;
 	}
 
-	const DIRECTION_UP = [ 'up', 'u', 'north', 'n', 'back', 'b' ];
-	const DIRECTION_LEFT = [ 'left', 'l', 'west', 'w' ];
-	const DIRECTION_RIGHT = [ 'right', 'r', 'east', 'e' ];
-	const DIRECTION_DOWN = [ 'down', 'd', 'south', 's', 'front', 'forward', 'f' ];
+	const DIRECTION_DOWN_LEFT = [ 'downleft', 'dl', 'southwest', 'sw', '↙︎' ];
+	const DIRECTION_DOWN = [ 'down', 'd', 'south', 's', '↓' ];
+	const DIRECTION_DOWN_RIGHT = [ 'downright', 'dr', 'southeast', 'se', '↘︎' ];
+	const DIRECTION_LEFT = [ 'left', 'l', 'west', 'w', '←' ];
+	const DIRECTION_RIGHT = [ 'right', 'r', 'east', 'e', '→' ];
+	const DIRECTION_UP_LEFT = [ 'upleft', 'ul', 'northwest', 'nw', '↖︎' ];
+	const DIRECTION_UP = [ 'up', 'u', 'north', 'n', '↑' ];
+	const DIRECTION_UP_RIGHT = [ 'upright', 'ur', 'northeast', 'ne', '↗︎' ];
 	/**
-	 * 方向文字列をテンキー方向の数値に変換して返す
-	 * @param {String} value 方向た文字列
-	 * @returns {Number} テンキー方向の数値(変換できなかった場合:undefined)
-	 */
+		 * 方向文字列をテンキー方向の数値に変換して返す
+		 * @param {String} value 方向た文字列
+		 * @returns {Number} テンキー方向の数値(変換できなかった場合:undefined)
+		 */
 	function stringToDirection( value ) {
 		value = treatValue( value );
 		const result = parseInt( value, 10 );
 		if( !isNaN( result ) ) return result;
 
 		value = value.toLowerCase();
+		if( DIRECTION_DOWN_LEFT.includes( value ) ) return 1;
 		if( DIRECTION_DOWN.includes( value ) ) return 2;
+		if( DIRECTION_DOWN_RIGHT.includes( value ) ) return 3;
 		if( DIRECTION_LEFT.includes( value ) ) return 4;
 		if( DIRECTION_RIGHT.includes( value ) ) return 6;
+		if( DIRECTION_UP_LEFT.includes( value ) ) return 7;
 		if( DIRECTION_UP.includes( value ) ) return 8;
+		if( DIRECTION_UP_RIGHT.includes( value ) ) return 9;
 	}
 
 
