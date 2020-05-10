@@ -1,6 +1,6 @@
 //========================================
 // TF_Condition.js
-// Version :0.2.2.0
+// Version :0.3.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -87,6 +87,11 @@
  * 　[x] 対象x座標(タイル数)
  * 　[y] 対象y座標(タイル数)
  * 　[向き] プレイヤーの向き(テンキー対応 | 方向文字列)
+ * 　　上: 8, up, u, north, n, ↑
+ * 　　左: 4, left, l, west, w, ←
+ * 　　右: 6, right, r, east, e, →
+ * 　　下: 2, down, d, south, s, ↓
+ * 　　※[向き]は大文字小文字の区別をしません。
  *------------------------------
  * [スクリプト] this.TF_checkLocation( [マップID], [x], [y], [向き], [論理演算子] )
  *------------------------------
@@ -217,27 +222,34 @@
 		return result;
 	}
 
-	const DIRECTION_UP = [ 'up', 'u', 'north', 'n', 'back', 'b' ];
-	const DIRECTION_LEFT = [ 'left', 'l', 'west', 'w' ];
-	const DIRECTION_RIGHT = [ 'right', 'r', 'east', 'e' ];
-	const DIRECTION_DOWN = [ 'down', 'd', 'south', 's', 'front', 'forward', 'f' ];
+	const DIRECTION_DOWN_LEFT = [ 'downleft', 'dl', 'southwest', 'sw', '↙︎' ];
+	const DIRECTION_DOWN = [ 'down', 'd', 'south', 's', '↓' ];
+	const DIRECTION_DOWN_RIGHT = [ 'downright', 'dr', 'southeast', 'se', '↘︎' ];
+	const DIRECTION_LEFT = [ 'left', 'l', 'west', 'w', '←' ];
+	const DIRECTION_RIGHT = [ 'right', 'r', 'east', 'e', '→' ];
+	const DIRECTION_UP_LEFT = [ 'upleft', 'ul', 'northwest', 'nw', '↖︎' ];
+	const DIRECTION_UP = [ 'up', 'u', 'north', 'n', '↑' ];
+	const DIRECTION_UP_RIGHT = [ 'upright', 'ur', 'northeast', 'ne', '↗︎' ];
 	/**
-	 * 方向文字列をテンキー方向の数値に変換して返す
-	 * @param {String} value 方向た文字列
-	 * @returns {Number} テンキー方向の数値(変換できなかった場合:undefined)
-	 */
+		 * 方向文字列をテンキー方向の数値に変換して返す
+		 * @param {String} value 方向た文字列
+		 * @returns {Number} テンキー方向の数値(変換できなかった場合:undefined)
+		 */
 	function stringToDirection( value ) {
 		value = treatValue( value );
 		const result = parseInt( value, 10 );
 		if( !isNaN( result ) ) return result;
 
 		value = value.toLowerCase();
+		if( DIRECTION_DOWN_LEFT.includes( value ) ) return 1;
 		if( DIRECTION_DOWN.includes( value ) ) return 2;
+		if( DIRECTION_DOWN_RIGHT.includes( value ) ) return 3;
 		if( DIRECTION_LEFT.includes( value ) ) return 4;
 		if( DIRECTION_RIGHT.includes( value ) ) return 6;
+		if( DIRECTION_UP_LEFT.includes( value ) ) return 7;
 		if( DIRECTION_UP.includes( value ) ) return 8;
+		if( DIRECTION_UP_RIGHT.includes( value ) ) return 9;
 	}
-
 
 
 	/*---- Game_Interpreter ----*/
