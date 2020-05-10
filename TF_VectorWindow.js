@@ -1,6 +1,6 @@
 //========================================
 // TF_VectorWindow.js
-// Version :0.5.0.0
+// Version :0.5.1.1
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -172,7 +172,7 @@
 	function treatValue( value ) {
 		if( value === undefined || value === '' ) return '0';
 		if( value[ 0 ] === 'V' || value[ 0 ] === 'v' ) {
-			return value.replace( /[Vv]\[([0-9]+)\]/, ( match, p1 ) => $gameVariables.value( parseInt( p1, 10 ) ) );
+			return value.replace( /[V]\[([0-9]+)\]/i, ( match, p1 ) => $gameVariables.value( parseInt( p1, 10 ) ) );
 		}
 		return value;
 	}
@@ -306,6 +306,7 @@
 		_Window_Message_initialize.call( this );
 	};
 
+	// 表示前に TS_SET_WINDOW による変更があれば適用
 	const _Window_Message_startMessage = Window_Message.prototype.startMessage;
 	Window_Message.prototype.startMessage = function() {
 		if( this.TF_refleshWindow ) {
@@ -313,7 +314,17 @@
 			refreshWindowFrame( this );
 		}
 		_Window_Message_startMessage.call( this );
-	}
+	};
+
+	// 終了時にウィンドウタイプを規定値(0)に戻す。
+	const _Window_Message_terminateMessage = Window_Message.prototype.terminateMessage;
+	Window_Message.prototype.terminateMessage = function() {
+		_Window_Message_terminateMessage.call( this );
+		if( this.TF_windowType !== 0 ) {
+			this.TF_windowType = 0;
+			this.TF_refleshWindow = true;
+		}
+	};
 
 	/**
 	 * フキダシ型(balloon)のみ、Window_Message に設定できる。
@@ -365,7 +376,8 @@
 		} else {
 			return _Window_Message_windowHeight.call( this ) + TF_TAIL_HEIGHT;
 		}
-	}
+	};
+
 
 	/*--- 関数 ---*/
 	/**
