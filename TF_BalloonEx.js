@@ -1,6 +1,6 @@
 //========================================
 // TF_BalloonEx.js
-// Version :1.2.0.0
+// Version :1.2.0.1
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -337,7 +337,7 @@
 	function treatValue( value ) {
 		if( value === undefined || value === '' ) return '0';
 		if( value[ 0 ] === 'V' || value[ 0 ] === 'v' ) {
-			return value.replace( /[Vv]\[([0-9]+)\]/, ( match, p1 ) => $gameVariables.value( parseInt( p1, 10 ) ) );
+			return value.replace( /[V]\[([0-9]+)\]/i, ( match, p1 ) => $gameVariables.value( parseInt( p1, 10 ) ) );
 		}
 		return value;
 	}
@@ -382,16 +382,11 @@
 		if( !isNaN( result ) ) return result;
 
 		switch( value ) {
-			case EVENT_THIS:
-				return 0;
-			case EVENT_PLAYER:
-				return -1;
-			case EVENT_FOLLOWER0:
-				return -2;
-			case EVENT_FOLLOWER1:
-				return -3;
-			case EVENT_FOLLOWER2:
-				return -4;
+			case EVENT_THIS: return 0;
+			case EVENT_PLAYER: return -1;
+			case EVENT_FOLLOWER0: return -2;
+			case EVENT_FOLLOWER1: return -3;
+			case EVENT_FOLLOWER2: return -4;
 		}
 
 		// イベント名で指定できるようにする
@@ -450,11 +445,24 @@
 	 * @param {Game_Character} character 実行中のイベント・プレイヤーキャラ
 	 */
 	function setWaitMode2Balloon( character ) {
-		let interpreter = ( character._trigger === 4 ? character._interpreter : $gameMap._interpreter );
+		getInterpreterFromCharacter( character ).setWaitMode( WAIT_BALLOON );
+	}
+	const TRIGGER_PARALLEL = 4;	// 並列処理
+	/**
+	 * 	イベントで使われているインタプリタを取り出す。
+	 * @param {*} character 
+	 */
+	function getInterpreterFromCharacter( character ) {
+		let interpreter;
+		if( character._trigger === TRIGGER_PARALLEL ) {
+			interpreter = character._interpreter
+		} else {
+			interpreter = $gameMap._interpreter;
+		}
 		while( interpreter._childInterpreter ) {
 			interpreter = interpreter._childInterpreter;
 		}
-		interpreter.setWaitMode( WAIT_BALLOON );
+		return interpreter;
 	}
 
 	/**
@@ -532,9 +540,7 @@
 	const _Game_Interpreter_command213 = Game_Interpreter.prototype.command213;
 	Game_Interpreter.prototype.command213 = function() {
 		const target = this.character( this._params[ 0 ] );
-		if( target ) {
-			target.TF_balloon = null;
-		}
+		if( target ) target.TF_balloon = null;
 		return _Game_Interpreter_command213.call( this );
 	};
 
@@ -556,17 +562,13 @@
 	Game_CharacterBase.prototype.TF_startBalloon = function( balloonId, wait, dx, dy ) {
 		this.TF_balloon = null;
 		this.requestBalloon( stringToBalloonId( balloonId ) );
-		if( wait ) {
-			setWaitMode2Balloon( this );
-		}
+		if( wait ) setWaitMode2Balloon( this );
 		locateBalloon( this, dx, dy );
 	};
 	// TF_SET_BALLOON に対応したメソッド
 	Game_CharacterBase.prototype.TF_setBalloon = function( balloonId, pattern, waitTime, wait, dx, dy ) {
 		setBalloon( this, balloonId, pattern, waitTime, dx, dy );
-		if( wait ) {
-			setWaitMode2Balloon( this );
-		}
+		if( wait ) setWaitMode2Balloon( this );
 	};
 	// TF_LOCATE_BALLOON に対応したメソッド
 	Game_CharacterBase.prototype.TF_locateBalloon = function( dx, dy ) {
