@@ -1,6 +1,6 @@
 //========================================
 // TF_CharEx.js
-// Version :0.7.0.0
+// Version :0.8.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -157,10 +157,9 @@
  * 　[左に90度回転] : turnleft, <, ⤹, ⤴
  * 　　数字に0を指定すると[右か左に90度回転]
  * 　　1の場合即時変更、2以降は[移動速度]に応じたウェイトをして回転。
- * 　[スイッチ] : switch, o, ス
+ * 　[スイッチ] : switch, h, ス
  * 　　コンマ( , )で区切って一つ目の数字はスイッチID。
  * 　　ふたつ目の数字が0の場合は[スイッチOFF…]、1で[スイッチON…]
- * 　　o はスイッチOn の o 。
  * 　[移動速度の変更…] : agility, a, 速
  * 　　1: 1 / 8倍速, 2: 1 / 4倍速, 3: 1 / 2倍速, 4: 通常速, 5: 2倍速, 6: 4倍速
  * 　[移動頻度の変更…] : freaqency, q, 頻
@@ -184,6 +183,10 @@
  * 　　現在指定しているキャラ画像内での変更するコマンドを別に追加。
  * 　　[画像の変更…]はファイルとキャラの変更はできるが、
  * 　　パターンの変更はできないので、むしろ高機能かもしれない。
+ * 　[不透明度の変更…] : opacity, o, 濁
+ *　　0〜255 の間の数字。
+ * 　[合成方法の変更…] : blendmode, m, 合
+ * 　　0: 通常, 1: 加算, 2: 乗算, 3: スクリーン
  * ------------------------------
  * 移動速度をウェイトに変換する場合以下のような対応となる。
  * 　1 / 8倍速 … 64フレーム
@@ -466,7 +469,7 @@
 	}
 
 
-	// ab_defg_ijkl_nopqrstu_wxyz&<>
+	// abcdefghijklmnopqrstu_wxyz&<>
 
 	const MOVE_RANDOM = [ 'random', '&', '＆', '乱' ]; // [ランダムに方向転換][ランダムに移動]
 	const MOVE_TWARD = [ 'tward', 't', '近' ]; // [プレイヤーの方を向く][プレイヤーに近づく]
@@ -477,7 +480,7 @@
 	const MOVE_WAIT = [ 'wait', 'z', '待' ]; // [ウェイト…]
 	const MOVE_TURN_90D_R = [ 'turnright', '>', '＞', '⤵︎' ]; // [ランダムに方向転換][右に90度回転]
 	const MOVE_TURN_90D_L = [ 'turnleft', '<', '＜', '⤹', '⤴' ]; // [右か左に90度回転][左に90度回転]
-	const MOVE_SWITCH = [ 'switch', 'o', 'ス' ]; // [スイッチON…][スイッチOFF…]
+	const MOVE_SWITCH = [ 'switch', 'h', 'ス' ]; // [スイッチON…][スイッチOFF…]
 	const MOVE_SPEED = [ 'agility', 'a', '速' ]; // [移動速度の変更…]
 	const MOVE_FREQ = [ 'freaqency', 'q', '頻' ]; // [移動頻度の変更…]
 	const MOVE_WALK = [ 'walk', 'k', '歩' ]; // [歩行アニメON][歩行アニメOFF]
@@ -487,9 +490,9 @@
 	const MOVE_INVISIBLE = [ 'invisible', 'i', '透' ]; // [透明化ON][透明化OFF]
 	const MOVE_VISIBLE = [ 'visible', 'v', '示' ]; // 透明化の逆
 	const MOVE_CHENGE = [ 'change', 'c', '変' ]; // キャラパターンの変更 [画像の変更…]の代用
+	const MOVE_OPACITY = [ 'opacity', 'o', '濁' ]; // [不透明度の変更…]
+	const MOVE_BLEND_MODE = [ 'blendmode', 'm', '合' ]; // [合成方法の変更…]
 
-	// ROUTE_CHANGE_OPACITY
-	// ROUTE_CHANGE_BLEND_MODE
 	// ROUTE_PLAY_SE
 	// ROUTE_SCRIPT
 
@@ -667,8 +670,16 @@
 				if( result ) {
 					movementList.push( { code: TF_CHANGE_CHAR, parameters: [ result[ 1 ], result[ 3 ], result[ 5 ] ] } );
 				}
+			} else if( MOVE_OPACITY.includes( value ) ) { // [不透明度の変更…]
+				movementList.push( { code: gc.ROUTE_CHANGE_OPACITY, parameters: [ paramNo ] } );
+
+			} else if( MOVE_BLEND_MODE.includes( value ) ) { // [合成モードの設定…]
+				movementList.push( { code: gc.ROUTE_CHANGE_BLEND_MODE, parameters: [ paramNo ] } );
+
 			}
 		} );
+		// 
+		// 
 
 		movementList.push( { code: gc.ROUTE_END } );
 		this._params = [ eventId, { repeat: repeat, skippable: skippable, wait: wait, list: movementList } ];
