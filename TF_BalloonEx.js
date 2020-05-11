@@ -1,6 +1,6 @@
 //========================================
 // TF_BalloonEx.js
-// Version :1.2.0.1
+// Version :1.2.0.2
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -367,22 +367,27 @@
 		}
 	}
 
+
+	const EVENT_THIS = 'this';
+	const EVENT_SELF = 'self';
+	const EVENT_PLAYER = 'player';
+	const EVENT_FOLLOWER0 = 'follower0';
+	const EVENT_FOLLOWER1 = 'follower1';
+	const EVENT_FOLLOWER2 = 'follower2';
 	/**
 	 * 文字列をイベントIDへ変換
 	 * @param {String} value イベントIDの番号か識別子
 	 * @returns {Number} 拡張イベントID
 	 */
-	const EVENT_THIS = 'this';
-	const EVENT_PLAYER = 'player';
-	const EVENT_FOLLOWER0 = 'follower0';
-	const EVENT_FOLLOWER1 = 'follower1';
-	const EVENT_FOLLOWER2 = 'follower2';
 	function stringToEventId( value ) {
-		const result = parseInt( treatValue( value ), 10 );
+		value = treatValue( value );
+		const result = parseInt( value, 10 );
 		if( !isNaN( result ) ) return result;
 
-		switch( value ) {
-			case EVENT_THIS: return 0;
+		const lowValue = value.toLowerCase();
+		switch( lowValue ) {
+			case EVENT_THIS:
+			case EVENT_SELF: return 0;
 			case EVENT_PLAYER: return -1;
 			case EVENT_FOLLOWER0: return -2;
 			case EVENT_FOLLOWER1: return -3;
@@ -390,11 +395,11 @@
 		}
 
 		// イベント名で指定できるようにする
-		const i = $gameMap._events.findIndex( e => {
-			if( e === undefined ) return false;	// _events[0] が undefined なので無視
+		const i = $gameMap._events.findIndex( event => {
+			if( event === undefined ) return false;	// _events[0] が undefined なので無視
 
-			const eventId = e._eventId;
-			return $dataMap.events[ eventId ].name === value
+			const eventId = event._eventId;
+			return $dataMap.events[ eventId ].name === value;
 		} );
 		if( i === -1 ) throw Error( `指定したイベント[${value}]がありません。` );
 		return i;
@@ -437,7 +442,7 @@
 			loops: loops,
 			speed: 0,
 			waitTime: waitTime
-		}
+		};
 	}
 
 	/**
@@ -455,7 +460,7 @@
 	function getInterpreterFromCharacter( character ) {
 		let interpreter;
 		if( character._trigger === TRIGGER_PARALLEL ) {
-			interpreter = character._interpreter
+			interpreter = character._interpreter;
 		} else {
 			interpreter = $gameMap._interpreter;
 		}
@@ -591,7 +596,7 @@
 		if( this._character.TF_balloon ) {
 			this._character.requestBalloon( this._character.TF_balloon._balloonId );
 		}
-	}
+	};
 
 	const _Sprite_Character_endBalloon = Sprite_Character.prototype.endBalloon;
 	Sprite_Character.prototype.endBalloon = function() {

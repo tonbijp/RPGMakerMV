@@ -58,7 +58,7 @@
 	function treatValue( value ) {
 		if( value === undefined || value === '' ) return '0';
 		if( value[ 0 ] === 'V' || value[ 0 ] === 'v' ) {
-			return value.replace( /[Vv]\[([0-9]+)\]/, ( match, p1 ) => $gameVariables.value( parseInt( p1, 10 ) ) );
+			return value.replace( /[v]\[([0-9]+)\]/i, ( match, p1 ) => $gameVariables.value( parseInt( p1, 10 ) ) );
 		}
 		return value;
 	}

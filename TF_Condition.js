@@ -117,7 +117,7 @@
 	function treatValue( value ) {
 		if( value === undefined || value === '' ) return '0';
 		if( value[ 0 ] === 'V' || value[ 0 ] === 'v' ) {
-			return value.replace( /[Vv]\[([0-9]+)\]/, ( match, p1 ) => $gameVariables.value( parseInt( p1, 10 ) ) );
+			return value.replace( /[V]\[([0-9]+)\]/i, ( match, p1 ) => $gameVariables.value( parseInt( p1, 10 ) ) );
 		}
 		return value;
 	}
@@ -408,7 +408,7 @@
 
 	Game_Switches.prototype.multipleAnd = function( ...args ) {
 		return args.reduce( ( pre, curr ) => pre && $gameSwitches.valueByName( curr ), true );
-	}
+	};
 
 	/*--- SelfSwitche ---*/
 	/**
