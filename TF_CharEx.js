@@ -1,6 +1,6 @@
 //========================================
 // TF_CharEx.js
-// Version :0.8.1.0
+// Version :0.8.2.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -859,10 +859,11 @@
 	/*---- Game_CharacterBase ----*/
 	/**
 	 * TF_START_ANIME, TF_END_ANIME 対応。
+	 * TF_isAnime フラグが true の場合、規定の移動処理を行わない。
 	 */
 	const _Game_CharacterBase_isMoving = Game_CharacterBase.prototype.isMoving;
 	Game_CharacterBase.prototype.isMoving = function() {
-		if( this.TF_isAnime ) return false;	// TF_isAnime フラグが true の場合、規定の移動処理を行わない。
+		if( this.TF_isAnime ) return false;
 		return _Game_CharacterBase_isMoving.call( this );
 	};
 
@@ -899,11 +900,41 @@
 	Game_Follower.prototype.initMembers = function() {
 		_Game_Follower_initMembers.call( this );
 		this._originalPattern = 1;
+		this.TF_isFollow = true;
 	};
+
 	Game_Follower.prototype.isOriginalPattern = function() {
 		return this.pattern() === this._originalPattern;
 	};
 
+	/**
+	 * TF_isFollow が false か、TF_isFollow フラグが true の時は
+	 * プレイヤーを追わない。
+	 */
+	const _Game_Follower_chaseCharacter = Game_Follower.prototype.chaseCharacter;
+	Game_Follower.prototype.chaseCharacter = function( character ) {
+		if( !this.TF_isFollow || this.TF_isAnime ) return false;
+		_Game_Follower_chaseCharacter.apply( this, arguments );
+	};
+
+
+	/*---- Game_Followers ----*/
+	/**
+	 * TF_isFollow が false か、TF_isFollow フラグが true の時は
+	 * プレイヤーに同期してジャンプしない。
+	 */
+	const _Game_Followers_jumpAll = Game_Followers.prototype.jumpAll;
+	Game_Followers.prototype.jumpAll = function() {
+		if( !$gamePlayer.isJumping() ) return;
+
+		for( var i = 0; i < this._data.length; i++ ) {
+			const follower = this._data[ i ];
+			if( !follower.TF_isFollow || follower.TF_isAnime ) continue;
+			const sx = $gamePlayer.deltaXFrom( follower.x );
+			const sy = $gamePlayer.deltaYFrom( follower.y );
+			follower.jump( sx, sy );
+		}
+	};
 
 	/**
 	 * 4方向を右回転90して返す。
