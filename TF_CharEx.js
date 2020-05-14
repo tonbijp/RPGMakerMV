@@ -1,6 +1,6 @@
 //========================================
 // TF_CharEx.js
-// Version :0.8.3.0
+// Version :0.9.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -25,9 +25,23 @@
  * @default 1
  * 
  * @help
+ * 主な機能とイベントコマンドにない利点。
+ * 
+ * 1 : キャラ( イベント・プレイヤー・隊列メンバー )の位置・パターンの 詳細な設定。
+ * 　位置にピクセル単位の指定が可能で、キャラの繊細なアニメーションができる。
+ * 　歩行パターン別の指定が可能で、キャラ素材を無駄なく利用できる。
+ * 
+ * 2 : 頻出するアニメーションの指定。
+ * 　収録素材の宝箱など歩行パターンの3列全て同じ素材が並んでいて無駄が多い。
+ * 　このプラグインは歩行パターン別に指定可能なので、3パターン違う素材を置ける。
+ * 
+ * 3 : キャラの[ルート移動]の簡易コマンドによる指定。
+ * 　例えば[上に移動][上に移動][上に移動][上に移動]と繰り返し指定が必要な場合、
+ * 　↑4 と書けるので回数調整が容易で、全体の見通しが良い。
+ * 
+ * 通常のイベントコマンドでは指定できない隊列メンバーを指定できる。
  *
- *
- * 【プラグインコマンド】
+ * 【プラグインコマンド】※ 規定値のある値は省略可能。
  * ------------------------------
  * TF_SET_CHAR [イベントID] [画像ファイル名] [キャラ番号] [歩行パターン] [向き]
  * 　イベントコマンド[移動ルートの設定] の[画像の変更]と[○を向く]に加え歩行パターンも一度に指定。
@@ -46,7 +60,7 @@
  * ------------------------------
  * TF_CHANGE_CHAR [イベントID] [キャラ番号] [歩行パターン] [向き]
  * TF_CHANGE_CHAR [イベントID] [キャラ番号] [キャラパターン]
- * 　TF_SET_CHAR から[画像ファイル名]を抜いたコマンド
+ * 　TF_SET_CHAR から[画像ファイル名]を抜いたコマンド。
  * ------------------------------
  * TF_LOCATE_CHAR [イベントID] [x] [y] [歩行パターン] [向き]
  * 　位置を設定。
@@ -57,15 +71,6 @@
  * ------------------------------
  * TF_LOCATE_CHAR [イベントID] [x] [y] [キャラパターン]
  * ------------------------------
- * TF_MOVE_CHAR [イベントID] [向き] [移動距離]
- * 　指定方向に指定タイル数移動。
- * 　[移動距離] 移動距離(タイル数)
- *
- * 　例: TF_MOVE_CHAR self up 10
- * ------------------------------
- * [スクリプト] this.TF_moveChar( [イベントID], [向き], [移動距離] );
- * [移動ルートの設定][スクリプト] this.TF_moveChar(  [向き], [移動距離] );
- * ------------------------------
  * TF_ROUTE [イベントID] [移動指定] [繰り返し] [飛ばす] [待つ]
  * 　イベントコマンドの[ルートの設定]を一行で書く。
  * 　[移動指定] 専用コマンド文字(例:←↓↑→)+数値の連続 ※下部詳細参照
@@ -75,16 +80,23 @@
  *
  * 　例: TF_ROUTE this ↑4⤵︎5→3 OFF ON OFF
  * ------------------------------
- * TF_START_ANIME [イベントID]
- * 　アニメモードに変更(移動アニメ停止・[すり抜け]ON)
- * 
- * 　例: TF_START_ANIME this
+ * TF_VD_ANIME [イベントID] [画像ファイル名] [キャラ番号] [歩行パターン] [ウェイト]
+ * 　キャラ画像の縦下方向にアニメーションする(キャラの向きだと 左→右→上 の順)
+ * 　収録素材の宝箱や扉のようなパターンに使う。
+ * 　TF_ROUTE の[移動指定]だと c0,2,2z4c0,2,4z4c0,2,6z4c0,2,8 のように書ける。
+ * 　[ウェイト] 表示時間(規定値:[移動速度]より算出)※下部詳細参照
+ *
+ * 　例:TF_VD_ANIME 2 !Door2 2 0
+ * ------------------------------
+ * TF_VU_ANIME [イベントID] [画像ファイル名] [キャラ番号] [歩行パターン] [ウェイト]
+ * 　キャラ画像の縦上方向にアニメーションする(キャラの向きだと 右→左→下 の順)
+ *
+ * 　例:TF_VU_ANIME
  * ------------------------------
  * TF_ANIME [イベントID] [mx] [my] [ウェイト] [キャラ番号] [歩行パターン] [向き]
- * 　アニメの指定。TF_START_ANIME でアニメモードする必要がある。
+ * 　アニメの指定。実行するとアニメモード(移動アニメ停止・[すり抜け]ON)になる。
  * 　[mx] x移動距離(規定値:0ピクセル)
  * 　[my] y移動距離(規定値:0ピクセル)
- * 　[ウェイト] 表示時間(規定値:[移動速度]より算出)※下部詳細参照
  * 
  * 　例: TF_ANIME -1 -4 8 12 0 0 6
  * ------------------------------
@@ -94,19 +106,19 @@
  * 　[キャラ番号]は現在の番号になる。
  * ------------------------------
  * TF_END_ANIME [イベントID]
- * 　通常モードに戻る。アニメの指定が終わったら実行すること。
+ * 　アニメモード(移動アニメ停止・[すり抜け]ON)の終了。
+ * 　また、moveUnit パラメータに合わせて位置を調整する。
+ * 　TF_ANIMEの指定が終わったら、これで通常に戻すこと。
  *
- * 　例: TF_END_ANIME follower0
+ * 　例: TF_END_ANIME this
+ *
+ * 
+ * 【スクリプト】
  * ------------------------------
- * TF_VD_ANIME [イベントID] [画像ファイル名] [キャラ番号] [歩行パターン] [ウェイト]
- * 　キャラ画像の縦下方向にアニメーションする(キャラの向きだと 左→右→上 の順)
- *
- * 　例:TF_VD_ANIME 2 !Door2 2 0
- * ------------------------------
- * TF_VU_ANIME [イベントID] [画像ファイル名] [キャラ番号] [歩行パターン] [ウェイト]
- * 　キャラ画像の縦上方向にアニメーションする(キャラの向きだと 右→左→下 の順)
- *
- * 　例:TF_VU_ANIME
+ * this.TF_moveChar( [イベントID], [向き], [移動距離] );
+ * 　指定方向に指定距離移動。
+ * this.TF_moveChar(  [向き], [移動距離] );
+ * 　[移動ルートの設定]内で使う場合、[イベントID]の指定は不要。
  * =========================
  * 【詳細】
  * ------------------------------
@@ -132,6 +144,21 @@
  * 　3, 4, 5		<= 左向き(テンキー4)
  * 　6, 7, 8		<= 右向き(テンキー6)
  * 　9, 10, 11 <= 上向き(テンキー8)
+ * ------------------------------
+ * 移動速度を[ウェイト]に変換する場合以下のような対応となる。
+ * 　1 / 8倍速 … 64フレーム
+ * 　1 / 4倍速 … 32フレーム
+ * 　1 / 2倍速 … 16フレーム
+ * 　通常速 … 8フレーム
+ * 　2倍速 … 4フレーム
+ * 　4倍速 … 2フレーム
+ * ------------------------------
+ * 真偽値( true/false )を指定する値には、on/off も使える。
+ * ------------------------------
+ * [イベントID][ウェイト][画像ファイル名][キャラ番号][歩行パターン][向き][x][y][mx][my]の
+ * 値は全てV[n]の形式で、変数を指定できる。
+ *
+ * 例 : TF_LOCATE_CHAR 0 V[1] V[2]
  * ------------------------------
  * [移動指定] コマンド文字+数字を一単位とする文字列。
  * かなり量があるので、印刷するなどして手元で確認することを推奨。
@@ -187,19 +214,6 @@
  *　　0〜255 の間の数字。
  * 　[合成方法の変更…] : blendmode, m, 合
  * 　　0: 通常, 1: 加算, 2: 乗算, 3: スクリーン
- * ------------------------------
- * 移動速度をウェイトに変換する場合以下のような対応となる。
- * 　1 / 8倍速 … 64フレーム
- * 　1 / 4倍速 … 32フレーム
- * 　1 / 2倍速 … 16フレーム
- * 　通常速 … 8フレーム
- * 　2倍速 … 4フレーム
- * 　4倍速 … 2フレーム
- * ------------------------------
- * [イベントID][ウェイト][画像ファイル名][キャラ番号][歩行パターン][向き][x][y][mx][my]の
- * 値は全てV[n]の形式で、変数を指定できる。
- * 
- * 例 : TF_LOCATE_CHAR 0 V[1] V[2]
  */
 
 ( function() {
@@ -224,38 +238,42 @@
 	function treatValue( value ) {
 		if( value === undefined || value === '' ) return '0';
 		if( value[ 0 ] === 'V' || value[ 0 ] === 'v' ) {
-			return value.replace( /[v]\[([0-9]+)\]/i, ( match, p1 ) => $gameVariables.value( parseInt( p1, 10 ) ) );
+			return value.replace( /v\[([0-9]+)\]/i, ( match, p1 ) => $gameVariables.value( parseInt( p1, 10 ) ) );
 		}
 		return value;
 	}
 
 	/**
-	 * @method parseIntStrict
-	 * @param {String} value
+	 * 文字列を整数に変換して返す。
+	 * @param {String|Number} value
 	 * @return {Number} 数値に変換した結果
 	 */
 	function parseIntStrict( value ) {
+		if( typeof value === 'number' ) return value;
 		const result = parseInt( treatValue( value ), 10 );
 		if( isNaN( result ) ) throw Error( '指定した値[' + value + ']が数値ではありません。' );
 		return result;
 	}
 
 	/**
-	 * @method parseFloatStrict
-	 * @param {String} value
+	 * 文字列を実数に変換して返す。
+	 * @param {String|Number} value
 	 * @return {Number} 数値に変換した結果
 	 */
 	function parseFloatStrict( value ) {
+		if( typeof value === 'number' ) return value;
 		const result = parseFloat( treatValue( value ) );
 		if( isNaN( result ) ) throw Error( '指定した値[' + value + ']が数値ではありません。' );
 		return result;
 	}
 
     /**
-     * @param {String} value 変換元文字列
+	 * 文字列を真偽値に変換して返す。
+     * @param {String|Boolean} value 変換元文字列
      * @returns {Boolean} 
      */
 	function parseBooleanStrict( value ) {
+		if( typeof value === 'boolean' ) return value;
 		value = treatValue( value );
 		const result = value.toLowerCase();
 		return ( result === PARAM_TRUE || result === PARAM_ON );
@@ -361,13 +379,11 @@
 	const TF_SET_CHAR = 'TF_SET_CHAR';
 	const TF_CHANGE_CHAR = 'TF_CHANGE_CHAR';
 	const TF_LOCATE_CHAR = 'TF_LOCATE_CHAR';
-	const TF_MOVE_CHAR = 'TF_MOVE_CHAR';
 	const TF_ROUTE = 'TF_ROUTE';
-	const TF_START_ANIME = 'TF_START_ANIME';
-	const TF_ANIME = 'TF_ANIME';
-	const TF_END_ANIME = 'TF_END_ANIME';
 	const TF_VD_ANIME = 'TF_VD_ANIME';
 	const TF_VU_ANIME = 'TF_VU_ANIME';
+	const TF_END_ANIME = 'TF_END_ANIME';
+	const TF_ANIME = 'TF_ANIME';
 	/**
 	 * プラグインコマンドの実行。
 	 */
@@ -381,10 +397,8 @@
 			case TF_SET_CHAR: setCharPattern( idToEv( args[ 0 ] ), args[ 1 ], args[ 2 ], args[ 3 ], args[ 4 ] ); break;
 			case TF_CHANGE_CHAR: setCharPattern( idToEv( args[ 0 ] ), undefined, args[ 1 ], args[ 2 ], args[ 3 ] ); break;
 			case TF_LOCATE_CHAR: locateChar( idToEv( args[ 0 ] ), args[ 1 ], args[ 2 ], args[ 3 ], args[ 4 ] ); break;
-			case TF_MOVE_CHAR: moveChar( idToEv( args[ 0 ] ), args[ 1 ], args[ 2 ] ); break;
 			case TF_ROUTE: moveRoute.apply( this, args ); break;
-			case TF_START_ANIME: startAnime( idToEv( args[ 0 ] ) ); break;
-			case TF_END_ANIME: endAnime( idToEv( args[ 0 ] ) ); break;
+			case TF_END_ANIME: animeMode( idToEv( args[ 0 ] ), false ); break;
 			case TF_ANIME: anime.apply( this, args ); break;
 			case TF_VD_ANIME: vdAnime.apply( this, args ); break;
 			case TF_VU_ANIME: vuAnime.apply( this, args ); break;
@@ -726,23 +740,17 @@
 
 
 	/**
-	 * TF_START_ANIME  の実行。
+	 * アニメモードの設定。
+	 * isAnime が false の場合が TF_END_ANIME の内容。
 	 *
 	 * @param {Game_Character} targetEvent イベント・プレイヤー・フォロワーのいずれか
+	 * @param {String|Boolean} isAnime アニメモードか(規定値:false)
 	 */
-	function startAnime( targetEvent ) {
-		targetEvent.setThrough( true );
-		targetEvent.TF_isAnime = true;
-	}
-
-	/**
-	 * TF_END_ANIME  の実行。
-	 *
-	 * @param {Game_Character} targetEvent イベント・プレイヤー・フォロワーのいずれか
-	 */
-	function endAnime( targetEvent ) {
-		targetEvent.setThrough( false );
-		targetEvent.TF_isAnime = false;
+	function animeMode( targetEvent, isAnime ) {
+		isAnime = parseBooleanStrict( isAnime );
+		targetEvent.setThrough( isAnime );
+		targetEvent.TF_isAnime = isAnime;
+		if( isAnime ) return;
 
 		if( TF_moveUnit === 0 ) {
 			targetEvent._x = targetEvent._realX;
@@ -772,6 +780,7 @@
 	function anime( eventId, mx, my, waitFrames, charaNo, patternNo, d ) {
 		eventId = stringToEventId( eventId );
 		const targetEvent = getEventById( this, eventId );
+		if( !targetEvent.TF_isAnime ) animeMode( targetEvent, true );
 		setCharPattern( targetEvent, undefined, charaNo, patternNo, d );
 		targetEvent._realX += parseIntStrict( mx ) / $gameMap.tileWidth();
 		targetEvent._realY += parseIntStrict( my ) / $gameMap.tileHeight();
@@ -875,10 +884,10 @@
 		if( !command ) return;
 
 		const params = command.parameters;
-		if( command.code === TF_MOVE_CHAR ) {
-			this.TF_moveChar( ...params );
-		} else if( command.code === TF_CHANGE_CHAR ) {
+		if( command.code === TF_CHANGE_CHAR ) {
 			setCharPattern( this, undefined, params[ 0 ], params[ 1 ], params[ 2 ] );
+			// } else if( command.code === TF_MOVE_CHAR ) {
+			// 	this.TF_moveChar( ...params );
 		};
 	};
 
