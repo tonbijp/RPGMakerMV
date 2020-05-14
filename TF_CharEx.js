@@ -1,6 +1,6 @@
 //========================================
 // TF_CharEx.js
-// Version :0.8.0.0
+// Version :0.8.1.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -207,6 +207,7 @@
 
 	const PARAM_TRUE = 'true';
 	const PARAM_ON = 'on';
+	const WAIT_ROUTE = 'route';
 
     /**
      * パラメータを受け取る
@@ -388,6 +389,24 @@
 			case TF_VD_ANIME: vdAnime.apply( this, args ); break;
 			case TF_VU_ANIME: vuAnime.apply( this, args ); break;
 		}
+	};
+
+	/**
+	 * [移動ルートの設定]ができない隊列メンバーに対して、
+	 * TF_MOVE_ROUTEを可能にする。
+	 */
+	const _Game_Interpreter_command205 = Game_Interpreter.prototype.command205;
+	Game_Interpreter.prototype.command205 = function() {
+		const params = this._params;
+		params[ 0 ] = stringToEventId( params[ 0 ] );
+		if( -2 < params[ 0 ] ) return _Game_Interpreter_command205.call( this );
+
+		$gameMap.refreshIfNeeded();
+		this._character = $gamePlayer.followers().follower( -2 - params[ 0 ] );			// 隊列メンバー(0〜2)
+		if( !this._character ) return true;
+		this._character.forceMoveRoute( params[ 1 ] );
+		if( params[ 1 ].wait ) this.setWaitMode( WAIT_ROUTE );
+		return true;
 	};
 
 	/**
