@@ -1,6 +1,6 @@
 //========================================
 // TF_CharEx.js
-// Version :0.8.2.0
+// Version :0.8.3.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -66,14 +66,14 @@
  * [スクリプト] this.TF_moveChar( [イベントID], [向き], [移動距離] );
  * [移動ルートの設定][スクリプト] this.TF_moveChar(  [向き], [移動距離] );
  * ------------------------------
- * TF_MOVE_ROUTE [イベントID] [移動指定] [繰り返し] [飛ばす] [待つ]
+ * TF_ROUTE [イベントID] [移動指定] [繰り返し] [飛ばす] [待つ]
  * 　イベントコマンドの[ルートの設定]を一行で書く。
  * 　[移動指定] 専用コマンド文字(例:←↓↑→)+数値の連続 ※下部詳細参照
  * 　[繰り返し] 指定した動作を繰り返すか(規定値:false)
  * 　[飛ばす] 移動できない場合は飛ばすか(規定値:true)
  * 　[待つ] 移動が終わるのを待つか(規定値:true)
  *
- * 　例: TF_MOVE_ROUTE this ↑4⤵︎5→3 OFF ON OFF
+ * 　例: TF_ROUTE this ↑4⤵︎5→3 OFF ON OFF
  * ------------------------------
  * TF_START_ANIME [イベントID]
  * 　アニメモードに変更(移動アニメ停止・[すり抜け]ON)
@@ -362,7 +362,7 @@
 	const TF_CHANGE_CHAR = 'TF_CHANGE_CHAR';
 	const TF_LOCATE_CHAR = 'TF_LOCATE_CHAR';
 	const TF_MOVE_CHAR = 'TF_MOVE_CHAR';
-	const TF_MOVE_ROUTE = 'TF_MOVE_ROUTE';
+	const TF_ROUTE = 'TF_ROUTE';
 	const TF_START_ANIME = 'TF_START_ANIME';
 	const TF_ANIME = 'TF_ANIME';
 	const TF_END_ANIME = 'TF_END_ANIME';
@@ -382,7 +382,7 @@
 			case TF_CHANGE_CHAR: setCharPattern( idToEv( args[ 0 ] ), undefined, args[ 1 ], args[ 2 ], args[ 3 ] ); break;
 			case TF_LOCATE_CHAR: locateChar( idToEv( args[ 0 ] ), args[ 1 ], args[ 2 ], args[ 3 ], args[ 4 ] ); break;
 			case TF_MOVE_CHAR: moveChar( idToEv( args[ 0 ] ), args[ 1 ], args[ 2 ] ); break;
-			case TF_MOVE_ROUTE: moveRoute.apply( this, args ); break;
+			case TF_ROUTE: moveRoute.apply( this, args ); break;
 			case TF_START_ANIME: startAnime( idToEv( args[ 0 ] ) ); break;
 			case TF_END_ANIME: endAnime( idToEv( args[ 0 ] ) ); break;
 			case TF_ANIME: anime.apply( this, args ); break;
@@ -393,7 +393,7 @@
 
 	/**
 	 * [移動ルートの設定]ができない隊列メンバーに対して、
-	 * TF_MOVE_ROUTEを可能にする。
+	 * TF_ROUTEを可能にする。
 	 */
 	const _Game_Interpreter_command205 = Game_Interpreter.prototype.command205;
 	Game_Interpreter.prototype.command205 = function() {
