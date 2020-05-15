@@ -1,6 +1,6 @@
 //========================================
 // TF_CharEx.js
-// Version :0.9.0.0
+// Version :0.10.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -93,6 +93,14 @@
  *
  * 　例:TF_VU_ANIME
  * ------------------------------
+ * TF_FOLLOW [隊列メンバーID] [フォロー状態]
+ * 　プレイヤーを隊列メンバーが追跡するかどうか指定。
+ * 　[隊列メンバーID] -2,-3,-4 あるいは follower0, follower1,follower2 の値。
+ * 　　all を指定した場合、隊列メンバー全体に適用(規定値:all)
+ * 　[フォロー状態] フォローするか(規定値:true)
+ *
+ * 　例: TF_FOLLOW all false
+ * ------------------------------
  * TF_ANIME [イベントID] [mx] [my] [ウェイト] [キャラ番号] [歩行パターン] [向き]
  * 　アニメの指定。実行するとアニメモード(移動アニメ停止・[すり抜け]ON)になる。
  * 　[mx] x移動距離(規定値:0ピクセル)
@@ -155,8 +163,9 @@
  * ------------------------------
  * 真偽値( true/false )を指定する値には、on/off も使える。
  * ------------------------------
- * [イベントID][ウェイト][画像ファイル名][キャラ番号][歩行パターン][向き][x][y][mx][my]の
- * 値は全てV[n]の形式で、変数を指定できる。
+ * [イベントID][画像ファイル名][キャラ番号][歩行パターン][向き] [キャラパターン]
+ * [ウェイト][x][y][mx][my][移動指定][隊列メンバーID]の値は、
+ * 全てV[n]の形式で変数を指定できる。
  *
  * 例 : TF_LOCATE_CHAR 0 V[1] V[2]
  * ------------------------------
@@ -382,8 +391,9 @@
 	const TF_ROUTE = 'TF_ROUTE';
 	const TF_VD_ANIME = 'TF_VD_ANIME';
 	const TF_VU_ANIME = 'TF_VU_ANIME';
-	const TF_END_ANIME = 'TF_END_ANIME';
+	const TF_FOLLOW = 'TF_FOLLOW';
 	const TF_ANIME = 'TF_ANIME';
+	const TF_END_ANIME = 'TF_END_ANIME';
 	/**
 	 * プラグインコマンドの実行。
 	 */
@@ -398,10 +408,11 @@
 			case TF_CHANGE_CHAR: setCharPattern( idToEv( args[ 0 ] ), undefined, args[ 1 ], args[ 2 ], args[ 3 ] ); break;
 			case TF_LOCATE_CHAR: locateChar( idToEv( args[ 0 ] ), args[ 1 ], args[ 2 ], args[ 3 ], args[ 4 ] ); break;
 			case TF_ROUTE: moveRoute.apply( this, args ); break;
-			case TF_END_ANIME: animeMode( idToEv( args[ 0 ] ), false ); break;
-			case TF_ANIME: anime.apply( this, args ); break;
 			case TF_VD_ANIME: vdAnime.apply( this, args ); break;
 			case TF_VU_ANIME: vuAnime.apply( this, args ); break;
+			case TF_FOLLOW: follow.apply( this, args ); break;
+			case TF_ANIME: anime.apply( this, args ); break;
+			case TF_END_ANIME: animeMode( idToEv( args[ 0 ] ), false ); break;
 		}
 	};
 
@@ -438,7 +449,7 @@
 	/**
 	 * TF_SET_CHAR  の実行。
 	 *
-	 * @param {Game_Character} targetEvent イベント・プレイヤー・フォロワーのいずれか
+	 * @param {Game_Character} targetEvent イベント・プレイヤー・隊列メンバーのいずれか
 	 * @param {String} fileName キャラクタファイル名( img/characters/ 以下)
 	 * @param {String} charaNo キャラクタ番号( 0~7 )
 	 * @param {String} patternNo パターン番号( 0~2 )
@@ -488,7 +499,7 @@
 	/**
 	 * TF_LOCATE_CHAR  の実行。
 	 *
-	 * @param {Game_Character} targetEvent イベント・プレイヤー・フォロワーのいずれか
+	 * @param {Game_Character} targetEvent イベント・プレイヤー・隊列メンバーのいずれか
 	 * @param {String} x x座標(タイル数)
 	 * @param {String} y y座標(タイル数)
 	 * @param {String} patternNo パターン番号( 0~2 )
@@ -711,8 +722,6 @@
 
 			}
 		} );
-		// 
-		// 
 
 		movementList.push( { code: gc.ROUTE_END } );
 		this._params = [ eventId, { repeat: repeat, skippable: skippable, wait: wait, list: movementList } ];
@@ -726,7 +735,7 @@
 	 * 　移動ルート＋(https://w.atwiki.jp/pokotan/pages/3.html)
 	 * 　移動ルート簡易記述関数プラグイン(https://ci-en.dlsite.com/creator/2449/article/122390)
 	 *
-	 * @param {Game_Character} targetEvent イベント・プレイヤー・フォロワーのいずれか
+	 * @param {Game_Character} targetEvent イベント・プレイヤー・隊列メンバーのいずれか
 	 * @param {String} d キャラの向き(テンキー対応)
 	 * @param {String} distance 移動距離(タイル数)
 	 */
@@ -740,10 +749,43 @@
 
 
 	/**
+	 * TF_FOLLOW の実行。
+	 *
+	 * @param {String} followerId 隊列メンバーID(規定値:all)
+	 * @param {String|Boolean} isFollow プレイヤーを追跡するか(規定値:true)
+	 */
+	function follow( followerId, isFollow ) {
+		if( followerId === undefined || followerId.toLowerCase() === 'all' ) {
+			const followers = $gamePlayer.followers();
+			followers.forEach( follower => {
+				followMode( follower, isFollow );
+			} );
+		} else {
+			const id = stringToEventId( followerId );
+			if( -5 < id && id < -1 ) {
+				followMode( getEventById( id ), isFollow );
+			} else {
+				throw Error( `[${followerId}]は隊列メンバーのIDではありません。` );
+			}
+		}
+	}
+
+	/**
+	 * フォロー状態の設定。
+	 *
+	 * @param {Game_Follower} targetEvent 隊列メンバーのいずれか
+	 * @param {String|Boolean} isFollow プレイヤーを追跡するか(規定値:true)
+	 */
+	function followMode( targetEvent, isFollow ) {
+		isFollow = ( isFollow === undefined ) ? true : parseBooleanStrict( isFollow );
+		targetEvent.TF_isFollow = isFollow;
+	}
+
+	/**
 	 * アニメモードの設定。
 	 * isAnime が false の場合が TF_END_ANIME の内容。
 	 *
-	 * @param {Game_Character} targetEvent イベント・プレイヤー・フォロワーのいずれか
+	 * @param {Game_Character} targetEvent イベント・プレイヤー・隊列メンバーのいずれか
 	 * @param {String|Boolean} isAnime アニメモードか(規定値:false)
 	 */
 	function animeMode( targetEvent, isAnime ) {
