@@ -1,6 +1,6 @@
 //========================================
 // TF_CharEx.js
-// Version :0.11.1.0
+// Version :0.11.2.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -776,8 +776,7 @@
 		if( x === undefined ) {
 			x = $gamePlayer.x;
 			y = $gamePlayer.y;
-		}
-		if( y === undefined ) {
+		} else if( y === undefined ) {
 			const id = stringToEventId( x );
 			let destinationEvent;
 			if( id < -1 ) {
