@@ -1,6 +1,6 @@
 //========================================
 // TF_CharEx.js
-// Version :0.11.2.0
+// Version :0.11.3.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -649,7 +649,7 @@
 				}
 
 			} else if( MOVE_JUMP.includes( value ) ) { // [ジャンプ…]
-				const result = opland.match( /([0-9-]*),([0-9-]*)/ );
+				const result = opland.match( /([0-9.-]+),([0-9.-]+)/ );
 				let x, y;
 				if( result === null ) {
 					x = 0;
@@ -690,7 +690,7 @@
 				}
 
 			} else if( MOVE_SWITCH.includes( value ) ) { // [スイッチON…][スイッチOFF…]
-				const result = opland.match( /([0-9-]*),([0-9-]*)/ );
+				const result = opland.match( /([0-9]+),([01])/ );
 				let id, sw;
 				if( result === null ) {
 					id = paramNo;
@@ -731,7 +731,7 @@
 				movementList.push( { code: paramNo ? gc.ROUTE_TRANSPARENT_OFF : gc.ROUTE_TRANSPARENT_ON } );
 
 			} else if( MOVE_CHENGE.includes( value ) ) { // キャラパターンの変更[画像の変更…]の代わり
-				const result = opland.match( /([0-9-]*)(,([0-9-]*)(,([0-9-]*))?)?/ );
+				const result = opland.match( /([0-7]+)(,([0-9]+)(,([2468]))?)?/ );
 				if( result ) {
 					movementList.push( { code: TF_CHANGE_CHAR, parameters: [ result[ 1 ], result[ 3 ], result[ 5 ] ] } );
 				}
@@ -742,15 +742,15 @@
 				movementList.push( { code: gc.ROUTE_CHANGE_BLEND_MODE, parameters: [ paramNo ] } );
 
 			} else if( MOVE_GO.includes( value ) ) { // TF_GO_CHAR
-				const result = opland.match( /([0-9-]*),([0-9-]*)/ );
+				const result = opland.match( /([0-9.]+),([0-9.]+)/ );
 				let x, y;
 				if( result === null ) {
 					const destinationEvent = getEventById( paramNo );
 					x = destinationEvent.x;
 					y = destinationEvent.y;
 				} else {
-					x = Boolean( result[ 1 ] ) ? parseInt( result[ 1 ] ) : 0;
-					y = Boolean( result[ 2 ] ) ? parseInt( result[ 2 ] ) : 0;
+					x = Boolean( result[ 1 ] ) ? parseFloat( result[ 1 ] ) : 0;
+					y = Boolean( result[ 2 ] ) ? parseFloat( result[ 2 ] ) : 0;
 				}
 				movementList.push( { code: TF_GO_CHAR, parameters: [ x, y ] } );
 			}
