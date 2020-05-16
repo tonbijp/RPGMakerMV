@@ -1,6 +1,6 @@
 //========================================
 // TF_CharEx.js
-// Version :0.12.0.0
+// Version :0.13.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -82,14 +82,15 @@
  * ------------------------------
  * TF_LOCATE_EV [イベントID] [目標イベントID] [dx] [dy] [キャラパターン]
  * ------------------------------
- * TF_GO_XY [イベントID] [x] [y]
+ * TF_GO_XY [イベントID] [x] [y] [完了までウェイト]
  * 　指定座標に移動する。
  * 　TF_LOCATE_XY は瞬時に移動するが、こちらは徒歩。
  * 　障害物などで移動できないこともある。
- * 
+ * 　[完了までウェイト] 真偽値(true:移動終了まで待つ false:待たない)(規定値:false)
+ *
  * 　例: TF_GO_XY モブおじさん 10 4
  * ------------------------------
- * TF_GO_EV [イベントID] [目標イベントID] [dx] [dy]
+ * TF_GO_EV [イベントID] [目標イベントID] [dx] [dy] [完了までウェイト]
  * 　指定イベントの位置に移動する。
  * 　[dx] [dy] は省略可能(両者とも規定値:0)
  * 
@@ -249,8 +250,9 @@
  *　　0〜255 の間の数字。
  * 　[合成方法の変更…] : blendmode, m, 合
  * 　　0: 通常, 1: 加算, 2: 乗算, 3: スクリーン
- * 　TF_GO_XY : go, @, 移
- * 　　コンマ( , )で区切って [x],[y] の座標を数字で指定。
+ * 　TF_GO_XY( TF_GO_EV ) : go, @, 移
+ * 　　コンマ( , )で区切って [x],[y] の座標に移動。
+ * 　　数字がひとつだけの場合イベントIDとみなし、その位置に移動。
  */
 
 ( function() {
@@ -258,7 +260,9 @@
 
 	const PARAM_TRUE = 'true';
 	const PARAM_ON = 'on';
+
 	const WAIT_ROUTE = 'route';
+	const WAIT_MOVING = 'moving';
 
     /**
      * パラメータを受け取る
@@ -439,8 +443,8 @@
 			case TF_CHAR: setCharPattern( idToEv( args[ 0 ] ), undefined, args[ 1 ], args[ 2 ], args[ 3 ] ); break;
 			case TF_LOCATE_XY: locateXY( idToEv( args[ 0 ] ), args[ 1 ], args[ 2 ], args[ 3 ], args[ 4 ] ); break;
 			case TF_LOCATE_EV: locateEv( idToEv( args[ 0 ] ), idToEv( args[ 1 ] ), args[ 2 ], args[ 3 ], args[ 4 ], args[ 5 ] ); break;
-			case TF_GO_XY: goXY( idToEv( args[ 0 ] ), args[ 1 ], args[ 2 ] ); break;
-			case TF_GO_EV: goEv( idToEv( args[ 0 ] ), idToEv( args[ 1 ] ), args[ 2 ], args[ 3 ] ); break;
+			case TF_GO_XY: goXY( idToEv( args[ 0 ] ), args[ 1 ], args[ 2 ], args[ 3 ] ); break;
+			case TF_GO_EV: goEv( idToEv( args[ 0 ] ), idToEv( args[ 1 ] ), args[ 2 ], args[ 3 ], args[ 4 ] ); break;
 			case TF_ROUTE: moveRoute.apply( this, args ); break;
 			case TF_VD_ANIME: vdAnime.apply( this, args ); break;
 			case TF_VU_ANIME: vuAnime.apply( this, args ); break;
@@ -475,8 +479,8 @@
 	// 	const targetEvent = getEventById( this, stringToEventId( eventId ) );
 	// 	goXY( targetEvent, x, y );
 	// };
-	Game_CharacterBase.prototype.TF_goXY = function( x, y ) {
-		goXY( this, x, y );
+	Game_CharacterBase.prototype.TF_goXY = function( x, y, isWait ) {
+		goXY( this, x, y, isWait );
 	};
 
 	/**
@@ -487,9 +491,9 @@
 	// 	const destinationEvent = getEventById( this, stringToEventId( destinationId ) );
 	// 	goEv( targetEvent, destinationEvent, dx, dy );
 	// };
-	Game_CharacterBase.prototype.TF_goEv = function( destinationId, dx, dy ) {
+	Game_CharacterBase.prototype.TF_goEv = function( destinationId, dx, dy, isWait ) {
 		const destinationEvent = getEventById( this, stringToEventId( destinationId ) );
-		goEv( this, destinationEvent, dx, dy );
+		goEv( this, destinationEvent, dx, dy, isWait );
 	};
 
 
@@ -584,14 +588,32 @@
 	 * @param {Game_Character} targetEvent イベント・プレイヤー・隊列メンバーのいずれか
 	 * @param {String} x x座標(タイル数)
 	 * @param {String} y y座標(タイル数)
+	 * @param {Boolean} isWait ウェイトモードか
 	 */
-	function goXY( targetEvent, x, y ) {
+	function goXY( targetEvent, x, y, isWait ) {
 		x = parseFloatStrict( x );
 		y = parseFloatStrict( y );
 		targetEvent.turnTowardCharacter( { x: x, y: y } );
 		targetEvent._x = x;
 		targetEvent._y = y;
+		if( isWait ) {
+			const interpreter = getInterpreterFromCharacter( targetEvent );
+			interpreter.setWaitMode( WAIT_MOVING );
+			interpreter._character = targetEvent;
+		}
 	}
+
+	const _Game_Interpreter_updateWaitMode = Game_Interpreter.prototype.updateWaitMode;
+	Game_Interpreter.prototype.updateWaitMode = function() {
+		if( this._waitMode === WAIT_MOVING ) {
+			const waiting = this._character.isMoving();
+			if( !waiting ) {
+				this._waitMode = '';
+			}
+			return waiting;
+		}
+		_Game_Interpreter_updateWaitMode.call( this );
+	};
 
 	/**
 	 * TF_GO_EV  の実行。
@@ -600,11 +622,12 @@
 	 * @param {Game_Character} destinationEvent 目標イベント
 	 * @param { String; } dx 目標イベントからの相対x座標( タイル数 )
 	 * @param { String; } dy 目標イベントからの相対y座標( タイル数 )
+	 * @param {Boolean} isWait ウェイトモードか
 	 */
-	function goEv( targetEvent, destinationEvent, dx, dy ) {
+	function goEv( targetEvent, destinationEvent, dx, dy, isWait ) {
 		const x = $gameMap.roundX( destinationEvent.x + parseFloatStrict( dx ) );
 		const y = $gameMap.roundY( destinationEvent.y + parseFloatStrict( dy ) );
-		goXY( targetEvent, x, y );
+		goXY( targetEvent, x, y, isWait );
 	}
 
 	const TRIGGER_PARALLEL = 4;	// 並列処理
@@ -1084,10 +1107,9 @@
 	Game_Follower.prototype.update = function() {
 		if( this.TF_isFollow ) {
 			_Game_Follower_update.call( this );
-			return;
+		} else {
+			Game_Character.prototype.update.call( this );
 		}
-
-		Game_Character.prototype.update.call( this );
 	};
 
 
