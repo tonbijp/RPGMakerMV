@@ -1,6 +1,6 @@
 //========================================
 // TF_CharEx.js
-// Version :0.13.0.0
+// Version :0.13.0.1
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -82,15 +82,15 @@
  * ------------------------------
  * TF_LOCATE_EV [イベントID] [目標イベントID] [dx] [dy] [キャラパターン]
  * ------------------------------
- * TF_GO_XY [イベントID] [x] [y] [完了までウェイト]
+ * TF_GO_XY [イベントID] [x] [y] [待つ]
  * 　指定座標に移動する。
  * 　TF_LOCATE_XY は瞬時に移動するが、こちらは徒歩。
  * 　障害物などで移動できないこともある。
- * 　[完了までウェイト] 真偽値(true:移動終了まで待つ false:待たない)(規定値:false)
+ * 　[待つ] 真偽値(true:移動終了まで待つ false:待たない)(規定値:true)
  *
  * 　例: TF_GO_XY モブおじさん 10 4
  * ------------------------------
- * TF_GO_EV [イベントID] [目標イベントID] [dx] [dy] [完了までウェイト]
+ * TF_GO_EV [イベントID] [目標イベントID] [dx] [dy] [待つ]
  * 　指定イベントの位置に移動する。
  * 　[dx] [dy] は省略可能(両者とも規定値:0)
  * 
@@ -101,7 +101,6 @@
  * 　[移動指定] 専用コマンド文字(例:←↓↑→)+数値の連続 ※下部詳細参照
  * 　[繰り返し] 指定した動作を繰り返すか(規定値:false)
  * 　[飛ばす] 移動できない場合は飛ばすか(規定値:true)
- * 　[待つ] 移動が終わるのを待つか(規定値:true)
  *
  * 　例: TF_ROUTE this ↑4⤵︎5→3 OFF ON OFF
  * ------------------------------
@@ -473,6 +472,21 @@
 	};
 
 	/**
+	 * ウェイトモードに移動待ちを追加。
+	 */
+	const _Game_Interpreter_updateWaitMode = Game_Interpreter.prototype.updateWaitMode;
+	Game_Interpreter.prototype.updateWaitMode = function() {
+		if( this._waitMode === WAIT_MOVING ) {
+			const waiting = this._character.isMoving();
+			if( !waiting ) {
+				this._waitMode = '';
+			}
+			return waiting;
+		}
+		_Game_Interpreter_updateWaitMode.call( this );
+	};
+
+	/**
 	 * goXY() を呼び出す。
 	 */
 	// Game_Interpreter.prototype.TF_goXY = function( eventId, x, y ) {
@@ -596,24 +610,14 @@
 		targetEvent.turnTowardCharacter( { x: x, y: y } );
 		targetEvent._x = x;
 		targetEvent._y = y;
-		if( isWait ) {
-			const interpreter = getInterpreterFromCharacter( targetEvent );
-			interpreter.setWaitMode( WAIT_MOVING );
-			interpreter._character = targetEvent;
-		}
-	}
 
-	const _Game_Interpreter_updateWaitMode = Game_Interpreter.prototype.updateWaitMode;
-	Game_Interpreter.prototype.updateWaitMode = function() {
-		if( this._waitMode === WAIT_MOVING ) {
-			const waiting = this._character.isMoving();
-			if( !waiting ) {
-				this._waitMode = '';
-			}
-			return waiting;
-		}
-		_Game_Interpreter_updateWaitMode.call( this );
-	};
+		isWait = ( isWait === undefined ) ? true : parseBooleanStrict( isWait );
+		if( !isWait ) return;
+
+		const interpreter = getInterpreterFromCharacter( targetEvent );
+		interpreter.setWaitMode( WAIT_MOVING );
+		interpreter._character = targetEvent;
+	}
 
 	/**
 	 * TF_GO_EV  の実行。
@@ -649,7 +653,6 @@
 	}
 
 
-
 	const MOVE_RANDOM = [ 'random', '&', '＆', '乱' ]; // [ランダムに方向転換][ランダムに移動]
 	const MOVE_TWARD = [ 'tward', 't', '近' ]; // [プレイヤーの方を向く][プレイヤーに近づく]
 	const MOVE_AWAY = [ 'away', 'y', '遠' ]; // [プレイヤーの逆を向く][プレイヤーから遠ざかる]
@@ -668,11 +671,10 @@
 	const MOVE_THROUGH = [ 'through', 'g', '抜' ]; // [すり抜けON][すり抜けOFF]
 	const MOVE_INVISIBLE = [ 'invisible', 'i', '透' ]; // [透明化ON][透明化OFF]
 	const MOVE_VISIBLE = [ 'visible', 'v', '示' ]; // 透明化の逆
-	const MOVE_CHENGE = [ 'change', 'c', '変' ]; // キャラパターンの変更 [画像の変更…]の代用
+	const MOVE_CHARA = [ 'change', 'c', '変' ]; // キャラパターンの変更 [画像の変更…]の代用
 	const MOVE_OPACITY = [ 'opacity', 'o', '濁' ]; // [不透明度の変更…]
 	const MOVE_BLEND_MODE = [ 'blendmode', 'm', '合' ]; // [合成方法の変更…]
-	const MOVE_GO = [ 'go', '@', '移' ]; // 
-
+	const MOVE_GO = [ 'go', '@', '移' ]; // TF_GO_XY(TF_GO_EV)
 	// ROUTE_PLAY_SE
 	// ROUTE_SCRIPT
 
@@ -845,7 +847,7 @@
 			} else if( MOVE_VISIBLE.includes( value ) ) { // 透明化の逆
 				movementList.push( { code: paramNo ? gc.ROUTE_TRANSPARENT_OFF : gc.ROUTE_TRANSPARENT_ON } );
 
-			} else if( MOVE_CHENGE.includes( value ) ) { // キャラパターンの変更[画像の変更…]の代わり
+			} else if( MOVE_CHARA.includes( value ) ) { // キャラパターンの変更[画像の変更…]の代わり
 				const result = opland.match( /([0-7]+)(,([0-9]+)(,([2468]))?)?/ );
 				if( result ) {
 					movementList.push( { code: TF_CHAR, parameters: [ result[ 1 ], result[ 3 ], result[ 5 ] ] } );
