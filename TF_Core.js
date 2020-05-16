@@ -31,38 +31,42 @@
     function treatValue( value ) {
         if( value === undefined || value === '' ) return '0';
         if( value[ 0 ] === 'V' || value[ 0 ] === 'v' ) {
-            return value.replace( /[v]\[([0-9]+)\]/i, ( match, p1 ) => $gameVariables.value( parseInt( p1, 10 ) ) );
+            return value.replace( /v\[([0-9]+)\]/i, ( match, p1 ) => $gameVariables.value( parseInt( p1, 10 ) ) );
         }
         return value;
     }
 
 	/**
-	 * @method parseIntStrict
-	 * @param {String} value
+	 * 文字列を整数に変換して返す。
+	 * @param {String|Number} value
 	 * @return {Number} 数値に変換した結果
 	 */
     function parseIntStrict( value ) {
+        if( typeof value === 'number' ) return Math.floor( value );
         const result = parseInt( treatValue( value ), 10 );
         if( isNaN( result ) ) throw Error( '指定した値[' + value + ']が数値ではありません。' );
         return result;
     }
 
 	/**
-	 * @method parseFloatStrict
-	 * @param {String} value
+	 * 文字列を実数に変換して返す。
+	 * @param {String|Number} value
 	 * @return {Number} 数値に変換した結果
 	 */
     function parseFloatStrict( value ) {
+        if( typeof value === 'number' ) return value;
         const result = parseFloat( treatValue( value ) );
         if( isNaN( result ) ) throw Error( '指定した値[' + value + ']が数値ではありません。' );
         return result;
     }
 
     /**
-     * @param {String} value 変換元文字列
+	 * 文字列を真偽値に変換して返す。
+     * @param {String|Boolean} value 変換元文字列
      * @returns {Boolean} 
      */
     function parseBooleanStrict( value ) {
+        if( typeof value === 'boolean' ) return value;
         value = treatValue( value );
         const result = value.toLowerCase();
         return ( result === PARAM_TRUE || result === PARAM_ON );
@@ -146,6 +150,25 @@
         if( DIRECTION_UP_LEFT.includes( value ) ) return 7;
         if( DIRECTION_UP.includes( value ) ) return 8;
         if( DIRECTION_UP_RIGHT.includes( value ) ) return 9;
+    }
+
+
+    const TRIGGER_PARALLEL = 4;	// 並列処理
+	/**
+	 * 	イベントで使われているインタプリタを取り出す。
+	 * @param {Game_Character} character 
+	 */
+    function getInterpreterFromCharacter( character ) {
+        let interpreter;
+        if( character._trigger === TRIGGER_PARALLEL ) {
+            interpreter = character._interpreter;
+        } else {
+            interpreter = $gameMap._interpreter;
+        }
+        while( interpreter._childInterpreter ) {
+            interpreter = interpreter._childInterpreter;
+        }
+        return interpreter;
     }
 
     /*---- 移動関連関数 ----*/
