@@ -1,6 +1,6 @@
 //========================================
 // TF_CharEx.js
-// Version :0.11.3.0
+// Version :0.12.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -43,7 +43,7 @@
  *
  * 【プラグインコマンド】※ 規定値のある値は省略可能。
  * ------------------------------
- * TF_SET_CHAR [イベントID] [画像ファイル名] [キャラ番号] [歩行パターン] [向き]
+ * TF_FILE_CHAR [イベントID] [画像ファイル名] [キャラ番号] [歩行パターン] [向き]
  * 　イベントコマンド[移動ルートの設定] の[画像の変更]と[○を向く]に加え歩行パターンも一度に指定。
  * 　[イベントID] 0:このイベント、-1:プレイヤー、-2〜-4:隊列メンバー、1〜:イベントID(規定値:0) ※下部詳細参照
  * 　[画像ファイル名] .pngを除いた img/character/ フォルダのファイル名
@@ -51,36 +51,49 @@
  * 　[歩行パターン] 3パターンアニメの左から 0, 1, 2(規定値:現在値)
  * 　[向き] 4方向のキャラの向き (規定値:2、[歩行パターン]の指定がない場合は現在値)
  *
- * 　例: TF_SET_CHAR self !Door 2 0 D
+ * 　例: TF_FILE_CHAR self !Door 2 0 D
  * ------------------------------
- * TF_SET_CHAR [イベントID] [画像ファイル名] [キャラ番号] [キャラパターン]
+ * TF_FILE_CHAR [イベントID] [画像ファイル名] [キャラ番号] [キャラパターン]
  * 　[キャラパターン] 一度に [歩行パターン] と [向き] を指定する番号(規定値:現在値) ※下部詳細参照
  * 
- * 　例: TF_SET_CHAR player Animal 7 11
+ * 　例: TF_FILE_CHAR player Animal 7 11
  * ------------------------------
- * TF_CHANGE_CHAR [イベントID] [キャラ番号] [歩行パターン] [向き]
- * TF_CHANGE_CHAR [イベントID] [キャラ番号] [キャラパターン]
- * 　TF_SET_CHAR から[画像ファイル名]を抜いたコマンド。
+ * TF_CHAR [イベントID] [キャラ番号] [歩行パターン] [向き]
+ * TF_CHAR [イベントID] [キャラ番号] [キャラパターン]
+ * 　TF_FILE_CHAR から[画像ファイル名]を抜いたコマンド。
  * ------------------------------
- * TF_LOCATE_CHAR [イベントID] [x] [y] [歩行パターン] [向き]
+ * TF_LOCATE_XY [イベントID] [x] [y] [歩行パターン] [向き]
  * 　位置を設定。
  * 　[x] x位置(タイル数)
  * 　[y] y位置(タイル数)
  *
- * 　例: TF_LOCATE_CHAR モブおじさん 10 4 2 4
+ * 　例: TF_LOCATE_XY モブおじさん 10 4 2 4
  * ------------------------------
- * TF_LOCATE_CHAR [イベントID] [x] [y] [キャラパターン]
+ * TF_LOCATE_XY [イベントID] [x] [y] [キャラパターン]
  *
- * 　例: TF_LOCATE_CHAR モブおじさん 10 4 5
+ * 　例: TF_LOCATE_XY モブおじさん 10 4 5
  * ------------------------------
- * TF_GO_CHAR [イベントID] [x] [y]
+ * TF_LOCATE_EV [イベントID] [目標イベントID]  [dx] [dy] [歩行パターン] [向き]
+ * 　[目標イベントID] 移動目標のイベントID
+ * 　[dx] 目標イベントからの相対x座標(タイル数)
+ * 　[dy] 目標イベントからの相対y座標(タイル数)
+ *
+ * 　例: TF_LOCATE_EV モブおじさん 10 4 5
+ * ------------------------------
+ * TF_LOCATE_EV [イベントID] [目標イベントID] [dx] [dy] [キャラパターン]
+ * ------------------------------
+ * TF_GO_XY [イベントID] [x] [y]
  * 　指定座標に移動する。
- * 　TF_LOCATE_CHAR は瞬時に移動するが、こちらは徒歩。
+ * 　TF_LOCATE_XY は瞬時に移動するが、こちらは徒歩。
  * 　障害物などで移動できないこともある。
- * 　[y]を省略すると[x]を[イベントID]とみなし、その位置へ移動。
- * 　[x][y]を省略するとプレイヤーの位置へ移動。
  * 
- * 　例: TF_GO_CHAR モブおじさん 10 4
+ * 　例: TF_GO_XY モブおじさん 10 4
+ * ------------------------------
+ * TF_GO_EV [イベントID] [目標イベントID] [dx] [dy]
+ * 　指定イベントの位置に移動する。
+ * 　[dx] [dy] は省略可能(両者とも規定値:0)
+ * 
+ * 　例: TF_GO_EV モブおじさん バミリB
  * ------------------------------
  * TF_ROUTE [イベントID] [移動指定] [繰り返し] [飛ばす] [待つ]
  * 　イベントコマンドの[ルートの設定]を一行で書く。
@@ -132,14 +145,13 @@
  * 　例: TF_END_ANIME this
  *
  * 
- * 【スクリプト】
+ * 【[移動ルートの設定]で使うスクリプト】
  * ------------------------------
- * this.TF_goChar( [イベントID], [x], [y] );
+ * this.TF_goXY( [x], [y] );
  * 　指定座標に移動。
- * 　[y]を省略すると[x]を[イベントID]とみなし、その位置へ移動。
- * 　[x][y]を省略するとプレイヤーの位置へ移動。
- * this.TF_goChar(  [x], [y] );
- * 　[移動ルートの設定]内で使う場合、[イベントID]の指定は不要。
+ * ------------------------------
+ * this.TF_goEv( [目標イベントID], [dx], [dy] );
+ * 　目標イベント位置に移動。
  * =========================
  * 
  * 【詳細】
@@ -181,7 +193,7 @@
  * [ウェイト][x][y][mx][my][移動指定][隊列メンバーID]の値は、
  * 全てV[n]の形式で変数を指定できる。
  *
- * 例 : TF_LOCATE_CHAR 0 V[1] V[2]
+ * 例 : TF_LOCATE_XY 0 V[1] V[2]
  * ------------------------------
  * [移動指定] コマンド文字+数字を一単位とする文字列。
  * かなり量があるので、印刷するなどして手元で確認することを推奨。
@@ -227,7 +239,7 @@
  * 　[表示] : visible, v, 示
  * 　　数字が0の場合は[表示OFF]、1で[表示ON]
  * 　　透明化のOFFで見えるというのが分かりづらく間違いまくるので追加。
- * 　TF_CHANGE_CHAR : change, c, 変
+ * 　TF_CHAR : change, c, 変
  * 　　コンマ( , )で区切って [キャラ番号],[歩行パターン],[向き] を数字で指定。
  * 　　標準のコマンド[画像の変更…]は数字だけで指定できないので、
  * 　　現在指定しているキャラ画像内での変更するコマンドを別に追加。
@@ -237,10 +249,8 @@
  *　　0〜255 の間の数字。
  * 　[合成方法の変更…] : blendmode, m, 合
  * 　　0: 通常, 1: 加算, 2: 乗算, 3: スクリーン
- * 　TF_GO_CHAR : go, @, 移
+ * 　TF_GO_XY : go, @, 移
  * 　　コンマ( , )で区切って [x],[y] の座標を数字で指定。
- * 　　[y]を省略すると[x]を[イベントID](数値のみ指定可能)とみなし、その位置へ移動。
- * 　　[x][y]を省略するとプレイヤーの位置へ移動。
  */
 
 ( function() {
@@ -403,10 +413,12 @@
 
 
 	/*---- Game_Interpreter ----*/
-	const TF_SET_CHAR = 'TF_SET_CHAR';
-	const TF_CHANGE_CHAR = 'TF_CHANGE_CHAR';
-	const TF_LOCATE_CHAR = 'TF_LOCATE_CHAR';
-	const TF_GO_CHAR = 'TF_GO_CHAR';
+	const TF_FILE_CHAR = 'TF_FILE_CHAR';
+	const TF_CHAR = 'TF_CHAR';
+	const TF_LOCATE_XY = 'TF_LOCATE_XY';
+	const TF_LOCATE_EV = 'TF_LOCATE_EV';
+	const TF_GO_XY = 'TF_GO_XY';
+	const TF_GO_EV = 'TF_GO_EV';
 	const TF_ROUTE = 'TF_ROUTE';
 	const TF_VD_ANIME = 'TF_VD_ANIME';
 	const TF_VU_ANIME = 'TF_VU_ANIME';
@@ -423,10 +435,12 @@
 		const idToEv = ( id ) => getEventById( this, stringToEventId( id ) );
 		const commandStr = command.toUpperCase();
 		switch( commandStr ) {
-			case TF_SET_CHAR: setCharPattern( idToEv( args[ 0 ] ), args[ 1 ], args[ 2 ], args[ 3 ], args[ 4 ] ); break;
-			case TF_CHANGE_CHAR: setCharPattern( idToEv( args[ 0 ] ), undefined, args[ 1 ], args[ 2 ], args[ 3 ] ); break;
-			case TF_LOCATE_CHAR: locateChar( idToEv( args[ 0 ] ), args[ 1 ], args[ 2 ], args[ 3 ], args[ 4 ] ); break;
-			case TF_GO_CHAR: goChar( idToEv( args[ 0 ] ), args[ 1 ], args[ 2 ] ); break;
+			case TF_FILE_CHAR: setCharPattern( idToEv( args[ 0 ] ), args[ 1 ], args[ 2 ], args[ 3 ], args[ 4 ] ); break;
+			case TF_CHAR: setCharPattern( idToEv( args[ 0 ] ), undefined, args[ 1 ], args[ 2 ], args[ 3 ] ); break;
+			case TF_LOCATE_XY: locateXY( idToEv( args[ 0 ] ), args[ 1 ], args[ 2 ], args[ 3 ], args[ 4 ] ); break;
+			case TF_LOCATE_EV: locateEv( idToEv( args[ 0 ] ), idToEv( args[ 1 ] ), args[ 2 ], args[ 3 ], args[ 4 ], args[ 5 ] ); break;
+			case TF_GO_XY: goXY( idToEv( args[ 0 ] ), args[ 1 ], args[ 2 ] ); break;
+			case TF_GO_EV: goEv( idToEv( args[ 0 ] ), idToEv( args[ 1 ] ), args[ 2 ], args[ 3 ] ); break;
 			case TF_ROUTE: moveRoute.apply( this, args ); break;
 			case TF_VD_ANIME: vdAnime.apply( this, args ); break;
 			case TF_VU_ANIME: vuAnime.apply( this, args ); break;
@@ -455,19 +469,32 @@
 	};
 
 	/**
-	 * goChar() を呼び出す。
+	 * goXY() を呼び出す。
 	 */
-	Game_Interpreter.prototype.TF_goChar = function( eventId, x, y ) {
-		const targetEvent = getEventById( this, stringToEventId( eventId ) );
-		goChar( targetEvent, x, y );
+	// Game_Interpreter.prototype.TF_goXY = function( eventId, x, y ) {
+	// 	const targetEvent = getEventById( this, stringToEventId( eventId ) );
+	// 	goXY( targetEvent, x, y );
+	// };
+	Game_CharacterBase.prototype.TF_goXY = function( x, y ) {
+		goXY( this, x, y );
 	};
-	Game_CharacterBase.prototype.TF_goChar = function( x, y ) {
-		goChar( this, x, y );
+
+	/**
+	 * goEv() を呼び出す。
+	 */
+	// Game_Interpreter.prototype.TF_goEv = function( eventId, destinationId, dx, dy ) {
+	// 	const targetEvent = getEventById( this, stringToEventId( eventId ) );
+	// 	const destinationEvent = getEventById( this, stringToEventId( destinationId ) );
+	// 	goEv( targetEvent, destinationEvent, dx, dy );
+	// };
+	Game_CharacterBase.prototype.TF_goEv = function( destinationId, dx, dy ) {
+		const destinationEvent = getEventById( this, stringToEventId( destinationId ) );
+		goEv( this, destinationEvent, dx, dy );
 	};
 
 
 	/**
-	 * TF_SET_CHAR  の実行。
+	 * TF_FILE_CHAR および TF_CHAR の実行。
 	 *
 	 * @param {Game_Character} targetEvent イベント・プレイヤー・隊列メンバーのいずれか
 	 * @param {String} fileName キャラクタファイル名( img/characters/ 以下)
@@ -517,7 +544,7 @@
 	}
 
 	/**
-	 * TF_LOCATE_CHAR  の実行。
+	 * TF_LOCATE_XY  の実行。
 	 *
 	 * @param {Game_Character} targetEvent イベント・プレイヤー・隊列メンバーのいずれか
 	 * @param {String} x x座標(タイル数)
@@ -525,15 +552,80 @@
 	 * @param {String} patternNo パターン番号( 0~2 )
 	 * @param {String} d キャラの向き(テンキー対応)
 	 */
-	function locateChar( targetEvent, x, y, patternNo, d ) {
+	function locateXY( targetEvent, x, y, patternNo, d ) {
 		if( patternNo ) {
 			setCharPattern( targetEvent, undefined, undefined, patternNo, d );
 		}
 		targetEvent.setPosition( parseFloatStrict( x ), parseFloatStrict( y ) );// HalfMove.js 対応でparseFloatStrict()を使う
 	}
 
+	/**
+	 * TF_LOCATE_EV  の実行。
+	 *
+	 * @param {Game_Character} targetEvent イベント・プレイヤー・隊列メンバーのいずれか
+	 * @param {Game_Character} destinationEvent 目標イベント
+	 * @param {String} dx 目標イベントからの相対x座標(タイル数)
+	 * @param {String} dy 目標イベントからの相対y座標(タイル数)
+	 * @param {String} patternNo パターン番号( 0~2 )
+	 * @param {String} d キャラの向き(テンキー対応)
+	 */
+	function locateEv( targetEvent, destinationEvent, dx, dy, patternNo, d ) {
+		x = $gameMap.roundX( destinationEvent.x + parseFloatStrict( dx ) );
+		y = $gameMap.roundY( destinationEvent.y + parseFloatStrict( dy ) );
+		locateXY( targetEvent, x, y, patternNo, d );
+	}
 
-	// abcdefghijklmnopqrstuvwxyz&@<>
+	/**
+	 * TF_GO_XY  の実行。
+	 * 類似プラグイン
+	 * 　移動ルート＋(https://w.atwiki.jp/pokotan/pages/3.html)
+	 * 　移動ルート簡易記述関数プラグイン(https://ci-en.dlsite.com/creator/2449/article/122390)
+	 *
+	 * @param {Game_Character} targetEvent イベント・プレイヤー・隊列メンバーのいずれか
+	 * @param {String} x x座標(タイル数)
+	 * @param {String} y y座標(タイル数)
+	 */
+	function goXY( targetEvent, x, y ) {
+		x = parseFloatStrict( x );
+		y = parseFloatStrict( y );
+		targetEvent.turnTowardCharacter( { x: x, y: y } );
+		targetEvent._x = x;
+		targetEvent._y = y;
+	}
+
+	/**
+	 * TF_GO_EV  の実行。
+	 *
+	 * @param {Game_Character} targetEvent イベント・プレイヤー・隊列メンバーのいずれか
+	 * @param {Game_Character} destinationEvent 目標イベント
+	 * @param { String; } dx 目標イベントからの相対x座標( タイル数 )
+	 * @param { String; } dy 目標イベントからの相対y座標( タイル数 )
+	 */
+	function goEv( targetEvent, destinationEvent, dx, dy ) {
+		const x = $gameMap.roundX( destinationEvent.x + parseFloatStrict( dx ) );
+		const y = $gameMap.roundY( destinationEvent.y + parseFloatStrict( dy ) );
+		goXY( targetEvent, x, y );
+	}
+
+	const TRIGGER_PARALLEL = 4;	// 並列処理
+	/**
+	 * 	イベントで使われているインタプリタを取り出す。
+	 * @param {Game_Character} character 
+	 */
+	function getInterpreterFromCharacter( character ) {
+		let interpreter;
+		if( character._trigger === TRIGGER_PARALLEL ) {
+			interpreter = character._interpreter;
+		} else {
+			interpreter = $gameMap._interpreter;
+		}
+		while( interpreter._childInterpreter ) {
+			interpreter = interpreter._childInterpreter;
+		}
+		return interpreter;
+	}
+
+
 
 	const MOVE_RANDOM = [ 'random', '&', '＆', '乱' ]; // [ランダムに方向転換][ランダムに移動]
 	const MOVE_TWARD = [ 'tward', 't', '近' ]; // [プレイヤーの方を向く][プレイヤーに近づく]
@@ -733,26 +825,27 @@
 			} else if( MOVE_CHENGE.includes( value ) ) { // キャラパターンの変更[画像の変更…]の代わり
 				const result = opland.match( /([0-7]+)(,([0-9]+)(,([2468]))?)?/ );
 				if( result ) {
-					movementList.push( { code: TF_CHANGE_CHAR, parameters: [ result[ 1 ], result[ 3 ], result[ 5 ] ] } );
+					movementList.push( { code: TF_CHAR, parameters: [ result[ 1 ], result[ 3 ], result[ 5 ] ] } );
 				}
+
 			} else if( MOVE_OPACITY.includes( value ) ) { // [不透明度の変更…]
 				movementList.push( { code: gc.ROUTE_CHANGE_OPACITY, parameters: [ paramNo ] } );
 
 			} else if( MOVE_BLEND_MODE.includes( value ) ) { // [合成モードの設定…]
 				movementList.push( { code: gc.ROUTE_CHANGE_BLEND_MODE, parameters: [ paramNo ] } );
 
-			} else if( MOVE_GO.includes( value ) ) { // TF_GO_CHAR
+			} else if( MOVE_GO.includes( value ) ) { // TF_GO_XY
 				const result = opland.match( /([0-9.]+),([0-9.]+)/ );
 				let x, y;
 				if( result === null ) {
-					const destinationEvent = getEventById( paramNo );
+					const destinationEvent = getEventById( this, paramNo );
 					x = destinationEvent.x;
 					y = destinationEvent.y;
 				} else {
 					x = Boolean( result[ 1 ] ) ? parseFloat( result[ 1 ] ) : 0;
 					y = Boolean( result[ 2 ] ) ? parseFloat( result[ 2 ] ) : 0;
 				}
-				movementList.push( { code: TF_GO_CHAR, parameters: [ x, y ] } );
+				movementList.push( { code: TF_GO_XY, parameters: [ x, y ] } );
 			}
 		} );
 
@@ -761,38 +854,6 @@
 		this.command205();	// SET_MOVEMENT_ROUTE
 	}
 
-
-	/**
-	 * TF_GO_CHAR  の実行。
-	 * 類似プラグイン
-	 * 　移動ルート＋(https://w.atwiki.jp/pokotan/pages/3.html)
-	 * 　移動ルート簡易記述関数プラグイン(https://ci-en.dlsite.com/creator/2449/article/122390)
-	 *
-	 * @param {Game_Character} targetEvent イベント・プレイヤー・隊列メンバーのいずれか
-	 * @param {String} x x座標(タイル数) または [イベントID]
-	 * @param {String} y y座標(タイル数)
-	 */
-	function goChar( targetEvent, x, y ) {
-		if( x === undefined ) {
-			x = $gamePlayer.x;
-			y = $gamePlayer.y;
-		} else if( y === undefined ) {
-			const id = stringToEventId( x );
-			let destinationEvent;
-			if( id < -1 ) {
-				redestinationEvent = $gamePlayer.followers().follower( -2 - id );	// 隊列メンバー(0〜2)
-			} else if( id === 0 ) {
-				destinationEvent = $gamePlayer;	// プレイヤー
-			} else if( 0 < id ) {
-				destinationEvent = $gameMap.event( param > 0 ? param : targetEvent ); // イベント
-			}
-			x = destinationEvent.x;
-			y = destinationEvent.y;
-		}
-
-		targetEvent._x = parseFloatStrict( x );
-		targetEvent._y = parseFloatStrict( y );
-	}
 
 
 	/**
@@ -826,6 +887,7 @@
 	function followMode( targetEvent, isFollow ) {
 		isFollow = ( isFollow === undefined ) ? true : parseBooleanStrict( isFollow );
 		targetEvent.TF_isFollow = isFollow;
+		if( isFollow ) return;
 	}
 
 	/**
@@ -973,11 +1035,10 @@
 		if( !command ) return;
 
 		const params = command.parameters;
-		if( command.code === TF_CHANGE_CHAR ) {
-			setCharPattern( this, undefined, params[ 0 ], params[ 1 ], params[ 2 ] );
-		} else if( command.code === TF_GO_CHAR ) {
-			this.TF_goChar( ...params );
-		};
+		switch( command.code ) {
+			case TF_CHAR: setCharPattern( this, undefined, params[ 0 ], params[ 1 ], params[ 2 ] ); break;
+			case TF_GO_XY: this.TF_goXY( ...params ); break;
+		}
 	};
 
 	// Game_Event と同様に Game_Player・Game_Follower にオリジナルパターン( _originalPattern )の変更機能をつける。
@@ -1013,6 +1074,20 @@
 	Game_Follower.prototype.chaseCharacter = function( character ) {
 		if( !this.TF_isFollow || this.TF_isAnime ) return false;
 		_Game_Follower_chaseCharacter.apply( this, arguments );
+	};
+
+	/**
+	 * 隊列メンバーはプレイヤーのデータをコピーしているが、
+	 * TF_isFollow が false の時はコピーしない。
+	 */
+	const _Game_Follower_update = Game_Follower.prototype.update;
+	Game_Follower.prototype.update = function() {
+		if( this.TF_isFollow ) {
+			_Game_Follower_update.call( this );
+			return;
+		}
+
+		Game_Character.prototype.update.call( this );
 	};
 
 
