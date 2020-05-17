@@ -88,12 +88,13 @@
 
     const EVENT_THIS = 'this';
     const EVENT_SELF = 'self';
+    const EVENT_HERE = 'here';
     const EVENT_PLAYER = 'player';
     const EVENT_FOLLOWER0 = 'follower0';
     const EVENT_FOLLOWER1 = 'follower1';
     const EVENT_FOLLOWER2 = 'follower2';
 	/**
-	 * 文字列をイベントIDへ変換
+	 * 文字列をイベントIDへ変換。
 	 * @param {String} value イベントIDの番号か識別子
 	 * @returns {Number} 拡張イベントID
 	 */
@@ -123,6 +124,27 @@
         return i;
     }
 
+	/**
+	 * 文字列をマップIDへ変換。
+	 * @param {String} value マップIDの番号か識別子( here か this で現在のマップ)
+	 * @returns {Number} マップID 
+	 */
+    function stringToMapId( value ) {
+        value = treatValue( value );
+
+        const label = value.toLowerCase();
+        if( label === EVENT_THIS || label === EVENT_HERE ) return $gameMap.mapId();
+
+        const i = $dataMapInfos.findIndex( e => {
+            if( !e ) return false;
+            return e.name === value;
+        } );
+        if( i !== -1 ) return i; // $dataMapInfos[ i ].id が正しい気がするが、実は使われていないようだ
+        const result = parseInt( value, 10 );
+        if( isNaN( result ) ) throw Error( `指定したマップ[${value}]がありません。` );
+        return result;
+    }
+
     const DIRECTION_DOWN_LEFT = [ 'downleft', 'dl', 'southwest', 'sw', '↙︎', '左下', '南西' ];
     const DIRECTION_DOWN = [ 'down', 'd', 'south', 's', '↓', '下', '南' ];
     const DIRECTION_DOWN_RIGHT = [ 'downright', 'dr', 'southeast', 'se', '↘︎', '右下', '南東' ];
@@ -131,8 +153,9 @@
     const DIRECTION_UP_LEFT = [ 'upleft', 'ul', 'northwest', 'nw', '↖︎', '左上', '北西' ];
     const DIRECTION_UP = [ 'up', 'u', 'north', 'n', '↑', '上', '北' ];
     const DIRECTION_UP_RIGHT = [ 'upright', 'ur', 'northeast', 'ne', '↗︎', '右上', '北東' ];
+
 	/**
-	 * 方向文字列をテンキー方向の数値に変換して返す
+	 * 方向文字列をテンキー方向の数値に変換。
 	 * @param {String} value 方向た文字列
 	 * @returns {Number} テンキー方向の数値(変換できなかった場合:undefined)
 	 */
