@@ -1,6 +1,6 @@
 //========================================
 // TF_Condition.js
-// Version :0.3.0.0
+// Version :0.5.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -12,13 +12,24 @@
 /*:ja
  * @plugindesc 条件判定関連のスクリプト
  * @author とんび@鳶嶋工房
+ *
+ * @param temporaryVariable
+ * @desc 各種値を返す変数のID(規定値:1)
+ * @type number
+ * @min 1
+ * @default 1
+ * 
+ * @param temporarySwitch
+ * @desc 各種値を返すスイッチのID(規定値:1)
+ * @type number
+ * @min 1
+ * @default 1
  * 
  * @help
  * 変数・スイッチ・セルフスイッチをIDだけでなく[名前]で設定できる。
  * そのため、制作途中でIDを変えても[名前]が同じなら大丈夫。
  * プレイヤー位置・前方のイベントなどの判定ができる。
  * 
- *
  *------------------------------
  * TF_VAR [変数ID] [変数への設定値]
  * 　変数の値を設定。
@@ -28,6 +39,7 @@
  * 例: TF_VAR シーン 10
  *------------------------------
  * [スクリプト] $gameVariables.setValueByName( [変数ID], [変数への設定値] )
+ * 
  *------------------------------
  * TF_VAR [変数ID]
  * 　変数の値を、指定ID(規定値:1)の変数に設定。
@@ -35,6 +47,13 @@
  * 例: TF_VAR 石を叩いた回数
  *------------------------------
  * [スクリプト] $gameVariables.valueByName( [変数ID] )
+ *
+ *------------------------------
+ * TF_COMPARE [値] [比較演算子] [値] [比較演算子] [値]	(TODO:実装予定)
+ * 　数値の比較
+ * 　[値] V[n]形式の変数、数値、あるいは変数名
+ * 　[比較演算子] 〜≦＜≠＝
+ * 例: TF_COMPARE 10 ~ tmp ~ 15
  *------------------------------
  * TF_SW [スイッチID] [スイッチ状態]
  * 　スイッチを設定
@@ -44,6 +63,7 @@
  * 例: TF_SW 賢者に会った ON
  *------------------------------
  * [スクリプト] $gameSwitches.setValueByName( [スイッチID], [スイッチ状態(真偽値)] )
+ * 
  *------------------------------
  * TF_SW [スイッチID]
  * 　スイッチの値を、指定ID(規定値:1)のスイッチに設定。
@@ -51,6 +71,7 @@
  * 例: TF_SW クイーンビーを倒した
  *------------------------------
  * [スクリプト] $gameSwitches.valueByName( [スイッチID] )
+ * 
  *------------------------------
  * TF_SW_AND [スイッチID]...
  * 　複数のスイッチの値の論理積(AND)の結果を、指定ID(規定値:1)のスイッチに設定。
@@ -58,17 +79,19 @@
  * 例: TF_SW_AND 森の妖精 岩場の妖精 湖の妖精 丘の妖精
  *------------------------------
  * [スクリプト]  $gameSwitches.multipleAnd( [スイッチID]... )
+ * 
  *------------------------------
- * TF_SELF_SW [イベントID] [スイッチタイプ] [スイッチ状態]
+ * TF_SELF_SW [マップID] [イベントID] [スイッチタイプ] [スイッチ状態]
  * 　同マップ内のイベントのセルフスイッチを設定。
  * 　[イベントID] 0:このイベント、-1:プレイヤー、1〜:イベントID(規定値:0)
  * 　　this(またはself):このイベント、player:プレイヤー
  * 　　イベントの[名前]で指定(上記の数値や this などと同じ名前、およびスペースの入った名前は指定できません)
  * 　[スイッチタイプ] A, B, C, D のいずれか
+ * 　[マップID]  マップID | マップ名 | here | this
  * 
  * 例: TF_SELF_SW 1F:西スイッチ A true
  *------------------------------
- * TF_SELF_SW [イベントID] [スイッチタイプ]
+ * TF_SELF_SW [マップID] [イベントID] [スイッチタイプ]
  * 　イベントのセルフスイッチの値を、指定ID(規定値:1)のスイッチに設定。
  * 
  * 例: TF_SELF_SW 石像 A
@@ -76,10 +99,17 @@
  * TF_FRONT_EVENT [マップID] [イベントID] [論理演算子]
  * 　プレイヤー前方に指定のイベントがあるかをチェックして結果を、指定ID(規定値:1)のスイッチに設定。
  * 　(今の所、HalfMove.js を使ってる前提で作ってます)
- * 　[マップID]  マップID | マップ名 | self | this
  * 　[論理演算子] 指定ID(規定値:1)のスイッチ と比較する 論理演算子( logical operator )による接続( & | | | and | or )
  *------------------------------
  * [スクリプト] this.TF_frontEvent( [マップID], [イベントID], [論理演算子] )
+ * 
+ *------------------------------
+ * TF_HERE_EVENT [マップID] [イベントID] [論理演算子]
+ * 　プレイヤー位置に指定のイベントがあるかをチェックして結果を、指定ID(規定値:1)のスイッチに設定。
+ * 　(今の所、HalfMove.js を使ってる前提で作ってます)
+ *------------------------------
+ * [スクリプト] this.TF_hereEvent( [マップID], [イベントID], [論理演算子] )
+ * 
  *------------------------------
  * TF_CHECK_LOCATION [マップID] [x] [y] [向き] [論理演算子]
  * 　プレイヤーの座標位置と向きをチェックして合致して結果を、指定ID(規定値:1)のスイッチに設定。
@@ -106,6 +136,13 @@
 	const OPE_AND_MARK = '&';
 	const OPE_OR_MARK = '|';
 
+    /**
+     * パラメータを受け取る
+     */
+	const pluginParams = PluginManager.parameters( 'TF_Condition' );;
+	const TF_tmpVar = parseFloatStrict( pluginParams.temporaryVariable );
+	const TF_tmpSw = parseFloatStrict( pluginParams.temporarySwitch );
+
 	// HalfMove.js の確認
 	const hasHalfMove = PluginManager._scripts.contains( 'HalfMove' );
 
@@ -116,43 +153,56 @@
 	 */
 	function treatValue( value ) {
 		if( value === undefined || value === '' ) return '0';
-		if( value[ 0 ] === 'V' || value[ 0 ] === 'v' ) {
-			return value.replace( /[V]\[([0-9]+)\]/i, ( match, p1 ) => $gameVariables.value( parseInt( p1, 10 ) ) );
+		const result = value.match( /v\[(.+)\]/i );
+		if( result === null ) return value;
+		const id = parseInt( result[ 1 ], 10 );
+		if( isNaN( id ) ) {
+			return $gameVariables.valueByName( id );
+		} else {
+			return $gameVariables.value( id );
 		}
-		return value;
 	}
 
 	/**
-	 * @param {String} value 変換元文字列
-	 * @return {Number} 整数値への変換結果
+	 * 文字列を整数に変換して返す。
+	 * @param {String|Number} value
+	 * @return {Number} 数値に変換した結果
 	 */
 	function parseIntStrict( value ) {
+		if( typeof value === 'number' ) return Math.floor( value );
 		const result = parseInt( treatValue( value ), 10 );
 		if( isNaN( result ) ) throw Error( '指定した値[' + value + ']が数値ではありません。' );
 		return result;
-	};
+	}
 
 	/**
-	 * @param {String} value 変換元文字列
-	 * @return {Number} 数値への変換結果
+	 * 文字列を実数に変換して返す。
+	 * @param {String|Number} value
+	 * @return {Number} 数値に変換した結果
 	 */
 	function parseFloatStrict( value ) {
+		if( typeof value === 'number' ) return value;
 		const result = parseFloat( treatValue( value ) );
 		if( isNaN( result ) ) throw Error( '指定した値[' + value + ']が数値ではありません。' );
 		return result;
 	}
+
     /**
-     * @param {String} value 変換元文字列
+	 * 文字列を真偽値に変換して返す。
+     * @param {String|Boolean} value 変換元文字列
      * @returns {Boolean} 
      */
 	function parseBooleanStrict( value ) {
-		const result = treatValue( value ).toLowerCase();
+		if( typeof value === 'boolean' ) return value;
+		value = treatValue( value );
+		const result = value.toLowerCase();
 		return ( result === PARAM_TRUE || result === PARAM_ON );
 	}
 
 	/**
-	 * 
-	 * @param {String} logope 
+	 * ショートサーキット判定。
+	 * @param {String} logope
+     * @returns {Boolean} ショートサーキット成立した場合に、その値S[ 1 ]を返す
 	 */
 	function shortCircuit( logope ) {
 		if( logope === undefined ) return;
@@ -165,23 +215,25 @@
 		}
 	}
 
-
 	const EVENT_THIS = 'this';
 	const EVENT_SELF = 'self';
+	const EVENT_HERE = 'here';
 	const EVENT_PLAYER = 'player';
 	const EVENT_FOLLOWER0 = 'follower0';
 	const EVENT_FOLLOWER1 = 'follower1';
 	const EVENT_FOLLOWER2 = 'follower2';
 	/**
-	 * 文字列をイベントIDへ変換
+	 * 文字列をイベントIDへ変換。
 	 * @param {String} value イベントIDの番号か識別子
 	 * @returns {Number} 拡張イベントID
 	 */
 	function stringToEventId( value ) {
 		value = treatValue( value );
+		const result = parseInt( value, 10 );
+		if( !isNaN( result ) ) return result;
 
-		const label = value.toLowerCase();
-		switch( label ) {
+		const lowValue = value.toLowerCase();
+		switch( lowValue ) {
 			case EVENT_THIS:
 			case EVENT_SELF: return 0;
 			case EVENT_PLAYER: return -1;
@@ -189,28 +241,28 @@
 			case EVENT_FOLLOWER1: return -3;
 			case EVENT_FOLLOWER2: return -4;
 		}
-		// イベント名で指定できるようにする
-		const i = $gameMap._events.findIndex( e => {
-			if( e === undefined ) return false;	// _events[0] が undefined なので無視
-			return $dataMap.events[ e._eventId ].name === value;
-		} );
-		if( i !== -1 ) return i;
 
-		const result = parseInt( value, 10 );
-		if( !isNaN( result ) ) return result;
-		throw Error( `指定したイベント[${value}]がありません。` );
+		// イベント名で指定できるようにする
+		const i = $gameMap._events.findIndex( event => {
+			if( event === undefined ) return false;	// _events[0] が undefined なので無視
+
+			const eventId = event._eventId;
+			return $dataMap.events[ eventId ].name === value;
+		} );
+		if( i === -1 ) throw Error( `指定したイベント[${value}]がありません。` );
+		return i;
 	}
 
 	/**
-	 * 文字列をマップIDへ変換
-	 * @param {String} value マップIDの番号か識別子
+	 * 文字列をマップIDへ変換。
+	 * @param {String} value マップIDの番号か識別子( here か this で現在のマップ)
 	 * @returns {Number} マップID
 	 */
 	function stringToMapId( value ) {
 		value = treatValue( value );
 
 		const label = value.toLowerCase();
-		if( label === EVENT_THIS || label === EVENT_SELF ) return $gameMap.mapId();
+		if( label === EVENT_THIS || label === EVENT_HERE ) return $gameMap.mapId();
 
 		const i = $dataMapInfos.findIndex( e => {
 			if( !e ) return false;
@@ -259,6 +311,7 @@
 	const TF_SW_AND = 'TF_SW_AND';
 	const TF_CHECK_LOCATION = 'TF_CHECK_LOCATION';
 	const TF_FRONT_EVENT = 'TF_FRONT_EVENT';
+	const TF_HERE_EVENT = 'TF_HERE_EVENT';
 
 	/**
 	 * プラグインコマンドの実行
@@ -268,32 +321,32 @@
 		_Game_Interpreter_pluginCommand.apply( this, arguments );
 
 		const commandStr = command.toUpperCase();
-		if( commandStr === TF_VAR ) {
-			if( args[ 1 ] === undefined ) {
-				$gameVariables.setValue( 1, $gameVariables.valueByName( args[ 0 ] ) );
-			} else {
-				$gameVariables.setValueByName( args[ 0 ], args[ 1 ] );
-			}
-		} else if( commandStr === TF_SW ) {
-			if( args[ 1 ] === undefined ) {
-				$gameSwitches.setValue( 1, $gameSwitches.valueByName( args[ 0 ] ) );
-			} else {
-				$gameSwitches.setValueByName( args[ 0 ], args[ 1 ] );
-			}
-		} else if( commandStr === TF_SELF_SW ) {
-			setSelfSwitch.apply( this, args );
-		} else if( commandStr === TF_SW_AND ) {
-			$gameSwitches.setValue( 1, $gameSwitches.multipleAnd( ...args ) );
-		} else if( commandStr === TF_FRONT_EVENT ) {
-			$gameSwitches.setValue( 1, this.TF_frontEvent( ...args ) );
-		} else if( commandStr === TF_CHECK_LOCATION ) {
-			$gameSwitches.setValue( 1, this.TF_checkLocation( ...args ) );
-		};
+		switch( commandStr ) {
+			case TF_VAR:
+				if( args[ 1 ] === undefined ) {
+					$gameVariables.setValue( TF_tmpVar, $gameVariables.valueByName( args[ 0 ] ) );
+				} else {
+					$gameVariables.setValueByName( args[ 0 ], args[ 1 ] );
+				}
+				break;
+			case TF_SW:
+				if( args[ 1 ] === undefined ) {
+					$gameSwitches.setValue( TF_tmpSw, $gameSwitches.valueByName( args[ 0 ] ) );
+				} else {
+					$gameSwitches.setValueByName( args[ 0 ], args[ 1 ] );
+				}
+				break;
+			case TF_SELF_SW: setSelfSwitch.apply( this, args ); break;
+			case TF_SW_AND: $gameSwitches.setValue( TF_tmpSw, $gameSwitches.multipleAnd( ...args ) ); break;
+			case TF_FRONT_EVENT: $gameSwitches.setValue( TF_tmpSw, this.TF_frontEvent( ...args ) ); break;
+			case TF_HERE_EVENT: $gameSwitches.setValue( TF_tmpSw, this.TF_frontEvent( ...args ) ); break;
+			case TF_CHECK_LOCATION: $gameSwitches.setValue( TF_tmpSw, this.TF_checkLocation( ...args ) ); break;
+		}
 	};
 
 	/**
-	 * プレイヤー前方に指定イベントがあるか。
-	 * @param {String} mapId マップID | マップ名 | self | this
+	 * プレイヤー前方に指定イベントの判定があるか。
+	 * @param {String} mapId マップID | マップ名 | here | this
 	 * @param {String} eventId 対象イベント
 	 * @param {String} logope 前の結果との論理演算子( logical operator )による接続( & | | | and | or )
 	 * @returns {Boolean} 指定イベントがあるか
@@ -314,6 +367,30 @@
 			const x = $gameMap.roundXWithDirection( $gamePlayer.x, $gamePlayer.direction() );
 			const y = $gameMap.roundYWithDirection( $gamePlayer.y, $gamePlayer.direction() );
 			events = $gameMap.eventsXy( x, y );
+		}
+		eventId = stringToEventId( eventId );
+		return events.some( e => e.eventId() === eventId );
+	};
+
+	/**
+	 * プレイヤー位置に指定イベントの判定があるか。
+	 * @param {String} mapId マップID | マップ名 | here | this
+	 * @param {String} eventId 対象イベント
+	 * @param {String} logope 前の結果との論理演算子( logical operator )による接続( & | | | and | or )
+	 * @returns {Boolean} 指定イベントがあるか
+	 */
+	Game_Interpreter.prototype.TF_hereEvent = function( mapId, eventId, logope ) {
+		const sc = shortCircuit( logope );
+		if( sc !== undefined ) return sc;	// ショートサーキット
+
+		mapId = stringToMapId( mapId );
+		if( mapId !== $gameMap.mapId() ) return false;
+
+		let events;
+		if( hasHalfMove ) {//HalfMove.js を使っている場合
+			events = $gameMap.eventsXyUnitNt( $gamePlayer.x, $gamePlayer.y );
+		} else {
+			events = $gameMap.eventsXy( $gamePlayer.x, $gamePlayer.y );
 		}
 		eventId = stringToEventId( eventId );
 		return events.some( e => e.eventId() === eventId );
@@ -413,17 +490,19 @@
 	/*--- SelfSwitche ---*/
 	/**
 	 * [セルフスイッチ] を設定します
+	 * @param {String} mapId 対象マップ
 	 * @param {String} eventId 対象イベント
 	 * @param {String} type A・B・C・D いずれかの文字
 	 * @param {String} isOn ON/OFF状態(指定なしの場合get動作してスイッチID1に値を書き込む)
 	 */
-	function setSelfSwitch( eventId, type, isOn ) {
+	function setSelfSwitch( mapId, eventId, type, isOn ) {
+		mapId = stringToMapId( mapId );
 		eventId = stringToEventId( eventId );
 		type = type ? type.toUpperCase() : 'A';
 		if( isOn === undefined ) {
-			$gameSwitches.setValue( 1, $gameSelfSwitches.value( [ $gameMap.mapId(), eventId, type ] ) );
+			$gameSwitches.setValue( TF_tmpSw, $gameSelfSwitches.value( [ mapId, eventId, type ] ) );
 		} else {
-			$gameSelfSwitches.setValue( [ $gameMap.mapId(), eventId, type ], parseBooleanStrict( isOn ) );
+			$gameSelfSwitches.setValue( [ mapId, eventId, type ], parseBooleanStrict( isOn ) );
 		}
 	};
 
