@@ -12,7 +12,8 @@
 /*:
  * 
  * @help
- * プラグインで共通して使っている処理をメモ的にまとめたもので、
+ * プラグインで共通して使っている処理をメモ的にまとめたもの。
+ * これをライブラリとして必要とするプラグインなどを作る予定はない。
  * 
  * 利用規約 : MITライセンス
  */
@@ -20,9 +21,13 @@
 ( function() {
     'use strict';
 
+    // HalfMove.js の確認
+    const hasHalfMove = PluginManager._scripts.contains( 'HalfMove' );
 
 
     /*---- パラメータパース関数 ----*/
+    const TYPE_BOOLEAN = 'boolean';
+    const TYPE_NUMBER = 'number';
 	/**
 	 * 与えられた文字列に変数が指定されていたら、変数の内容に変換して返す。
 	 * @param {String} value 変換元の文字列( v[n]形式を含む )
@@ -30,10 +35,14 @@
 	 */
     function treatValue( value ) {
         if( value === undefined || value === '' ) return '0';
-        if( value[ 0 ] === 'V' || value[ 0 ] === 'v' ) {
-            return value.replace( /v\[([0-9]+)\]/i, ( match, p1 ) => $gameVariables.value( parseInt( p1, 10 ) ) );
+        const result = value.match( /v\[(.+)\]/i );
+        if( result === null ) return value;
+        const id = parseInt( result[ 1 ], 10 );
+        if( isNaN( id ) ) {
+            return $gameVariables.valueByName( id );
+        } else {
+            return $gameVariables.value( id );
         }
-        return value;
     }
 
 	/**
@@ -42,7 +51,7 @@
 	 * @return {Number} 数値に変換した結果
 	 */
     function parseIntStrict( value ) {
-        if( typeof value === 'number' ) return Math.floor( value );
+        if( typeof value === TYPE_NUMBER ) return Math.floor( value );
         const result = parseInt( treatValue( value ), 10 );
         if( isNaN( result ) ) throw Error( '指定した値[' + value + ']が数値ではありません。' );
         return result;
@@ -66,7 +75,7 @@
      * @returns {Boolean} 
      */
     function parseBooleanStrict( value ) {
-        if( typeof value === 'boolean' ) return value;
+        if( typeof value === TYPE_BOOLEAN ) return value;
         value = treatValue( value );
         const result = value.toLowerCase();
         return ( result === PARAM_TRUE || result === PARAM_ON );
@@ -145,34 +154,31 @@
         return result;
     }
 
-    const DIRECTION_DOWN_LEFT = [ 'downleft', 'dl', 'southwest', 'sw', '↙︎', '左下', '南西' ];
-    const DIRECTION_DOWN = [ 'down', 'd', 'south', 's', '↓', '下', '南' ];
-    const DIRECTION_DOWN_RIGHT = [ 'downright', 'dr', 'southeast', 'se', '↘︎', '右下', '南東' ];
-    const DIRECTION_LEFT = [ 'left', 'l', 'west', 'w', '←', '左', '西' ];
-    const DIRECTION_RIGHT = [ 'right', 'r', 'east', 'e', '→', '右', '東' ];
-    const DIRECTION_UP_LEFT = [ 'upleft', 'ul', 'northwest', 'nw', '↖︎', '左上', '北西' ];
-    const DIRECTION_UP = [ 'up', 'u', 'north', 'n', '↑', '上', '北' ];
-    const DIRECTION_UP_RIGHT = [ 'upright', 'ur', 'northeast', 'ne', '↗︎', '右上', '北東' ];
 
+    const DIRECTION_MAP = [
+        { in: [ '↙︎', 'dl', 'sw', 'downleft', 'southwest' ], out: 1 },
+        { in: [ '↓', 'd', 's', 'down', 'south' ], out: 2 },
+        { in: [ '↘︎', 'dr', 'se', 'downright', 'southeast' ], out: 3 },
+        { in: [ '←', 'l', 'w', 'left', 'west' ], out: 4 },
+        { in: [ '→', 'r', 'e', 'right', 'east' ], out: 6 },
+        { in: [ '↖︎', 'ul', 'nw', 'upleft', 'northwest' ], out: 7 },
+        { in: [ '↑', 'u', 'n', 'up', 'north' ], out: 8 },
+        { in: [ '↗︎', 'ur', 'ne', 'upright', 'northeast' ], out: 9 }
+    ];
 	/**
-	 * 方向文字列をテンキー方向の数値に変換。
-	 * @param {String} value 方向た文字列
-	 * @returns {Number} テンキー方向の数値(変換できなかった場合:undefined)
-	 */
+		 * 方向文字列をテンキー方向の数値に変換して返す。
+		 * @param {String} value 方向た文字列
+		 * @returns {Number} テンキー方向の数値(変換できなかった場合:undefined)
+		 */
     function stringToDirection( value ) {
         value = treatValue( value );
         const result = parseInt( value, 10 );
         if( !isNaN( result ) ) return result;
 
         value = value.toLowerCase();
-        if( DIRECTION_DOWN_LEFT.includes( value ) ) return 1;
-        if( DIRECTION_DOWN.includes( value ) ) return 2;
-        if( DIRECTION_DOWN_RIGHT.includes( value ) ) return 3;
-        if( DIRECTION_LEFT.includes( value ) ) return 4;
-        if( DIRECTION_RIGHT.includes( value ) ) return 6;
-        if( DIRECTION_UP_LEFT.includes( value ) ) return 7;
-        if( DIRECTION_UP.includes( value ) ) return 8;
-        if( DIRECTION_UP_RIGHT.includes( value ) ) return 9;
+        const index = DIRECTION_MAP.findIndex( e => e.in.includes( value ) );
+        if( index === -1 ) return;
+        return DIRECTION_MAP[ index ].out;
     }
 
 
