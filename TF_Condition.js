@@ -1,6 +1,6 @@
 //========================================
 // TF_Condition.js
-// Version :0.5.0.0
+// Version :0.6.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -97,31 +97,31 @@
  * 例: TF_SELF_SW 石像 A
  *------------------------------
  * TF_FRONT_EVENT [マップID] [イベントID] [論理演算子]
- * 　プレイヤー前方に指定のイベントがあるかをチェックして結果を、指定ID(規定値:1)のスイッチに設定。
- * 　(今の所、HalfMove.js を使ってる前提で作ってます)
+ * 　プレイヤー前方に指定のイベントがあるかをチェックして、結果を指定ID(規定値:1)のスイッチに設定。
  * 　[論理演算子] 指定ID(規定値:1)のスイッチ と比較する 論理演算子( logical operator )による接続( & | | | and | or )
  *------------------------------
  * [スクリプト] this.TF_frontEvent( [マップID], [イベントID], [論理演算子] )
+ * 　結果は返り値として返る。
  * 
  *------------------------------
- * TF_HERE_EVENT [マップID] [イベントID] [論理演算子]
- * 　プレイヤー位置に指定のイベントがあるかをチェックして結果を、指定ID(規定値:1)のスイッチに設定。
- * 　(今の所、HalfMove.js を使ってる前提で作ってます)
- *------------------------------
- * [スクリプト] this.TF_hereEvent( [マップID], [イベントID], [論理演算子] )
- * 
- *------------------------------
- * TF_CHECK_LOCATION [マップID] [x] [y] [向き] [論理演算子]
- * 　プレイヤーの座標位置と向きをチェックして合致して結果を、指定ID(規定値:1)のスイッチに設定。
- * 　(半歩移動を使っている場合は0.5単位で考慮)
- * 　[x] 対象x座標(タイル数)
- * 　[y] 対象y座標(タイル数)
+ * TF_HERE_EVENT [マップID] [イベントID] [向き] [論理演算子]
+ * 　プレイヤー位置の指定のイベントとプレイヤーの向きをチェックして、結果を指定ID(規定値:1)のスイッチに設定。
  * 　[向き] プレイヤーの向き(テンキー対応 | 方向文字列)
  * 　　上: 8, up, u, north, n, ↑
  * 　　左: 4, left, l, west, w, ←
  * 　　右: 6, right, r, east, e, →
  * 　　下: 2, down, d, south, s, ↓
  * 　　※[向き]は大文字小文字の区別をしません。
+ *------------------------------
+ * [スクリプト] this.TF_hereEvent( [マップID], [イベントID],[向き], [論理演算子] )
+ * 　結果は返り値として返る。
+ *
+ *------------------------------
+ * TF_CHECK_LOCATION [マップID] [x] [y] [向き] [論理演算子]
+ * 　プレイヤーの座標位置と向きをチェックして合致して結果を、指定ID(規定値:1)のスイッチに設定。
+ * 　(半歩移動を使っている場合は0.5単位で考慮)
+ * 　[x] 対象x座標(タイル数)
+ * 　[y] 対象y座標(タイル数)
  *------------------------------
  * [スクリプト] this.TF_checkLocation( [マップID], [x], [y], [向き], [論理演算子] )
  *------------------------------
@@ -136,6 +136,10 @@
 	const OPE_AND_MARK = '&';
 	const OPE_OR_MARK = '|';
 
+
+	// HalfMove.js の確認
+	const hasHalfMove = PluginManager._scripts.contains( 'HalfMove' );
+
     /**
      * パラメータを受け取る
      */
@@ -143,9 +147,10 @@
 	const TF_tmpVar = parseFloatStrict( pluginParams.temporaryVariable );
 	const TF_tmpSw = parseFloatStrict( pluginParams.temporarySwitch );
 
-	// HalfMove.js の確認
-	const hasHalfMove = PluginManager._scripts.contains( 'HalfMove' );
 
+	/*---- パラメータパース関数 ----*/
+	const TYPE_BOOLEAN = 'boolean';
+	const TYPE_NUMBER = 'number';
 	/**
 	 * 与えられた文字列に変数が指定されていたら、変数の内容に変換して返す。
 	 * @param {String} value 変換元の文字列( v[n]形式を含む )
@@ -169,7 +174,7 @@
 	 * @return {Number} 数値に変換した結果
 	 */
 	function parseIntStrict( value ) {
-		if( typeof value === 'number' ) return Math.floor( value );
+		if( typeof value === TYPE_NUMBER ) return Math.floor( value );
 		const result = parseInt( treatValue( value ), 10 );
 		if( isNaN( result ) ) throw Error( '指定した値[' + value + ']が数値ではありません。' );
 		return result;
@@ -193,7 +198,7 @@
      * @returns {Boolean} 
      */
 	function parseBooleanStrict( value ) {
-		if( typeof value === 'boolean' ) return value;
+		if( typeof value === TYPE_BOOLEAN ) return value;
 		value = treatValue( value );
 		const result = value.toLowerCase();
 		return ( result === PARAM_TRUE || result === PARAM_ON );
@@ -212,6 +217,20 @@
 			if( !$gameSwitches.value( 1 ) ) return false;
 		} else if( logope === OPE_OR_MARK || logope === OPE_OR ) {
 			if( $gameSwitches.value( 1 ) ) return true;
+		}
+	}
+
+	/**
+	 * character を拡張して隊列メンバーも指定できるようにしたもの。
+	 * @param {Game_Interpreter} interpreter インタプリタ
+	 * @param {Number} id 拡張イベントID
+	 * @returns {Game_CharacterBase}
+	 */
+	function getEventById( interpreter, id ) {
+		if( id < -1 ) {
+			return $gamePlayer.followers().follower( -2 - id );			// 隊列メンバー(0〜2)
+		} else {
+			return interpreter.character( id );			// プレイヤーキャラおよびイベント
 		}
 	}
 
@@ -274,16 +293,18 @@
 		return result;
 	}
 
-	const DIRECTION_DOWN_LEFT = [ 'downleft', 'dl', 'southwest', 'sw', '↙︎' ];
-	const DIRECTION_DOWN = [ 'down', 'd', 'south', 's', '↓' ];
-	const DIRECTION_DOWN_RIGHT = [ 'downright', 'dr', 'southeast', 'se', '↘︎' ];
-	const DIRECTION_LEFT = [ 'left', 'l', 'west', 'w', '←' ];
-	const DIRECTION_RIGHT = [ 'right', 'r', 'east', 'e', '→' ];
-	const DIRECTION_UP_LEFT = [ 'upleft', 'ul', 'northwest', 'nw', '↖︎' ];
-	const DIRECTION_UP = [ 'up', 'u', 'north', 'n', '↑' ];
-	const DIRECTION_UP_RIGHT = [ 'upright', 'ur', 'northeast', 'ne', '↗︎' ];
+	const DIRECTION_MAP = [
+		{ in: [ '↙︎', 'dl', 'sw', 'downleft', 'southwest' ], out: 1 },
+		{ in: [ '↓', 'd', 's', 'down', 'south' ], out: 2 },
+		{ in: [ '↘︎', 'dr', 'se', 'downright', 'southeast' ], out: 3 },
+		{ in: [ '←', 'l', 'w', 'left', 'west' ], out: 4 },
+		{ in: [ '→', 'r', 'e', 'right', 'east' ], out: 6 },
+		{ in: [ '↖︎', 'ul', 'nw', 'upleft', 'northwest' ], out: 7 },
+		{ in: [ '↑', 'u', 'n', 'up', 'north' ], out: 8 },
+		{ in: [ '↗︎', 'ur', 'ne', 'upright', 'northeast' ], out: 9 }
+	];
 	/**
-		 * 方向文字列をテンキー方向の数値に変換して返す
+		 * 方向文字列をテンキー方向の数値に変換して返す。
 		 * @param {String} value 方向た文字列
 		 * @returns {Number} テンキー方向の数値(変換できなかった場合:undefined)
 		 */
@@ -293,14 +314,9 @@
 		if( !isNaN( result ) ) return result;
 
 		value = value.toLowerCase();
-		if( DIRECTION_DOWN_LEFT.includes( value ) ) return 1;
-		if( DIRECTION_DOWN.includes( value ) ) return 2;
-		if( DIRECTION_DOWN_RIGHT.includes( value ) ) return 3;
-		if( DIRECTION_LEFT.includes( value ) ) return 4;
-		if( DIRECTION_RIGHT.includes( value ) ) return 6;
-		if( DIRECTION_UP_LEFT.includes( value ) ) return 7;
-		if( DIRECTION_UP.includes( value ) ) return 8;
-		if( DIRECTION_UP_RIGHT.includes( value ) ) return 9;
+		const index = DIRECTION_MAP.findIndex( e => e.in.includes( value ) );
+		if( index === -1 ) return;
+		return DIRECTION_MAP[ index ].out;
 	}
 
 
@@ -339,12 +355,13 @@
 			case TF_SELF_SW: setSelfSwitch.apply( this, args ); break;
 			case TF_SW_AND: $gameSwitches.setValue( TF_tmpSw, $gameSwitches.multipleAnd( ...args ) ); break;
 			case TF_FRONT_EVENT: $gameSwitches.setValue( TF_tmpSw, this.TF_frontEvent( ...args ) ); break;
-			case TF_HERE_EVENT: $gameSwitches.setValue( TF_tmpSw, this.TF_frontEvent( ...args ) ); break;
+			case TF_HERE_EVENT: $gameSwitches.setValue( TF_tmpSw, this.TF_hereEvent( ...args ) ); break;
 			case TF_CHECK_LOCATION: $gameSwitches.setValue( TF_tmpSw, this.TF_checkLocation( ...args ) ); break;
 		}
 	};
 
 	/**
+	 * TF_FRONT_EVENT の実行。
 	 * プレイヤー前方に指定イベントの判定があるか。
 	 * @param {String} mapId マップID | マップ名 | here | this
 	 * @param {String} eventId 対象イベント
@@ -352,34 +369,25 @@
 	 * @returns {Boolean} 指定イベントがあるか
 	 */
 	Game_Interpreter.prototype.TF_frontEvent = function( mapId, eventId, logope ) {
-		const sc = shortCircuit( logope );
-		if( sc !== undefined ) return sc;	// ショートサーキット
-
-		mapId = stringToMapId( mapId );
-		if( mapId !== $gameMap.mapId() ) return false;
-
-		let events;
-		if( hasHalfMove ) {//HalfMove.js を使っている場合
-			const x = $gameMap.roundHalfXWithDirection( $gamePlayer.x, $gamePlayer.direction() );
-			const y = $gameMap.roundHalfYWithDirection( $gamePlayer.y, $gamePlayer.direction() );
-			events = $gameMap.eventsXyUnitNt( x, y );
-		} else {
-			const x = $gameMap.roundXWithDirection( $gamePlayer.x, $gamePlayer.direction() );
-			const y = $gameMap.roundYWithDirection( $gamePlayer.y, $gamePlayer.direction() );
-			events = $gameMap.eventsXy( x, y );
-		}
-		eventId = stringToEventId( eventId );
-		return events.some( e => e.eventId() === eventId );
+		return collisionCheck( this, mapId, eventId, logope, $gamePlayer.direction() );
 	};
 
 	/**
+	 * TF_HERE_EVENT の実行。
 	 * プレイヤー位置に指定イベントの判定があるか。
 	 * @param {String} mapId マップID | マップ名 | here | this
 	 * @param {String} eventId 対象イベント
+	 * @param {String} d プレイヤーの向き(テンキー対応 | 方向文字列)
 	 * @param {String} logope 前の結果との論理演算子( logical operator )による接続( & | | | and | or )
 	 * @returns {Boolean} 指定イベントがあるか
 	 */
-	Game_Interpreter.prototype.TF_hereEvent = function( mapId, eventId, logope ) {
+	Game_Interpreter.prototype.TF_hereEvent = function( mapId, eventId, d, logope ) {
+		d = stringToDirection( d );
+		const resultD = d ? ( d === $gamePlayer.direction() ) : true;
+		return collisionCheck( this, mapId, eventId, logope ) && resultD;
+	};
+
+	function collisionCheck( interpreter, mapId, eventId, logope, d ) {
 		const sc = shortCircuit( logope );
 		if( sc !== undefined ) return sc;	// ショートサーキット
 
@@ -388,13 +396,17 @@
 
 		let events;
 		if( hasHalfMove ) {//HalfMove.js を使っている場合
-			events = $gameMap.eventsXyUnitNt( $gamePlayer.x, $gamePlayer.y );
+			const x = d ? $gameMap.roundHalfXWithDirection( $gamePlayer.x, d ) : $gamePlayer.x;
+			const y = d ? $gameMap.roundHalfYWithDirection( $gamePlayer.y, d ) : $gamePlayer.y;
+			events = $gameMap.eventsXyUnitNt( x, y );
 		} else {
-			events = $gameMap.eventsXy( $gamePlayer.x, $gamePlayer.y );
+			const x = d ? $gameMap.roundXWithDirection( $gamePlayer.x, d ) : $gamePlayer.x;
+			const y = d ? $gameMap.roundYWithDirection( $gamePlayer.y, d ) : $gamePlayer.y;
+			events = $gameMap.eventsXy( x, y );
 		}
-		eventId = stringToEventId( eventId );
-		return events.some( e => e.eventId() === eventId );
-	};
+		const targetEvent = getEventById( interpreter, stringToEventId( eventId ) );
+		return events.some( e => e === targetEvent );
+	}
 
 	/**
 	 * プレイヤーの座標位置と向きをチェックして合致しているか。
