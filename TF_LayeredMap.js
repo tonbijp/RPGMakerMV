@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :1.0.2.0
+// Version :1.0.3.1
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2020
@@ -372,10 +372,9 @@
 ( function() {
     'use strict';
     const TF_HIGHER_LEVEL = 'TF_HIGHER_LEVEL';
-    const PARAM_TRUE = 'true';
 
     // flag用定数
-    const FLAG_NORTH_DIR = 0x8 // 北の通行設定
+    const FLAG_NORTH_DIR = 0x8; // 北の通行設定
     const FLAG_UPPER = 0x10; // 高層[☆]
     const FLAG_COUNTER = 0x80; // カウンター
     // flagのマスク
@@ -396,30 +395,12 @@
 
     const AUTOTILE_BLOCK = 48; // オートタイル1ブロック分のパターン数
 
-    /**
-     * パラメータを受け取る
-     */
-    const pluginParams = PluginManager.parameters( 'TF_LayeredMap' );
-    /**
-     * 指定したパラメータの真偽値を返す。
-     * @param {String} paramName パラメータ名
-     * @param {Number} defaultParam 規定値
-     * @returns {Boolean}
-     */
-    const getBooleanParam = ( paramName, defaultParam ) => {
-        return pluginParams[ paramName ] ? ( pluginParams[ paramName ].toLowerCase() == PARAM_TRUE ) : defaultParam;
-    };
 
-    /**
-     * 指定したパラメータの数値を返す。
-     * @param {String} paramName パラメータ名
-     * @param {Number} defaultParam 規定値
-     * @returns {Number}
-     */
-    const getNumberParam = ( paramName, defaultParam ) => {
-        return parseInt( pluginParams[ paramName ] || defaultParam, 10 );
-    };
-
+    /*---- パラメータパース関数 ----*/
+    const PARAM_TRUE = 'true';
+    const PARAM_ON = 'on';
+    const TYPE_BOOLEAN = 'boolean';
+    const TYPE_NUMBER = 'number';
     /**
      * 指定したパラメータが、指定した値と同じか。
      * @param {String} paramName パラメータ名
@@ -427,24 +408,159 @@
      * @param {Boolean} defaultParam 規定値
      * @returns {Boolean}
      */
-    const conpairPluginParam = ( paramName, param, defaultParam ) => {
+    function conpairPluginParam( paramName, param, defaultParam ) {
         if( pluginParams[ paramName ] ) {
             return pluginParams[ paramName ].toLowerCase() === param;
         } else {
             return defaultParam;
         }
+    }
+
+	/**
+	 * 与えられた文字列に変数が指定されていたら、変数の内容に変換して返す。
+	 * @param {String} value 変換元の文字列( v[n]形式を含む )
+	 * @return {String} 変換後の文字列
+	 */
+    function treatValue( value ) {
+        if( value === undefined || value === '' ) return '0';
+        const result = value.match( /v\[(.+)\]/i );
+        if( result === null ) return value;
+        const id = parseInt( result[ 1 ], 10 );
+        if( isNaN( id ) ) {
+            return $gameVariables.valueByName( id );
+        } else {
+            return $gameVariables.value( id );
+        }
+    }
+    /*--- Game_Variables ---*/
+	/**
+	 * 変数を文字列で指定し、値を返す。
+	 * @param {String} name 変数(ID, 名前, V[n]による指定が可能)
+	 */
+    Game_Variables.prototype.valueByName = function( name ) {
+        return this.value( stringToVariableId( name ) );
     };
+	/**
+	 * 指定された変数のIDを返す。
+	 * @param {String} name 変数(ID, 名前, V[n]による指定が可能)
+	 */
+    function stringToVariableId( name ) {
+        name = treatValue( name );
+        let i = $dataSystem.variables.findIndex( i => i === name );
+        if( 0 <= i ) return i;
+        i = parseInt( name, 10 );
+        if( isNaN( i ) ) throw new Error( `I can't find the variable '${name}'` );
+        return i;
+    }
 
-    const _FillWithNeighborTile = getBooleanParam( 'FillWithNeighborTile', true );
-    const _DefaultLowerTileId = Tilemap.TILE_ID_A5 + getNumberParam( 'DefaultLowerTile', 16 );
-    const _UseLayeredCounter = getBooleanParam( 'UseLayeredCounter', true );
-    const _BillboardPriority = conpairPluginParam( 'BillboardPriority', 'front', false ) ? Infinity : -Infinity;
-    const _IsA2FullCollision = getBooleanParam( 'IsA2FullCollision', false );
-    const _IsA3UpperOpen = getBooleanParam( 'IsA3UpperOpen', false );
-    const _IsA4UpperOpen = getBooleanParam( 'IsA4UpperOpen', false );
-    const _OverpassTerrainTag = getNumberParam( 'OverpassTerrainTag', 3 );
-    const _CharacterSize = getNumberParam( 'CharacterSize', 1 );
+	/**
+	 * 文字列を整数に変換して返す。
+	 * @param {String|Number} value
+	 * @return {Number} 数値に変換した結果
+	 */
+    function parseIntStrict( value ) {
+        if( typeof value === TYPE_NUMBER ) return Math.floor( value );
+        const result = parseInt( treatValue( value ), 10 );
+        if( isNaN( result ) ) throw Error( '指定した値[' + value + ']が数値ではありません。' );
+        return result;
+    }
 
+	/**
+	 * 文字列を実数に変換して返す。
+	 * @param {String|Number} value
+	 * @return {Number} 数値に変換した結果
+	 */
+    function parseFloatStrict( value ) {
+        if( typeof value === 'number' ) return value;
+        const result = parseFloat( treatValue( value ) );
+        if( isNaN( result ) ) throw Error( '指定した値[' + value + ']が数値ではありません。' );
+        return result;
+    }
+
+    /**
+	 * 文字列を真偽値に変換して返す。
+     * @param {String|Boolean} value 変換元文字列
+     * @returns {Boolean} 
+     */
+    function parseBooleanStrict( value ) {
+        if( typeof value === TYPE_BOOLEAN ) return value;
+        value = treatValue( value );
+        const result = value.toLowerCase();
+        return ( result === PARAM_TRUE || result === PARAM_ON );
+    }
+
+	/**
+	 * character を拡張して隊列メンバーも指定できるようにしたもの。
+	 * @param {Game_Interpreter} interpreter インタプリタ
+	 * @param {Number} id 拡張イベントID
+	 * @returns {Game_CharacterBase}
+	 */
+    function getEventById( interpreter, id ) {
+        if( id < -1 ) {
+            return $gamePlayer.followers().follower( -2 - id );			// 隊列メンバー(0〜2)
+        } else {
+            return interpreter.character( id );			// プレイヤーキャラおよびイベント
+        }
+    }
+
+    const EVENT_THIS = 'this';
+    const EVENT_SELF = 'self';
+    const EVENT_PLAYER = 'player';
+    const EVENT_FOLLOWER0 = 'follower0';
+    const EVENT_FOLLOWER1 = 'follower1';
+    const EVENT_FOLLOWER2 = 'follower2';
+	/**
+	 * 文字列をイベントIDへ変換
+	 * @param {String} value イベントIDの番号か識別子
+	 * @returns {Number} 拡張イベントID
+	 */
+    function stringToEventId( value ) {
+        value = treatValue( value );
+        const result = parseInt( value, 10 );
+        if( !isNaN( result ) ) return result;
+
+        const lowValue = value.toLowerCase();
+        switch( lowValue ) {
+            case EVENT_THIS:
+            case EVENT_SELF: return 0;
+            case EVENT_PLAYER: return -1;
+            case EVENT_FOLLOWER0: return -2;
+            case EVENT_FOLLOWER1: return -3;
+            case EVENT_FOLLOWER2: return -4;
+        }
+
+        // イベント名で指定できるようにする
+        const i = $gameMap._events.findIndex( event => {
+            if( event === undefined ) return false;	// _events[0] が undefined なので無視
+
+            const eventId = event._eventId;
+            return $dataMap.events[ eventId ].name === value;
+        } );
+        if( i === -1 ) throw Error( `指定したイベント[${value}]がありません。` );
+        return i;
+    }
+
+    /**
+     * パラメータを受け取る
+     */
+    const pluginParams = PluginManager.parameters( 'TF_LayeredMap' );
+    const TF_FillWithNeighborTile = parseBooleanStrict( pluginParams.FillWithNeighborTile );
+    const TF_DefaultLowerTileId = Tilemap.TILE_ID_A5 + parseIntStrict( pluginParams.DefaultLowerTile );
+    const TF_UseLayeredCounter = parseBooleanStrict( pluginParams.UseLayeredCounter );
+    const TF_BillboardPriority = conpairPluginParam( 'BillboardPriority', 'front', false ) ? Infinity : -Infinity;
+    const TF_IsA2FullCollision = parseBooleanStrict( pluginParams.IsA2FullCollision );
+    const TF_IsA3UpperOpen = parseBooleanStrict( pluginParams.IsA3UpperOpen );
+    const TF_IsA4UpperOpen = parseBooleanStrict( pluginParams.IsA4UpperOpen );
+    const TF_OverpassTerrainTag = parseIntStrict( pluginParams.OverpassTerrainTag );
+    const TF_CharacterSize = parseIntStrict( pluginParams.CharacterSize );
+
+    /*---- SceneManager ----*/
+    // URLでの指定がない限り、WebGL モードを採用する。
+    const MODE_CANVAS = 'canvas';
+    const MODE_WEBGL = 'webgl';
+    SceneManager.preferableRendererType = function() {
+        return ( Utils.isOptionValid( MODE_CANVAS ) ) ? MODE_CANVAS : MODE_WEBGL;
+    };
 
     /*---- Game_Interpreter ----*/
     /**
@@ -457,13 +573,8 @@
         // _higherLevel のON/OFF
         if( command.toUpperCase() !== TF_HIGHER_LEVEL ) return;
 
-        const targetCharacter = ( ( id ) => {
-            const targetId = id ? parseInt( id, 10 ) : 0;
-            if( targetId === -1 ) return $gamePlayer;
-            if( targetId < -1 ) return $gamePlayer.followers().follower( -targetId - 2 );
-            return this.character( targetId );
-        } )( args[ 1 ] );
-        targetCharacter._higherLevel = ( args[ 0 ].toLowerCase() === PARAM_TRUE );
+        const targetCharacter = getEventById( this, stringToEventId( args[ 1 ] ) );
+        targetCharacter._higherLevel = parseBooleanStrict( args[ 0 ] );
     };
 
 
@@ -473,7 +584,7 @@
      */
     const _Tilemap_isOverpassPosition = Tilemap.prototype._isOverpassPosition;
     Tilemap.prototype._isOverpassPosition = function( x, y ) {
-        if( _OverpassTerrainTag !== 0 && $gameMap.terrainTag( x, y ) === _OverpassTerrainTag ) return true;
+        if( TF_OverpassTerrainTag !== 0 && $gameMap.terrainTag( x, y ) === TF_OverpassTerrainTag ) return true;
         return _Tilemap_isOverpassPosition.apply( this, arguments );
     };
 
@@ -485,7 +596,7 @@
         const zDefA = a._character ? a._character._TF_zDef : 0;
         const zDefB = b._character ? b._character._TF_zDef : 0;
         const ay = a.y + ( zDefA ? zDefA : 0 );
-        const by = b.y + ( zDefB ? zDefB : 0 )
+        const by = b.y + ( zDefB ? zDefB : 0 );
         if( ay !== by ) {
             return ay - by;
         }
@@ -510,7 +621,7 @@
         for( let curItem of this.TF_billboards ) {
             curItem.children[ 0 ].setBitmaps( bitmaps );
         }
-    }
+    };
 
     /**
      * 書き割りレイヤーの生成と追加。
@@ -530,7 +641,7 @@
 
         for( let i = 0; i < tileRows; i++ ) {
             const billboard = new PIXI.tilemap.ZLayer( this, 3 );
-            billboard.spriteId = _BillboardPriority;
+            billboard.spriteId = TF_BillboardPriority;
             this.addChild( billboard );
             this.TF_billboards.push( billboard );
             const layer = new PIXI.tilemap.CompositeRectTileLayer( 0, [], 0 );
@@ -548,7 +659,7 @@
         }
 
         _ShaderTilemap_paintAllTiles.apply( this, arguments );
-    }
+    };
 
     /**
      * タイルマップと書き割りの描画。
@@ -630,7 +741,7 @@
                 // 全方向通行可の場合は通常の高層[☆]表示
                 this._drawTile( upperLayer, tileId, dx, dy );
             }
-        }
+        };
 
         drawTile( tileId0 );
         drawTile( tileId1 );
@@ -690,7 +801,7 @@
         const th = this._tileHeight;
         const tw = this._tileWidth;
         const posX = startX * tw - ox;
-        const posY = startY * th - oy
+        const posY = startY * th - oy;
         const l = this.TF_billboards.length;
         for( let i = 0; i < l; i++ ) {
             const curItem = this.TF_billboards[ i ];
@@ -716,11 +827,11 @@
             treatA3Tilesets( curTileset.flags );
             treatA4Tilesets( curTileset.flags );
         }
-    }
+    };
     /* ---- DataManager.onLoad 用ユーティリティ ---- */
     // $gameMap が無い段階なので、必要な関数を代わりに定義したり、flags をまる渡ししたりしてる
 
-    const OPTT = ( _OverpassTerrainTag << 12 ); // 立体交差地形タグ
+    const OPTT = ( TF_OverpassTerrainTag << 12 ); // 立体交差地形タグ
 
     /**
      * カウンター設定か。
@@ -734,8 +845,8 @@
      * @param {Number} tileFlag タイルのフラグ情報
      */
     function isOverpassTile( tileFlag ) {
-        if( _OverpassTerrainTag === 0 ) return false;
-        return tileFlag >> 12 === _OverpassTerrainTag;
+        if( TF_OverpassTerrainTag === 0 ) return false;
+        return tileFlag >> 12 === TF_OverpassTerrainTag;
     }
 
     /**
@@ -760,8 +871,8 @@
                 ( isCounterTile( flags[ tileId ] ) ? 2 : 0 ) +
                 ( isCollisionTile( flags[ tileId + 46 ] ) ? 1 : 0 );
             switch( autotileFlags ) {
-                case 1: if( !_IsA2FullCollision ) { setEmptyLinePass( flags, tileId ); }; break;   // [×]
-                case 3: if( _UseLayeredCounter ) { setCounterPass( flags, tileId ); }; break;   // [×][♢]
+                case 1: if( !TF_IsA2FullCollision ) { setEmptyLinePass( flags, tileId ); }; break;   // [×]
+                case 3: if( TF_UseLayeredCounter ) { setCounterPass( flags, tileId ); }; break;   // [×][♢]
             }
         }
     }
@@ -813,7 +924,7 @@
                 // case 7 : ; break;   // [×][♢][TT]
 
                 // 上面
-                case 9: if( !_IsA4UpperOpen ) { setEmptyLinePass( flags, tileId ); } break;   // [×]
+                case 9: if( !TF_IsA4UpperOpen ) { setEmptyLinePass( flags, tileId ); } break;   // [×]
                 case 10: setAutoUpperPass( flags, tileId, 47 ); break;   // [○][♢]
                 case 11: setA4UpperPass( flags, tileId ); break;               // [×][♢]
                 // case 12 : ; break;       // [○][TT]
@@ -893,7 +1004,7 @@
      * @param {Number} tileId タイルID
      */
     function setA3UpperOverPass( flags, tileId ) {
-        const A3_UPPER_OVERPASS = _IsA3UpperOpen ? [
+        const A3_UPPER_OVERPASS = TF_IsA3UpperOpen ? [
             0, 2, OPTT + 8, OPTT + 10,
             4, 6, OPTT + 12, OPTT + 14,
             0, 2, OPTT + 8, OPTT + 10,
@@ -913,7 +1024,7 @@
      * @param {Number} tileId タイルID
      */
     function setRoofUpperPass( flags, tileId ) {
-        const A3_UPPER_PASS = _IsA3UpperOpen ? [
+        const A3_UPPER_PASS = TF_IsA3UpperOpen ? [
             0, 2, 17, 17,
             4, 6, 17, 17,
             0, 2, 17, 17,
@@ -933,7 +1044,7 @@
      * @param {Number} tileId タイルID
      */
     function setA4UpperOverPass( flags, tileId ) {
-        const A4_UPPER_OVERPASS = _IsA4UpperOpen ? [
+        const A4_UPPER_OVERPASS = TF_IsA4UpperOpen ? [
             0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0,
             2, 2, 2, 2, OPTT + 8, OPTT + 8, OPTT + 8, OPTT + 8,
@@ -957,7 +1068,7 @@
      * @param {Number} tileId タイルID
      */
     function setA4UpperPass( flags, tileId ) {
-        const A4_UPPER_PASS = _IsA4UpperOpen ? [
+        const A4_UPPER_PASS = TF_IsA4UpperOpen ? [
             0, 2, 4, 6, 0, 2, 4, 6,
             0, 2, 4, 6, 0, 2, 4, 6,
             2, 6, 2, 6, 17, 17, 17, 17,
@@ -1028,7 +1139,7 @@
      * @param {Number} tileId タイルID
      */
     function setRoofBottomPass( flags, tileId ) {
-        if( _IsA3UpperOpen ) {
+        if( TF_IsA3UpperOpen ) {
             setSquareOpenPass( flags, tileId );
         } else {
             setEmptySquarePass( flags, tileId );
@@ -1136,18 +1247,18 @@
                     } else continue;
 
 
-                    if( _FillWithNeighborTile ) {
+                    if( TF_FillWithNeighborTile ) {
                         // 北タイルで補完ただし、一番南は南で補完
                         const southTileId = getMapData( x, $gameMap.roundY( y + 1 ), 0 );
                         if( isA3A4Tile( southTileId ) || Tilemap.isTileA5( southTileId ) && isOverpassTile( flags[ southTileId ] ) ) {
                             const northTileId = getMapData( x, $gameMap.roundY( y - 1 ), 0 );
-                            setMapData( x, y, 0, northTileId ? northTileId : _DefaultLowerTileId );
+                            setMapData( x, y, 0, northTileId ? northTileId : TF_DefaultLowerTileId );
                         } else {
-                            setMapData( x, y, 0, southTileId ? southTileId : _DefaultLowerTileId );
+                            setMapData( x, y, 0, southTileId ? southTileId : TF_DefaultLowerTileId );
                         }
                     } else {
                         // 指定タイルで補完
-                        setMapData( x, y, 0, _DefaultLowerTileId );
+                        setMapData( x, y, 0, TF_DefaultLowerTileId );
                     }
                 }
             }
@@ -1182,7 +1293,7 @@
             }
 
         }
-    }
+    };
 
 
     /*---- Game_CharacterBase ----*/
@@ -1240,7 +1351,7 @@
                 if( ( flags[ tiles[ i ] ] & MASK_UPPER_DIR ) === collisionType ) return true;
             }
             return false;
-        }
+        };
 
         const isFurniturePassable = () => {
             // FLOOR1_N_FULL
@@ -1295,10 +1406,10 @@
             }
 
             return null;
-        }
+        };
 
         // Overpass タグが設定されていない
-        if( _OverpassTerrainTag === 0 ) {
+        if( TF_OverpassTerrainTag === 0 ) {
             const isFPassable = isFurniturePassable();
             if( isFPassable !== null ) return isFPassable;
             return _Game_CharacterBase_isMapPassable.apply( this, arguments );
@@ -1322,7 +1433,7 @@
                     ) return false;
                 } else if( d === 8 ) {
                     if( halfPos === 2 || halfPos === 3 ) {
-                        if( _CharacterSize === 2 ) {
+                        if( TF_CharacterSize === 2 ) {
                             if( !isOverpassTileAt( x, y - 2 ) && checkOverpassCollision( x, y - 1, 8 ) === false ) return false;
                         } else if( !isOverpassTileAt( x, y - 1 ) && checkOverpassCollision( x, y, 8 ) === false ) return false;
                     }
@@ -1341,7 +1452,7 @@
                     if( d === 2 ) {
                         if( !isOverpassTileAt( x - 1, y + 1 ) && checkOverpassCollision( x - 1, y, 2 ) === false ) return false;
                     } else if( d === 8 ) {
-                        if( _CharacterSize === 2 ) {
+                        if( TF_CharacterSize === 2 ) {
                             if( !isOverpassTileAt( x - 1, y - 2 ) && checkOverpassCollision( x - 1, y - 1, 8 ) === false ) return false;
                         } else if( !isOverpassTileAt( x - 1, y - 1 ) && checkOverpassCollision( x - 1, y, 8 ) === false ) return false;
                     }
@@ -1371,7 +1482,7 @@
                 if( checkOverpassCollision( x + dx, y, rd ) ) {
                     if( checkOverpassCollision( x + dx, y - 1, rd ) ) {
                         if( halfPos === 3 ) return true;
-                        if( halfPos === 1 && _CharacterSize === 1 || checkOverpassCollision( x + dx, y - 2, rd ) ) return true;
+                        if( halfPos === 1 && TF_CharacterSize === 1 || checkOverpassCollision( x + dx, y - 2, rd ) ) return true;
                     }
                     if( ( halfPos === 1 || halfPos === 3 ) && checkOverpassCollision( x + dx, y, 8 ) ) return true;   // ┌西東┐の角
                 }
@@ -1400,7 +1511,7 @@
             }
 
             // 境界の南の衝突判定
-            if( halfPos === 1 || ( _CharacterSize === 2 && halfPos === 3 ) ) {
+            if( halfPos === 1 || ( TF_CharacterSize === 2 && halfPos === 3 ) ) {
                 if( ( d === 4 || d === 6 ) && !isOverpassTileAt( x + dx, y ) ) {
                     if( !isOverpassTileAt( x + dx, y - 1 ) &&
                         checkOverpassCollision( x, y - 1, d ) === false &&
@@ -1410,7 +1521,7 @@
                         checkOverpassCollision( x + dx, y - 1, 2 ) ) return false;
                 }
             } else if( d === 8 ) {
-                if( _CharacterSize === 2 ) {
+                if( TF_CharacterSize === 2 ) {
                     if( halfPos === 0 && !isOverpassTileAt( x, y - 1 ) && !isOverpassTileAt( x - 1, y - 1 ) ) {
                         if( !isOverpassTileAt( x - 1, y - 2 ) &&
                             checkOverpassCollision( x, y - 2, 4 ) === false &&
@@ -1429,7 +1540,7 @@
                 }
             }
             return null;
-        }
+        };
 
         // 乗る
         const isGateway = isUp2Higher( x, y, d, halfPos );
@@ -1459,7 +1570,7 @@
                 ) return false;
             }
             return true;
-        }
+        };
 
         // レイヤー0,1の衝突判定
         if( !this._higherLevel &&
@@ -1475,7 +1586,7 @@
         }
 
         return isOPMapPassable;
-    }
+    };
 
     /*---- Game_Follower ----*/
     /**
@@ -1484,7 +1595,7 @@
      */
     const _Game_Follower_chaseCharacter = Game_Follower.prototype.chaseCharacter;
     Game_Follower.prototype.chaseCharacter = function( character ) {
-        if( _OverpassTerrainTag === 0 ) {
+        if( TF_OverpassTerrainTag === 0 ) {
             _Game_Follower_chaseCharacter.apply( this, arguments );
             return;
         }
@@ -1507,7 +1618,7 @@
         }
 
         _Game_Follower_chaseCharacter.apply( this, arguments );
-    }
+    };
 
 
     /*---- Game_Event ----*/
@@ -1584,7 +1695,7 @@
 
         for( let i = 0; i < tiles.length; i++ ) {
             const flag = flags[ tiles[ i ] ];
-            if( flag >> 12 === _OverpassTerrainTag && !Tilemap.isTileA5( tiles[ i ] ) ) {
+            if( flag >> 12 === TF_OverpassTerrainTag && !Tilemap.isTileA5( tiles[ i ] ) ) {
                 return ( flag & bit ) === bit;
             }
         }
@@ -1601,7 +1712,7 @@
         const flags = $gameMap.tilesetFlags();
         const tiles = $gameMap.layeredTiles( $gameMap.roundX( x ), $gameMap.roundY( y ) );
         for( let i = 0; i < tiles.length; i++ ) {
-            if( flags[ tiles[ i ] ] >> 12 === _OverpassTerrainTag && !Tilemap.isTileA5( tiles[ i ] ) ) {
+            if( flags[ tiles[ i ] ] >> 12 === TF_OverpassTerrainTag && !Tilemap.isTileA5( tiles[ i ] ) ) {
                 return true;
             }
         }
