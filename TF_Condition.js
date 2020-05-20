@@ -1,6 +1,6 @@
 //========================================
 // TF_Condition.js
-// Version :0.6.0.0
+// Version :0.6.0.2
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -129,26 +129,14 @@
 
 ( function() {
 	'use strict';
-	const PARAM_TRUE = 'true';
-	const PARAM_ON = 'on';
 	const OPE_AND = 'and';
 	const OPE_OR = 'or';
 	const OPE_AND_MARK = '&';
 	const OPE_OR_MARK = '|';
 
-
-	// HalfMove.js の確認
-	const hasHalfMove = PluginManager._scripts.contains( 'HalfMove' );
-
-    /**
-     * パラメータを受け取る
-     */
-	const pluginParams = PluginManager.parameters( 'TF_Condition' );;
-	const TF_tmpVar = parseFloatStrict( pluginParams.temporaryVariable );
-	const TF_tmpSw = parseFloatStrict( pluginParams.temporarySwitch );
-
-
 	/*---- パラメータパース関数 ----*/
+	const PARAM_TRUE = 'true';
+	const PARAM_ON = 'on';
 	const TYPE_BOOLEAN = 'boolean';
 	const TYPE_NUMBER = 'number';
 	/**
@@ -186,7 +174,7 @@
 	 * @return {Number} 数値に変換した結果
 	 */
 	function parseFloatStrict( value ) {
-		if( typeof value === 'number' ) return value;
+		if( typeof value === TYPE_NUMBER ) return value;
 		const result = parseFloat( treatValue( value ) );
 		if( isNaN( result ) ) throw Error( '指定した値[' + value + ']が数値ではありません。' );
 		return result;
@@ -318,6 +306,18 @@
 		if( index === -1 ) return;
 		return DIRECTION_MAP[ index ].out;
 	}
+
+
+
+	// HalfMove.js の確認
+	const hasHalfMove = PluginManager._scripts.contains( 'HalfMove' );
+
+    /**
+     * パラメータを受け取る
+     */
+	const pluginParams = PluginManager.parameters( 'TF_Condition' );;
+	const TF_tmpVar = parseFloatStrict( pluginParams.temporaryVariable );
+	const TF_tmpSw = parseFloatStrict( pluginParams.temporarySwitch );
 
 
 	/*---- Game_Interpreter ----*/

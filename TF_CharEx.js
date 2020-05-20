@@ -1,6 +1,6 @@
 //========================================
 // TF_CharEx.js
-// Version :0.13.0.1
+// Version :0.13.0.2
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -256,20 +256,16 @@
 
 ( function() {
 	'use strict';
-
-	const PARAM_TRUE = 'true';
-	const PARAM_ON = 'on';
-
 	const WAIT_ROUTE = 'route';
 	const WAIT_MOVING = 'moving';
 
-    /**
-     * パラメータを受け取る
-     */
-	const pluginParams = PluginManager.parameters( 'TF_CharEx' );
-	const TF_moveUnit = parseFloatStrict( pluginParams.moveUnit );
 
-
+	/*---- パラメータパース関数 ----*/
+	const PARAM_TRUE = 'true';
+	const PARAM_ON = 'on';
+	const TYPE_BOOLEAN = 'boolean';
+	const TYPE_NUMBER = 'number';
+	const TYPE_STRING = 'string';
 	/**
 	 * 与えられた文字列に変数が指定されていたら、変数の内容に変換して返す。
 	 * @param {String} value 変換元の文字列( v[n]形式を含む )
@@ -277,10 +273,34 @@
 	 */
 	function treatValue( value ) {
 		if( value === undefined || value === '' ) return '0';
-		if( value[ 0 ] === 'V' || value[ 0 ] === 'v' ) {
-			return value.replace( /v\[([0-9]+)\]/i, ( match, p1 ) => $gameVariables.value( parseInt( p1, 10 ) ) );
+		const result = value.match( /v\[(.+)\]/i );
+		if( result === null ) return value;
+		const id = parseInt( result[ 1 ], 10 );
+		if( isNaN( id ) ) {
+			return $gameVariables.valueByName( id );
+		} else {
+			return $gameVariables.value( id );
 		}
-		return value;
+	}
+	/*--- Game_Variables ---*/
+	/**
+	 * 変数を文字列で指定し、値を返す。
+	 * @param {String} name 変数(ID, 名前, V[n]による指定が可能)
+	 */
+	Game_Variables.prototype.valueByName = function( name ) {
+		return this.value( stringToVariableId( name ) );
+	};
+	/**
+	 * 指定された変数のIDを返す。
+	 * @param {String} name 変数(ID, 名前, V[n]による指定が可能)
+	 */
+	function stringToVariableId( name ) {
+		name = treatValue( name );
+		let i = $dataSystem.variables.findIndex( i => i === name );
+		if( 0 <= i ) return i;
+		i = parseInt( name, 10 );
+		if( isNaN( i ) ) throw new Error( `I can't find the variable '${name}'` );
+		return i;
 	}
 
 	/**
@@ -289,7 +309,7 @@
 	 * @return {Number} 数値に変換した結果
 	 */
 	function parseIntStrict( value ) {
-		if( typeof value === 'number' ) return Math.floor( value );
+		if( typeof value === TYPE_NUMBER ) return Math.floor( value );
 		const result = parseInt( treatValue( value ), 10 );
 		if( isNaN( result ) ) throw Error( '指定した値[' + value + ']が数値ではありません。' );
 		return result;
@@ -301,7 +321,7 @@
 	 * @return {Number} 数値に変換した結果
 	 */
 	function parseFloatStrict( value ) {
-		if( typeof value === 'number' ) return value;
+		if( typeof value === TYPE_NUMBER ) return value;
 		const result = parseFloat( treatValue( value ) );
 		if( isNaN( result ) ) throw Error( '指定した値[' + value + ']が数値ではありません。' );
 		return result;
@@ -313,7 +333,7 @@
      * @returns {Boolean} 
      */
 	function parseBooleanStrict( value ) {
-		if( typeof value === 'boolean' ) return value;
+		if( typeof value === TYPE_BOOLEAN ) return value;
 		value = treatValue( value );
 		const result = value.toLowerCase();
 		return ( result === PARAM_TRUE || result === PARAM_ON );
@@ -408,11 +428,15 @@
 	const FADEIN_SCREEN = 222;
 	const WAIT_FOR = 230;
 	const PLAY_SE = 250;
-	const TF_PATTERN = 'TF_pattern';
 
-	const PLAYER_CHARACTER = -1;
 	const gc = Game_Character;
 
+
+    /**
+     * パラメータを受け取る
+     */
+	const pluginParams = PluginManager.parameters( 'TF_CharEx' );
+	const TF_moveUnit = parseFloatStrict( pluginParams.moveUnit );
 
 
 	/*---- Game_Interpreter ----*/
@@ -460,11 +484,11 @@
 	const _Game_Interpreter_command205 = Game_Interpreter.prototype.command205;
 	Game_Interpreter.prototype.command205 = function() {
 		const params = this._params;
-		params[ 0 ] = stringToEventId( params[ 0 ] );
+		// if( typeof params[ 0 ] === TYPE_STRING ) params[ 0 ] = stringToEventId( params[ 0 ] );
 		if( -2 < params[ 0 ] ) return _Game_Interpreter_command205.call( this );
 
 		$gameMap.refreshIfNeeded();
-		this._character = $gamePlayer.followers().follower( -2 - params[ 0 ] );			// 隊列メンバー(0〜2)
+		this._character = getEventById( this, params[ 0 ] );
 		if( !this._character ) return true;
 		this._character.forceMoveRoute( params[ 1 ] );
 		if( params[ 1 ].wait ) this.setWaitMode( WAIT_ROUTE );
@@ -489,10 +513,10 @@
 	/**
 	 * goXY() を呼び出す。
 	 */
-	// Game_Interpreter.prototype.TF_goXY = function( eventId, x, y ) {
-	// 	const targetEvent = getEventById( this, stringToEventId( eventId ) );
-	// 	goXY( targetEvent, x, y );
-	// };
+	Game_Interpreter.prototype.TF_goXY = function( eventId, x, y ) {
+		const targetEvent = getEventById( this, stringToEventId( eventId ) );
+		goXY( targetEvent, x, y );
+	};
 	Game_CharacterBase.prototype.TF_goXY = function( x, y, isWait ) {
 		goXY( this, x, y, isWait );
 	};
@@ -500,11 +524,11 @@
 	/**
 	 * goEv() を呼び出す。
 	 */
-	// Game_Interpreter.prototype.TF_goEv = function( eventId, destinationId, dx, dy ) {
-	// 	const targetEvent = getEventById( this, stringToEventId( eventId ) );
-	// 	const destinationEvent = getEventById( this, stringToEventId( destinationId ) );
-	// 	goEv( targetEvent, destinationEvent, dx, dy );
-	// };
+	Game_Interpreter.prototype.TF_goEv = function( eventId, destinationId, dx, dy ) {
+		const targetEvent = getEventById( this, stringToEventId( eventId ) );
+		const destinationEvent = getEventById( this, stringToEventId( destinationId ) );
+		goEv( targetEvent, destinationEvent, dx, dy );
+	};
 	Game_CharacterBase.prototype.TF_goEv = function( destinationId, dx, dy, isWait ) {
 		const destinationEvent = getEventById( this, stringToEventId( destinationId ) );
 		goEv( this, destinationEvent, dx, dy, isWait );
