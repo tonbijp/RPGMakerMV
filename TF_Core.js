@@ -1,6 +1,6 @@
 //========================================
 // TF_Core
-// Version :0.0.0.0 
+// Version :0.1.0.0 
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -26,8 +26,11 @@
 
 
     /*---- パラメータパース関数 ----*/
+    const PARAM_TRUE = 'true';
+    const PARAM_ON = 'on';
     const TYPE_BOOLEAN = 'boolean';
     const TYPE_NUMBER = 'number';
+    const TYPE_STRING = 'string';
 	/**
 	 * 与えられた文字列に変数が指定されていたら、変数の内容に変換して返す。
 	 * @param {String} value 変換元の文字列( v[n]形式を含む )
@@ -43,6 +46,66 @@
         } else {
             return $gameVariables.value( id );
         }
+    }
+
+    /*--- Game_Variables ---*/
+	/**
+	 * 変数を文字列で指定し、値を返す。
+	 * @param {String} name 変数(ID, 名前, V[n]による指定が可能)
+	 */
+    Game_Variables.prototype.valueByName = function( name ) {
+        return this.value( stringToVariableId( name ) );
+    };
+	/**
+	 * 変数を文字列で指定し、値を設定。
+	 * @param {String} name 変数(ID, 名前, V[n]による指定が可能)
+	 * @param {String} value 設定する値
+	 */
+    Game_Variables.prototype.setValueByName = function( name, value ) {
+        this.setValue( stringToVariableId( name ), value );
+    };
+
+	/**
+	 * 指定された変数のIDを返す。
+	 * @param {String} name 変数(ID, 名前, V[n]による指定が可能)
+	 */
+    function stringToVariableId( name ) {
+        name = treatValue( name );
+        let i = $dataSystem.variables.findIndex( i => i === name );
+        if( 0 <= i ) return i;
+        i = parseInt( name, 10 );
+        if( isNaN( i ) ) throw new Error( `I can't find the variable '${name}'` );
+        return i;
+    }
+
+
+    /*--- Game_Switches ---*/
+	/**
+	 * スイッチの内容を文字列で指定して返す
+	 * @param {String} name スイッチ(ID, 名前, V[n]による指定が可能)
+	 */
+    Game_Switches.prototype.valueByName = function( name ) {
+        return this.value( stringToSwitchId( name ) );
+    };
+	/**
+	 * スイッチの内容を文字列で指定して設定
+	 * @param {String} name スイッチ(ID, 名前, V[n]による指定が可能)
+	 * @param {String} value 設定する値(
+	 */
+    Game_Switches.prototype.setValueByName = function( name, value ) {
+        this.setValue( stringToSwitchId( name ), value );
+    };
+	/**
+	 * 指定されたスイッチのIDを返す
+	 * @param {String} name スイッチ(ID, 名前, V[n]による指定が可能)
+	 */
+    function stringToSwitchId( name ) {
+        name = treatValue( name );
+        let i = $dataSystem.switches.findIndex( i => i === name );
+        if( 0 <= i ) return i;
+        i = parseInt( name, 10 );
+        if( isNaN( i ) ) throw new Error( `I can't find the switche '${name}'` );
+        return i;
     }
 
 	/**
@@ -63,7 +126,7 @@
 	 * @return {Number} 数値に変換した結果
 	 */
     function parseFloatStrict( value ) {
-        if( typeof value === 'number' ) return value;
+        if( typeof value === TYPE_NUMBER ) return value;
         const result = parseFloat( treatValue( value ) );
         if( isNaN( result ) ) throw Error( '指定した値[' + value + ']が数値ではありません。' );
         return result;
