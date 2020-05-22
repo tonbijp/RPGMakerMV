@@ -42,7 +42,7 @@
         if( result === null ) return value;
         const id = parseInt( result[ 1 ], 10 );
         if( isNaN( id ) ) {
-            return $gameVariables.valueByName( id );
+            return $gameVariables.valueByName( result[ 1 ] );
         } else {
             return $gameVariables.value( id );
         }

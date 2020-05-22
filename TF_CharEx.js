@@ -1,6 +1,6 @@
 //========================================
 // TF_CharEx.js
-// Version :0.13.0.2
+// Version :0.13.1.3
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -277,7 +277,7 @@
 		if( result === null ) return value;
 		const id = parseInt( result[ 1 ], 10 );
 		if( isNaN( id ) ) {
-			return $gameVariables.valueByName( id );
+			return $gameVariables.valueByName( result[ 1 ] );
 		} else {
 			return $gameVariables.value( id );
 		}
@@ -1116,7 +1116,7 @@
 	};
 
 	/**
-	 * TF_isFollow が false か、TF_isFollow フラグが true の時は
+	 * TF_isFollow が false か、TF_isAnime フラグが true の時は
 	 * プレイヤーを追わない。
 	 */
 	const _Game_Follower_chaseCharacter = Game_Follower.prototype.chaseCharacter;
