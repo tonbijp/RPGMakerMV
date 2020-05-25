@@ -251,15 +251,8 @@
 	 * @param {Game_Character} character 
 	 */
     function getInterpreterFromCharacter( character ) {
-        let interpreter;
-        if( character._trigger === TRIGGER_PARALLEL ) {
-            interpreter = character._interpreter;
-        } else {
-            interpreter = $gameMap._interpreter;
-        }
-        while( interpreter._childInterpreter ) {
-            interpreter = interpreter._childInterpreter;
-        }
+        let interpreter = ( character._trigger === TRIGGER_PARALLEL ) ? character._interpreter : $gameMap._interpreter;
+        while( interpreter._childInterpreter ) interpreter = interpreter._childInterpreter;
         return interpreter;
     }
 
