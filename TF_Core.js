@@ -74,7 +74,7 @@
         let i = $dataSystem.variables.findIndex( i => i === name );
         if( 0 <= i ) return i;
         i = parseInt( name, 10 );
-        if( isNaN( i ) ) throw new Error( `I can't find the variable '${name}'` );
+        if( isNaN( i ) ) throw Error( `I can't find the variable '${name}'` );
         return i;
     }
 
@@ -104,7 +104,7 @@
         let i = $dataSystem.switches.findIndex( i => i === name );
         if( 0 <= i ) return i;
         i = parseInt( name, 10 );
-        if( isNaN( i ) ) throw new Error( `I can't find the switche '${name}'` );
+        if( isNaN( i ) ) throw Error( `I can't find the switche '${name}'` );
         return i;
     }
 
@@ -116,7 +116,7 @@
     function parseIntStrict( value ) {
         if( typeof value === TYPE_NUMBER ) return Math.floor( value );
         const result = parseInt( treatValue( value ), 10 );
-        if( isNaN( result ) ) throw Error( '指定した値[' + value + ']が数値ではありません。' );
+        if( isNaN( result ) ) throw Error( `Value '${value}' is not a number.` );
         return result;
     }
 
@@ -128,7 +128,7 @@
     function parseFloatStrict( value ) {
         if( typeof value === TYPE_NUMBER ) return value;
         const result = parseFloat( treatValue( value ) );
-        if( isNaN( result ) ) throw Error( '指定した値[' + value + ']が数値ではありません。' );
+        if( isNaN( result ) ) throw Error( `Value '${value}' is not a number.` );
         return result;
     }
 
@@ -192,7 +192,7 @@
             const eventId = event._eventId;
             return $dataMap.events[ eventId ].name === value;
         } );
-        if( i === -1 ) throw Error( `指定したイベント[${value}]がありません。` );
+        if( i === -1 ) throw Error( `I can't find the event '${value}'` );
         return i;
     }
 
@@ -213,7 +213,7 @@
         } );
         if( i !== -1 ) return i; // $dataMapInfos[ i ].id が正しい気がするが、実は使われていないようだ
         const result = parseInt( value, 10 );
-        if( isNaN( result ) ) throw Error( `指定したマップ[${value}]がありません。` );
+        if( isNaN( result ) ) throw Error( `I can't find the map '${value}'` );
         return result;
     }
 
@@ -229,10 +229,10 @@
         { in: [ '↗︎', 'ur', 'ne', 'upright', 'northeast' ], out: 9 }
     ];
 	/**
-		 * 方向文字列をテンキー方向の数値に変換して返す。
-		 * @param {String} value 方向た文字列
-		 * @returns {Number} テンキー方向の数値(変換できなかった場合:undefined)
-		 */
+     * 方向文字列をテンキー方向の数値に変換して返す。
+     * @param {String} value 方向た文字列
+     * @returns {Number} テンキー方向の数値(変換できなかった場合:undefined)
+     */
     function stringToDirection( value ) {
         value = treatValue( value );
         const result = parseInt( value, 10 );
