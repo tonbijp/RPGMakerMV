@@ -1,6 +1,6 @@
 //========================================
 // TF_TextWindowMenu.js
-// Version :0.3.1.3
+// Version :0.4.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -62,31 +62,21 @@
 	const TF_OPEN_WINDOW_COMMAND = 'TF_OPEN_WINDOW_COMMAND';
 	const TRIGGER_OK = 'ok';
 	const TRIGGER_CANCEL = 'cancel';
-	const PARAM_TRUE = 'true';
 
     /**
      * パラメータを受け取る
      */
 	const pluginParams = PluginManager.parameters( 'TF_TextWindowMenu' );
-    /**
-     * 指定したパラメータの真偽値を返す。
-     * @param {String} paramName パラメータ名
-     * @param {Number} defaultParam 規定値
-     * @returns {Boolean}
-     */
-	const getBooleanParam = ( paramName, defaultParam ) => {
-		return pluginParams[ paramName ] ? ( pluginParams[ paramName ].toLowerCase() == PARAM_TRUE ) : defaultParam;
-	};
 
-
-	let TF_windows = JsonEx.parse( pluginParams.windowParams );
-	TF_windows = TF_windows.map( value => JsonEx.parse( value ) );
-	let TF_topRows;
-	let TF_itemIndex;
-
-	const TF_isAnimate = getBooleanParam( 'isAnimate', true );
-
-
+	const TF = JSON.parse( JSON.stringify(
+		pluginParams,
+		( key, value ) => {
+			try { return JSON.parse( value ); } catch( e ) { }
+			return value;
+		}
+	) );
+	TF.topRows = null;
+	TF.itemIndex = null;
 
 	/*---- Window_TitleCommand ----*/
 	/**
@@ -96,21 +86,22 @@
 	Window_TitleCommand.prototype.makeCommandList = function() {
 		_Window_TitleCommand_makeCommandList.call( this );
 
-		TF_topRows = this.maxItems();
-		TF_windows.forEach( e => this.addCommand( e.menuLabel, TF_OPEN_WINDOW_COMMAND ) );
+		TF.topRows = this.maxItems();
+		TF.windowParams.forEach( e => this.addCommand( e.menuLabel, TF_OPEN_WINDOW_COMMAND ) );
 	};
 	// 選択中の項目を記録
 	const _Window_TitleCommand_processOk = Window_TitleCommand.prototype.processOk;
 	Window_TitleCommand.prototype.processOk = function() {
 		_Window_TitleCommand_processOk.call( this );
-		TF_itemIndex = this.index();
+		TF.itemIndex = this.index();
 	};
 
+	const _Window_TitleCommand_selectLast = Window_TitleCommand.prototype.selectLast;
 	Window_TitleCommand.prototype.selectLast = function() {
-		if( TF_itemIndex ) {
-			this.select( TF_itemIndex );
-		} else if( this.isContinueEnabled() ) {
-			this.selectSymbol( 'continue' );
+		if( TF.itemIndex ) {
+			this.select( TF.itemIndex );
+		} else {
+			_Window_TitleCommand_selectLast.call( this );
 		}
 	};
 
@@ -133,13 +124,13 @@
 		create() {
 			super.create();
 
-			const lines = parseInt( TF_windows[ TF_itemIndex - TF_topRows ].lines, 10 );
+			const lines = parseInt( TF.windowParams[ TF.itemIndex - TF.topRows ].lines, 10 );
 			this._singleWindow = new Window_Help( lines );
 			this.addWindow( this._singleWindow );
 			this._singleWindow.y = ( Graphics.boxHeight - this._singleWindow.height ) / 2;
 			this._singleWindow.pause = true;
 
-			if( TF_isAnimate ) {
+			if( TF.isAnimate ) {
 				this._singleWindow.openness = 0;
 				this._singleWindow.open();
 			}
@@ -160,7 +151,7 @@
 				SoundManager.playCancel();
 			}
 
-			if( TF_isAnimate ) {
+			if( TF.isAnimate ) {
 				this._singleWindow.close();
 			} else {
 				SceneManager.pop();
@@ -169,9 +160,7 @@
 
 		setContents() {
 			if( this._singleWindow._text ) return;
-
-			const contents = JsonEx.parse( TF_windows[ TF_itemIndex - TF_topRows ].contents );
-			this._singleWindow.setText( contents );
+			this._singleWindow.setText( TF.windowParams[ TF.itemIndex - TF.topRows ].contents );
 		}
 
 		update() {
