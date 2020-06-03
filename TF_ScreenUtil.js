@@ -1,6 +1,6 @@
 //========================================
 // TF_ScreenUtil.js
-// Version :0.0.1.0
+// Version :0.1.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -10,90 +10,135 @@
 // http://opensource.org/licenses/mit-license.php
 //========================================
 /*:ja
- * @plugindesc 各種画面サイズ設定
+ * @plugindesc 各種画面サイズ設定と画面固定
  * @author とんび@鳶嶋工房
  *
  * @param screenWidth
  * @desc ゲーム画面全体の幅(本体設定: 816ピクセル)
+ * @type number
  * @default 1280
  *
  * @param screenHeight
  * @desc ゲーム画面全体の高さ(本体設定: 624ピクセル)
+ * @type number
  * @default 720
  * 
  * @param boxWidth
  * @desc ウィンドウ表示部分の幅(本体設定: 816ピクセル)
+ * @type number
  * @default 1080
  *
  * @param boxHeight
  * @desc ウィンドウ表示部分の高さ(本体設定: 624ピクセル)
+ * @type number
  * @default 720
  *
  * @help
  * 多分、screenWidth・screenHeight と boxWidth・boxHeight の値が違っていると
  * レイアウトが崩れる箇所が[名前入力の処理]などに残ってると思います。
  *
+ * 【タグ】
+ * [マップ]のメモにタグを書き込むと、そのマップはスクロールせず固定となります。
+ * <TF_fixedMap:0 0>
+ *
+ * 【注意点】
+ * 　プロジェクトフォルダの package.json の width, height のサイズを揃えておくと
+ * 起動時のウィンドウのパタパタした挙動がなくなります。
+ * 　また「RPGアツマール」などのサイトで公開する場合、
+ * サイト側に画面サイズ設定を揃えておく必要があります。
+ * 
+ * TODO :
+ * 固定のON/OFFするコマンド
+ * 
  * 利用規約 : MITライセンス
- */
-
+*/
 ( function() {
 	'use strict';
+	const PLUGIN_NAME = 'TF_ScreenUtil';
 	const PARAM_TRUE = 'true';
+	let _isMapFixed, _FixedX, _FixedY;
 
     /**
      * パラメータを受け取る
      */
-	const pluginParams = PluginManager.parameters( 'TF_ScreenUtil' );
-	// 画面周り
-	const TF_screenWidth = parseIntStrict( pluginParams.screenWidth );
-	const TF_screenHeight = parseIntStrict( pluginParams.screenHeight );
-	const TF_boxWidth = parseIntStrict( pluginParams.boxWidth );
-	const TF_boxHeight = parseIntStrict( pluginParams.boxHeight );
+	const TF = ( () => {
+		const parameters = PluginManager.parameters( PLUGIN_NAME );
+		return JSON.parse( JSON.stringify(
+			parameters,
+			( key, value ) => {
+				try { return JSON.parse( value ); } catch( e ) { }
+				return value;
+			}
+		) );
+	} )();
 
 	/**
-	 * 与えられた文字列に変数が指定されていたら、変数の内容に変換して返す。
-	 * @param {String} value 変換元の文字列( v[n]形式を含む )
-	 * @return {String} 変換後の文字列
+	 * @param {RPG.MetaData} object メタタグを持ったJSON
+	 * @param {String} tagName タグ名
+	 * @returns {String} タグの引数部分
 	 */
-	function treatValue( value ) {
-		if( value === undefined || value === '' ) return '0';
-		if( value[ 0 ] === 'V' || value[ 0 ] === 'v' ) {
-			return value.replace( /[v]\[([0-9]+)\]/i, ( match, p1 ) => $gameVariables.value( parseInt( p1, 10 ) ) );
-		}
-		return value;
+	function getMetaValue( object, tagName ) {
+		return object.meta.hasOwnProperty( tagName ) ? object.meta[ tagName ] : undefined;
 	}
 
 	/**
-	 * @method parseIntStrict
-	 * @param {String} value
-	 * @return {Number} 数値に変換した結果
+	 * 文字列の座標を数値配列にして返す。
+	 * @param {String} str スペース区切りの座標
+	 * @returns {Array<Number>} 座標 x, y の配列
 	 */
-	function parseIntStrict( value ) {
-		const result = parseInt( treatValue( value ), 10 );
-		if( isNaN( result ) ) throw Error( '指定した値[' + value + ']が数値ではありません。' );
-		return result;
+	function string2pos( str ) {
+		const args = str.split( ' ' );
+		if( args.length !== 2 ) throw PLUGIN_NAME + ': no parameter';
+		const x = parseFloat( args[ 0 ] );
+		const y = parseFloat( args[ 1 ] );
+		if( isNaN( x ) || isNaN( y ) ) throw PLUGIN_NAME + ': NaN';
+		return [ x, y ];
+	}
+
+
+	/*---- Game_Player ----*/
+	const _Game_Player_updateScroll = Game_Player.prototype.updateScroll;
+	Game_Player.prototype.updateScroll = function( lastScrolledX, lastScrolledY ) {
+		if( _isMapFixed ) return;
+
+		_Game_Player_updateScroll.apply( this, arguments );
 	};
 
-	/**
-	 * @method parseFloatStrict
-	 * @param {String} value
-	 * @return {Number} 数値に変換した結果
-	 */
-	function parseFloatStrict( value ) {
-		const result = parseFloat( treatValue( value ) );
-		if( isNaN( result ) ) throw Error( '指定した値[' + value + ']が数値ではありません。' );
-		return result;
-	}
 
+	/*---- Scene_Map ----*/
+	const _Scene_Map_onMapLoaded = Scene_Map.prototype.onMapLoaded;
+	Scene_Map.prototype.onMapLoaded = function() {
+		_Scene_Map_onMapLoaded.call( this );
+
+
+		// マップメモ固定座標の指定メタタグの処理
+		// 例: <TF_fixedMap:0.84 0.2>
+		const fixedMapArgs = getMetaValue( $dataMap, 'TF_fixedMap' );
+		if( fixedMapArgs === undefined ) {
+			_isMapFixed = false;
+		} else {
+			[ _FixedX, _FixedY ] = string2pos( fixedMapArgs );
+			_isMapFixed = true;
+		}
+	};
+
+
+	const _Scene_Map_start = Scene_Map.prototype.start;
+	Scene_Map.prototype.start = function() {
+		_Scene_Map_start.call( this );
+		if( _isMapFixed ) {
+			$gameMap.setDisplayPos( _FixedX, _FixedY );
+		}
+	};
 
 	/*==== 画面設定 ====*/
 	/*--- SceneManager ---*/
 	const _SceneManager_initialize = SceneManager.initialize;
 	SceneManager.initialize = function() {
-		this._screenWidth = TF_screenWidth;
-		this._screenHeight = TF_screenHeight;
-		this._boxWidth = TF_boxWidth;
-		this._boxHeight = TF_boxHeight;
+		this._screenWidth = TF.screenWidth;
+		this._screenHeight = TF.screenHeight;
+		this._boxWidth = TF.boxWidth;
+		this._boxHeight = TF.boxHeight;
 		_SceneManager_initialize.call( this );
 	};
 
@@ -118,7 +163,7 @@
 	const _Spriteset_Base_createPictures = Spriteset_Base.prototype.createPictures;
 	Spriteset_Base.prototype.createPictures = function() {
 		_Spriteset_Base_createPictures.call( this );
-		this._pictureContainer.setFrame( 0, 0, TF_screenWidth, TF_screenHeight );// 表示位置を原点に戻す
+		this._pictureContainer.setFrame( 0, 0, TF.screenWidth, TF.screenHeight );// 表示位置を原点に戻す
 	};
 
 	/*--- Scene_Title ---*/
