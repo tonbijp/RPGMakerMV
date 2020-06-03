@@ -30,59 +30,60 @@
  * 
  * 利用規約 : MITライセンス
  */
-    
-(function(){'use strict';
-const PLUGIN_NAME = 'TF_DashControl';
-const SHOW_MENU = 'Show AlwaysDash menu';
-const PLUGIN_COMMAND = 'TF_DASH_ENABLED';
 
-/**
- * 初期化イベント(的なアレ)
- */
-const _Game_System_initialize = Game_System.prototype.initialize;
-Game_System.prototype.initialize = function(){
-    _Game_System_initialize.call( this );
-    this.TF_dashEnabled = true; // セーブ用変数を用意
-};
+( function() {
+    'use strict';
+    const PLUGIN_NAME = 'TF_DashControl';
+    const SHOW_MENU = 'Show AlwaysDash menu';
+    const PLUGIN_COMMAND = 'TF_DASH_ENABLED';
 
-/**
- * プラグインコマンドの実行
- */
-const _Game_Interpreter_pluginCommand = Game_Interpreter.prototype.pluginCommand;
-Game_Interpreter.prototype.pluginCommand = function ( command, args ){
-    _Game_Interpreter_pluginCommand.call( this, command, args );
+    /**
+     * 初期化イベント(的なアレ)
+     */
+    const _Game_System_initialize = Game_System.prototype.initialize;
+    Game_System.prototype.initialize = function() {
+        _Game_System_initialize.call( this );
+        this.TF_dashEnabled = true; // セーブ用変数を用意
+    };
 
-    if( command.toUpperCase() !== PLUGIN_COMMAND ) return;
+    /**
+     * プラグインコマンドの実行
+     */
+    const _Game_Interpreter_pluginCommand = Game_Interpreter.prototype.pluginCommand;
+    Game_Interpreter.prototype.pluginCommand = function( command, args ) {
+        _Game_Interpreter_pluginCommand.call( this, command, args );
 
-    const dashEnabled = ( args[0].toLowerCase() === 'true' );
-    $gameSystem.TF_DashEnabled( dashEnabled );
-};
+        if( command.toUpperCase() !== PLUGIN_COMMAND ) return;
 
-/**
- * ダッシュ可能状態の設定
- * @param {Boolean} dashEnabled 注:isDashDisabledとは真偽逆
- */
-Game_System.prototype.TF_DashEnabled = function( dashEnabled ){
-    this.TF_dashEnabled = ( dashEnabled == 'false' );
-};
+        const dashEnabled = ( args[ 0 ].toLowerCase() === 'true' );
+        $gameSystem.TF_DashEnabled( dashEnabled );
+    };
 
-/**
- * @returns {Boolean} ダッシュ不可か
- */
-const _Game_Map_isDashDisabled = Game_Map.prototype.isDashDisabled;
-Game_Map.prototype.isDashDisabled = function(){
-    return !$gameSystem.TF_dashEnabled || _Game_Map_isDashDisabled.call( this );
-};
+    /**
+     * ダッシュ可能状態の設定
+     * @param {Boolean} dashEnabled 注:isDashDisabledとは真偽逆
+     */
+    Game_System.prototype.TF_DashEnabled = function( dashEnabled ) {
+        this.TF_dashEnabled = ( dashEnabled == 'false' );
+    };
 
-// [常時ダッシュ]メニューの表示・非表示の設定
-const showAlwaysDashMenu = PluginManager.parameters( PLUGIN_NAME )[ SHOW_MENU ];
-if ( showAlwaysDashMenu.toLowerCase() === 'true' ) return;
+    /**
+     * @returns {Boolean} ダッシュ不可か
+     */
+    const _Game_Map_isDashDisabled = Game_Map.prototype.isDashDisabled;
+    Game_Map.prototype.isDashDisabled = function() {
+        return !$gameSystem.TF_dashEnabled || _Game_Map_isDashDisabled.call( this );
+    };
 
-const _Window_Command_addCommand = Window_Command.prototype.addCommand;
-Window_Options.prototype.addCommand = function( name, symbol, enabled, ext ){
-    if( symbol === 'alwaysDash' ) return;
-    _Window_Command_addCommand.call(this,name,symbol,enabled,ext);
-};
-})();
+    // [常時ダッシュ]メニューの表示・非表示の設定
+    const showAlwaysDashMenu = PluginManager.parameters( PLUGIN_NAME )[ SHOW_MENU ];
+    if( showAlwaysDashMenu.toLowerCase() === 'true' ) return;
+
+    const _Window_Command_addCommand = Window_Command.prototype.addCommand;
+    Window_Options.prototype.addCommand = function( name, symbol, enabled, ext ) {
+        if( symbol === 'alwaysDash' ) return;
+        _Window_Command_addCommand.call( this, name, symbol, enabled, ext );
+    };
+} )();
 
 
