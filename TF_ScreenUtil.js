@@ -1,6 +1,6 @@
 //========================================
 // TF_ScreenUtil.js
-// Version :0.1.0.0
+// Version :0.1.1.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -106,9 +106,9 @@
 
 
 	/*---- Scene_Map ----*/
-	const _Scene_Map_onMapLoaded = Scene_Map.prototype.onMapLoaded;
-	Scene_Map.prototype.onMapLoaded = function() {
-		_Scene_Map_onMapLoaded.call( this );
+	const _Scene_Map_start = Scene_Map.prototype.start;
+	Scene_Map.prototype.start = function() {
+		_Scene_Map_start.call( this );
 
 
 		// マップメモ固定座標の指定メタタグの処理
@@ -120,12 +120,6 @@
 			[ _FixedX, _FixedY ] = string2pos( fixedMapArgs );
 			_isMapFixed = true;
 		}
-	};
-
-
-	const _Scene_Map_start = Scene_Map.prototype.start;
-	Scene_Map.prototype.start = function() {
-		_Scene_Map_start.call( this );
 		if( _isMapFixed ) {
 			$gameMap.setDisplayPos( _FixedX, _FixedY );
 		}
