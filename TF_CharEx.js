@@ -1,6 +1,6 @@
 //========================================
 // TF_CharEx.js
-// Version :0.13.1.3
+// Version :0.13.2.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -11,7 +11,7 @@
 //========================================
 /*:ja
  * @plugindesc キャラのアニメや移動など強化
- * @author とんび@鳶嶋工房
+ * @author とんび@鳶嶋工房(tonbi.jp)
  *
  * @param moveUnit
  * @desc 移動単位(TF_END_ANIME時の配置単位)
@@ -507,7 +507,7 @@
 			}
 			return waiting;
 		}
-		_Game_Interpreter_updateWaitMode.call( this );
+		return _Game_Interpreter_updateWaitMode.call( this );
 	};
 
 	/**
