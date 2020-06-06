@@ -1,6 +1,6 @@
 //========================================
 // TF_CharEx.js
-// Version :0.13.2.0
+// Version :0.13.3.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -712,7 +712,6 @@
 	 * @param {String} wait 待つか(規定値:true)
 	 */
 	function moveRoute( eventId, mml, repeat, skippable, wait ) {
-		eventId = stringToEventId( eventId );
 		const targetEvent = getEventById( this, stringToEventId( eventId ) );
 		const mmlArray = mml.match( /[^0-9.,-]+[0-9.,-]+/ig );
 		repeat = parseBooleanStrict( repeat );
