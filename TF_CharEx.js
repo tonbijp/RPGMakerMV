@@ -1,6 +1,6 @@
 //========================================
 // TF_CharEx.js
-// Version :0.13.3.0
+// Version :0.14.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -116,6 +116,19 @@
  * 　キャラ画像の縦上方向にアニメーションする(キャラの向きだと 右→左→下 の順)
  *
  * 　例:TF_VU_ANIME
+ * ------------------------------
+ * TF_VDEX_ANIME [イベントID] [画像ファイル名] [キャラ番号] [ウェイト]
+ * 　キャラ画像のパターンと向きを全て使ってアニメーションする。
+ * 　(キャラの向きだと 下→左→右→上 の順で、それぞれ足踏みが画像左から右)
+ * 　宝箱や扉のパターンをより滑らかに改造した時に使う。
+ *
+ * 　例:TF_VDEX_ANIME 2 !$SmoothDoor 0
+ * ------------------------------
+ * TF_VUEX_ANIME [イベントID] [画像ファイル名] [キャラ番号] [ウェイト]
+ * 　キャラ画像のパターンと向きを全て使ってアニメーションする。
+ * 　(キャラの向きだと 上→右→左→下  の順で、それぞれ足踏みが画像右から左)
+ *
+ * 　例:TF_VUEX_ANIME 2 !$SmoothDoor 2 1
  * ------------------------------
  * TF_FOLLOW [隊列メンバーID] [フォロー状態]
  * 　プレイヤーを隊列メンバーが追跡するかどうか指定。
@@ -282,6 +295,7 @@
 			return $gameVariables.value( id );
 		}
 	}
+
 	/*--- Game_Variables ---*/
 	/**
 	 * 変数を文字列で指定し、値を返す。
@@ -404,6 +418,7 @@
 	 * @returns {Number} テンキー方向の数値(変換できなかった場合:undefined)
 	 */
 	function stringToDirection( value ) {
+		if( typeof value === TYPE_NUMBER ) return value;
 		value = treatValue( value );
 		const result = parseInt( value, 10 );
 		if( !isNaN( result ) ) return result;
@@ -448,7 +463,9 @@
 	const TF_GO_EV = 'TF_GO_EV';
 	const TF_ROUTE = 'TF_ROUTE';
 	const TF_VD_ANIME = 'TF_VD_ANIME';
+	const TF_VDEX_ANIME = 'TF_VDEX_ANIME';
 	const TF_VU_ANIME = 'TF_VU_ANIME';
+	const TF_VUEX_ANIME = 'TF_VUEX_ANIME';
 	const TF_FOLLOW = 'TF_FOLLOW';
 	const TF_ANIME = 'TF_ANIME';
 	const TF_END_ANIME = 'TF_END_ANIME';
@@ -471,6 +488,8 @@
 			case TF_ROUTE: moveRoute.apply( this, args ); break;
 			case TF_VD_ANIME: vdAnime.apply( this, args ); break;
 			case TF_VU_ANIME: vuAnime.apply( this, args ); break;
+			case TF_VDEX_ANIME: vdexAnime.apply( this, args ); break;
+			case TF_VUEX_ANIME: vuexAnime.apply( this, args ); break;
 			case TF_FOLLOW: follow.apply( this, args ); break;
 			case TF_ANIME: anime.apply( this, args ); break;
 			case TF_END_ANIME: animeMode( idToEv( args[ 0 ] ), false ); break;
@@ -1022,6 +1041,103 @@
 				{ code: gc.ROUTE_TURN_RIGHT },
 				{ code: gc.ROUTE_WAIT, parameters: [ waitFrames ] },
 				{ code: gc.ROUTE_TURN_UP },
+				{ code: tempDirectionFix ? gc.ROUTE_DIR_FIX_ON : gc.ROUTE_DIR_FIX_OFF },
+				{ code: gc.ROUTE_END }
+			]
+		} ];
+		this.command205();	// SET_MOVEMENT_ROUTE
+	}
+
+	/**
+	 * TF_VDEX_ANIME  の実行。
+	 * 
+	 * @param {String} eventId イベントIDかそれに替わる識別子の文字列
+	 * @param {String} fileName キャラクタファイル名( img/characters/ 以下)
+	 * @param {String} charaNo キャラクタ番号( 0~7 )
+	 * @param {String} waitFrames 待ちフレーム数
+	 */
+	function vdexAnime( eventId, fileName, charaNo, waitFrames ) {
+		eventId = stringToEventId( eventId );
+		const targetEvent = getEventById( this, eventId );
+		if( waitFrames === undefined ) {
+			waitFrames = speedToFrames( targetEvent.moveSpeed() );
+		} else {
+			waitFrames = parseIntStrict( waitFrames );
+		}
+
+		setCharPattern( targetEvent, fileName, charaNo, 0, 2 );
+		const tempDirectionFix = targetEvent.isDirectionFixed();
+		targetEvent.setDirectionFix( false );
+		this._params = [ eventId, {
+			repeat: false, skippable: true, wait: true, list: [
+				{ code: TF_CHAR, parameters: [ charaNo, 1, 2 ] },
+				{ code: gc.ROUTE_WAIT, parameters: [ waitFrames ] },
+				{ code: TF_CHAR, parameters: [ charaNo, 2, 2 ] },
+				{ code: gc.ROUTE_WAIT, parameters: [ waitFrames ] },
+				{ code: TF_CHAR, parameters: [ charaNo, 0, 4 ] },
+				{ code: gc.ROUTE_WAIT, parameters: [ waitFrames ] },
+				{ code: TF_CHAR, parameters: [ charaNo, 1, 4 ] },
+				{ code: gc.ROUTE_WAIT, parameters: [ waitFrames ] },
+				{ code: TF_CHAR, parameters: [ charaNo, 2, 4 ] },
+				{ code: gc.ROUTE_WAIT, parameters: [ waitFrames ] },
+				{ code: TF_CHAR, parameters: [ charaNo, 0, 6 ] },
+				{ code: gc.ROUTE_WAIT, parameters: [ waitFrames ] },
+				{ code: TF_CHAR, parameters: [ charaNo, 1, 6 ] },
+				{ code: gc.ROUTE_WAIT, parameters: [ waitFrames ] },
+				{ code: TF_CHAR, parameters: [ charaNo, 2, 6 ] },
+				{ code: gc.ROUTE_WAIT, parameters: [ waitFrames ] },
+				{ code: TF_CHAR, parameters: [ charaNo, 0, 8 ] },
+				{ code: gc.ROUTE_WAIT, parameters: [ waitFrames ] },
+				{ code: TF_CHAR, parameters: [ charaNo, 1, 8 ] },
+				{ code: gc.ROUTE_WAIT, parameters: [ waitFrames ] },
+				{ code: TF_CHAR, parameters: [ charaNo, 2, 8 ] },
+				{ code: tempDirectionFix ? gc.ROUTE_DIR_FIX_ON : gc.ROUTE_DIR_FIX_OFF },
+				{ code: gc.ROUTE_END }
+			]
+		} ];
+		this.command205();	// SET_MOVEMENT_ROUTE
+	}
+	/**
+	 * TF_VUEX_ANIME  の実行。
+	 * 
+	 * @param {String} eventId イベントIDかそれに替わる識別子の文字列
+	 * @param {String} fileName キャラクタファイル名( img/characters/ 以下)
+	 * @param {String} charaNo キャラクタ番号( 0~7 )
+	 * @param {String} waitFrames 待ちフレーム数
+	 */
+	function vuexAnime( eventId, fileName, charaNo, waitFrames ) {
+		eventId = stringToEventId( eventId );
+		const targetEvent = getEventById( this, eventId );
+		if( waitFrames === undefined ) {
+			waitFrames = speedToFrames( targetEvent.moveSpeed() );
+		} else {
+			waitFrames = parseIntStrict( waitFrames );
+		}
+		setCharPattern( targetEvent, fileName, charaNo, 2, 8 );
+		const tempDirectionFix = targetEvent.isDirectionFixed();
+		targetEvent.setDirectionFix( false );
+		this._params = [ eventId, {
+			repeat: false, skippable: true, wait: true, list: [
+				{ code: TF_CHAR, parameters: [ charaNo, 1, 8 ] },
+				{ code: gc.ROUTE_WAIT, parameters: [ waitFrames ] },
+				{ code: TF_CHAR, parameters: [ charaNo, 0, 8 ] },
+				{ code: gc.ROUTE_WAIT, parameters: [ waitFrames ] },
+				{ code: TF_CHAR, parameters: [ charaNo, 2, 6 ] },
+				{ code: gc.ROUTE_WAIT, parameters: [ waitFrames ] },
+				{ code: TF_CHAR, parameters: [ charaNo, 1, 6 ] },
+				{ code: gc.ROUTE_WAIT, parameters: [ waitFrames ] },
+				{ code: TF_CHAR, parameters: [ charaNo, 0, 6 ] },
+				{ code: gc.ROUTE_WAIT, parameters: [ waitFrames ] },
+				{ code: TF_CHAR, parameters: [ charaNo, 2, 4 ] },
+				{ code: gc.ROUTE_WAIT, parameters: [ waitFrames ] },
+				{ code: TF_CHAR, parameters: [ charaNo, 1, 4 ] },
+				{ code: gc.ROUTE_WAIT, parameters: [ waitFrames ] },
+				{ code: TF_CHAR, parameters: [ charaNo, 0, 4 ] },
+				{ code: TF_CHAR, parameters: [ charaNo, 2, 2 ] },
+				{ code: gc.ROUTE_WAIT, parameters: [ waitFrames ] },
+				{ code: TF_CHAR, parameters: [ charaNo, 1, 2 ] },
+				{ code: gc.ROUTE_WAIT, parameters: [ waitFrames ] },
+				{ code: TF_CHAR, parameters: [ charaNo, 0, 2 ] },
 				{ code: tempDirectionFix ? gc.ROUTE_DIR_FIX_ON : gc.ROUTE_DIR_FIX_OFF },
 				{ code: gc.ROUTE_END }
 			]
