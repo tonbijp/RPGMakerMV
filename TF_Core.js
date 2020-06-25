@@ -248,6 +248,7 @@
      * @returns {Number} テンキー方向の数値(変換できなかった場合:undefined)
      */
     function stringToDirection( value ) {
+        if( typeof value === TYPE_NUMBER ) return value;
         value = treatValue( value );
         const result = parseInt( value, 10 );
         if( !isNaN( result ) ) return result;
