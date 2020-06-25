@@ -1,6 +1,6 @@
 //========================================
 // TF_Core
-// Version :0.2.0.0 
+// Version :0.2.1.0 
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
