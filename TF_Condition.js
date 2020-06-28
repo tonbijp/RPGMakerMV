@@ -1,6 +1,6 @@
 //========================================
 // TF_Condition.js
-// Version :0.6.0.2
+// Version :0.7.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -124,6 +124,11 @@
  * 　[y] 対象y座標(タイル数)
  *------------------------------
  * [スクリプト] this.TF_checkLocation( [マップID], [x], [y], [向き], [論理演算子] )
+ * 
+ *------------------------------
+ * TF_STAY_PAGE_IF [実行条件(真偽値)]
+ * 　ページの[出現条件]をさらに追加する。
+ * 　[実行条件(真偽値)] true:そのまま次の行を実行、false:次のページの実行(規定値:指定ID(規定値:1)のスイッチ)
  *------------------------------
  */
 
@@ -328,6 +333,7 @@
 	const TF_CHECK_LOCATION = 'TF_CHECK_LOCATION';
 	const TF_FRONT_EVENT = 'TF_FRONT_EVENT';
 	const TF_HERE_EVENT = 'TF_HERE_EVENT';
+	const TF_STAY_PAGE_IF = 'TF_STAY_PAGE_IF';
 
 	/**
 	 * プラグインコマンドの実行
@@ -352,11 +358,12 @@
 					$gameSwitches.setValueByName( args[ 0 ], args[ 1 ] );
 				}
 				break;
-			case TF_SELF_SW: setSelfSwitch.apply( this, args ); break;
+			case TF_SELF_SW: setSelfSwitch( ...args ); break;
 			case TF_SW_AND: $gameSwitches.setValue( TF_tmpSw, $gameSwitches.multipleAnd( ...args ) ); break;
 			case TF_FRONT_EVENT: $gameSwitches.setValue( TF_tmpSw, this.TF_frontEvent( ...args ) ); break;
 			case TF_HERE_EVENT: $gameSwitches.setValue( TF_tmpSw, this.TF_hereEvent( ...args ) ); break;
 			case TF_CHECK_LOCATION: $gameSwitches.setValue( TF_tmpSw, this.TF_checkLocation( ...args ) ); break;
+			case TF_STAY_PAGE_IF: stayPageIf( this, args[ 0 ] ); break;
 		}
 	};
 
@@ -457,6 +464,7 @@
 	 * @param {String} name 変数(ID, 名前, V[n]による指定が可能)
 	 */
 	function stringToVariableId( name ) {
+		if( typeof name === TYPE_NUMBER ) return name;
 		name = treatValue( name );
 		let i = $dataSystem.variables.findIndex( i => i === name );
 		if( 0 <= i ) return i;
@@ -487,11 +495,12 @@
 	 * @param {String} name スイッチ(ID, 名前, V[n]による指定が可能)
 	 */
 	function stringToSwitchId( name ) {
+		if( typeof name === TYPE_NUMBER ) return name;
 		name = treatValue( name );
 		let i = $dataSystem.switches.findIndex( i => i === name );
 		if( 0 <= i ) return i;
 		i = parseInt( name, 10 );
-		if( isNaN( i ) ) throw new Error( `I can't find the switche '${name}'` );
+		if( isNaN( i ) ) throw new Error( `I can't find the switch '${name}'` );
 		return i;
 	}
 
@@ -516,6 +525,5 @@
 		} else {
 			$gameSelfSwitches.setValue( [ mapId, eventId, type ], parseBooleanStrict( isOn ) );
 		}
-	};
-
+	}
 } )();
