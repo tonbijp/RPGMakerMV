@@ -1,6 +1,6 @@
 //========================================
 // TF_Condition.js
-// Version :0.8.0.0
+// Version :0.9.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -131,16 +131,20 @@
  * 例: TF_STAY_IF 15<=$gameParty.members()[0].level
  *------------------------------
  * TF_STAY_IF [スイッチ] [実行条件(真偽値)]　　　引数が2つの場合
- * 例: TF_STAY_IF A OFF(セルフスイッチ未実装)
+ * 例: TF_STAY_IF A OFF(
  * 例: TF_STAY_IF S[0] OFF
  *------------------------------
- * TF_STAY_IF [数値] [条件式] [数値]　　　引数が3つの場合(未実装)
+ * TF_STAY_IF [数値] [条件式] [数値]　　　引数が3つの場合
  * 　[数値] 数値か、V[変数ID] もしくは V[変数名]
  * 　[条件式] =,~(実際は=以外なら全て =<(小なりイコール)として判定)
  *
  * 例: TF_STAY_IF 0 ~ v[変数名]
  *------------------------------
- * TF_STAY_IF [判定要素] [~] [判定要素] [~] [判定要素]　　　引数が5つの場合(未実装)
+ * TF_STAY_IF [マップID] [イベントID] [セルフスイッチ] [実行条件(真偽値)]　　　引数が4つの場合(未実装)
+ *
+ * 例: TF_STAY_IF here 門番 C ON
+ *------------------------------
+ * TF_STAY_IF [判定要素] [~] [判定要素] [~] [判定要素]　　　引数が5つの場合
  * 　[~] 実際は全て =<(小なりイコール)として判定
  * 
  * 例: TF_STAY_IF 10 ~ V[1] ~ 15
@@ -153,8 +157,9 @@
 	const OPE_OR = 'or';
 	const OPE_AND_MARK = '&';
 	const OPE_OR_MARK = '|';
+	const OPE_EQUAL = '=';
 	const CHAR_SPACE = ' ';
-	const SWITCH_IT = 'it';
+	const IDENTIFIER_IT = 'it';
 
 	/*---- パラメータパース関数 ----*/
 	const PARAM_TRUE = 'true';
@@ -163,11 +168,12 @@
 	const TYPE_NUMBER = 'number';
 	/**
 	 * 与えられた文字列に変数が指定されていたら、変数の内容に変換して返す。
-	 * @param {String} value 変換元の文字列( v[n]形式を含む )
+	 * @param {String} value 変換元の文字列( V[n]形式を含む )
 	 * @return {String} 変換後の文字列
 	 */
 	function treatValue( value ) {
 		if( value === undefined || value === '' ) return '0';
+		if( value === IDENTIFIER_IT ) return $gameVariables.value( TF_varIt );
 		const result = value.match( /v\[(.+)\]/i );
 		if( result === null ) return value;
 		const id = parseInt( result[ 1 ], 10 );
@@ -210,7 +216,7 @@
 	function parseBooleanStrict( value ) {
 		if( typeof value === TYPE_BOOLEAN ) return value;
 		if( value === undefined || value === '' ) return false;
-		if( value === SWITCH_IT ) return $gameSwitches.value( TF_swIt );
+		if( value === IDENTIFIER_IT ) return $gameSwitches.value( TF_swIt );
 
 		const result = value.match( /s\[(.+)\]/i );
 		if( result === null ) {
@@ -352,7 +358,7 @@
      * パラメータを受け取る
      */
 	const pluginParams = PluginManager.parameters( PLUGIN_NAME );;
-	const TF_tmpVar = parseFloatStrict( pluginParams.temporaryVariable );
+	const TF_varIt = parseFloatStrict( pluginParams.temporaryVariable );
 	const TF_swIt = parseFloatStrict( pluginParams.temporarySwitch );
 
 
@@ -378,7 +384,7 @@
 			case TF_STAY_IF: break;// 無視することで出現条件判定を飛ばす(実際の判定は meetsConditions() で行う)
 			case TF_VAR:
 				if( args[ 1 ] === undefined ) {
-					$gameVariables.setValue( TF_tmpVar, $gameVariables.valueByName( args[ 0 ] ) );
+					$gameVariables.setValue( TF_varIt, $gameVariables.valueByName( args[ 0 ] ) );
 				} else {
 					$gameVariables.setValueByName( args[ 0 ], args[ 1 ] );
 				}
@@ -564,6 +570,7 @@
 	 * 指定イベントページの出現条件判定を行う。
 	 * @param {RPG.EventPage} page 対象イベントページ
 	 */
+	const SELF_SWITCHES = [ 'A', 'B', 'C', 'D' ];
 	const _Game_Event_meetsConditions = Game_Event.prototype.meetsConditions;
 	Game_Event.prototype.meetsConditions = function( page ) {
 		const doPage = _Game_Event_meetsConditions.apply( this, arguments );
@@ -579,22 +586,22 @@
 			switch( l ) {
 				case 1:
 					// スクリプト判定
-					return ( new Function(
-						'return '
-						+ args[ 0 ] )
-					)();
+					return ( new Function( `return ${args[ 0 ]}` ) )();
 				case 2:
 					//  スイッチ判定
-					const getSwitchValue = swId => [ 'A', 'B', 'C', 'D' ].includes( swId ) ?	// セルフスイッチ判定
+					const getSwitchValue = swId => SELF_SWITCHES.includes( swId ) ?	// セルフスイッチ判定
 						$gameSelfSwitches.value( [ this._mapId, this._eventId, swId ] ) :
 						parseBooleanStrict( swId );
 					return getSwitchValue( args[ 0 ] ) === getSwitchValue( args[ 1 ] );
 				case 3:
 					// 論理演算判定
-					break;
+					const leftSide = parseFloatStrict( args[ 0 ] );
+					const rightSide = parseFloatStrict( args[ 2 ] );
+					return ( args[ 1 ] === OPE_EQUAL ) ? ( leftSide === rightSide ) : ( leftSide <= rightSide );
 				case 5:
 					// 範囲判定
-					break;
+					const centerVal = parseFloatStrict( args[ 2 ] );
+					return ( parseFloatStrict( args[ 0 ] ) <= centerVal && centerVal <= parseFloatStrict( args[ 4 ] ) );
 				default:
 					new Error( `${l} length of arguments are wrong.` );
 					break;
