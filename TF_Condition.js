@@ -1,6 +1,6 @@
 //========================================
 // TF_Condition.js
-// Version :0.7.0.0
+// Version :0.8.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -126,18 +126,35 @@
  * [スクリプト] this.TF_checkLocation( [マップID], [x], [y], [向き], [論理演算子] )
  * 
  *------------------------------
- * TF_STAY_PAGE_IF [実行条件(真偽値)]
- * 　ページの[出現条件]をさらに追加する。
- * 　[実行条件(真偽値)] true:そのまま次の行を実行、false:次のページの実行(規定値:指定ID(規定値:1)のスイッチ)
+ * TF_STAY_IF [スクリプト]　　　引数が1つの場合
+ * 　ページの[出現条件]をさらに追加する。条件に合わなかった場合、次のページの出現条件判定へ
+ * 例: TF_STAY_IF 15<=$gameParty.members()[0].level
  *------------------------------
+ * TF_STAY_IF [スイッチ] [実行条件(真偽値)]　　　引数が2つの場合
+ * 例: TF_STAY_IF A OFF(セルフスイッチ未実装)
+ * 例: TF_STAY_IF S[0] OFF
+ *------------------------------
+ * TF_STAY_IF [数値] [条件式] [数値]　　　引数が3つの場合(未実装)
+ * 　[数値] 数値か、V[変数ID] もしくは V[変数名]
+ * 　[条件式] =,~(実際は=以外なら全て =<(小なりイコール)として判定)
+ *
+ * 例: TF_STAY_IF 0 ~ v[変数名]
+ *------------------------------
+ * TF_STAY_IF [判定要素] [~] [判定要素] [~] [判定要素]　　　引数が5つの場合(未実装)
+ * 　[~] 実際は全て =<(小なりイコール)として判定
+ * 
+ * 例: TF_STAY_IF 10 ~ V[1] ~ 15
  */
 
 ( function() {
 	'use strict';
+	const PLUGIN_NAME = document.currentScript.src.match( /\/([^\/]*)\.js$/ )[ 1 ];
 	const OPE_AND = 'and';
 	const OPE_OR = 'or';
 	const OPE_AND_MARK = '&';
 	const OPE_OR_MARK = '|';
+	const CHAR_SPACE = ' ';
+	const SWITCH_IT = 'it';
 
 	/*---- パラメータパース関数 ----*/
 	const PARAM_TRUE = 'true';
@@ -187,14 +204,26 @@
 
     /**
 	 * 文字列を真偽値に変換して返す。
-     * @param {String|Boolean} value 変換元文字列
+     * @param {String|Boolean} value 変換元文字列( it,S[n],S[name],ON,OFF,true,false)
      * @returns {Boolean} 
      */
 	function parseBooleanStrict( value ) {
 		if( typeof value === TYPE_BOOLEAN ) return value;
-		value = treatValue( value );
-		const result = value.toLowerCase();
-		return ( result === PARAM_TRUE || result === PARAM_ON );
+		if( value === undefined || value === '' ) return false;
+		if( value === SWITCH_IT ) return $gameSwitches.value( TF_swIt );
+
+		const result = value.match( /s\[(.+)\]/i );
+		if( result === null ) {
+			value = value.toLowerCase();
+			return ( value === PARAM_TRUE || value === PARAM_ON );
+		}
+
+		const id = parseInt( result[ 1 ], 10 );
+		if( isNaN( id ) ) {
+			return $gameSwitches.valueByName( id );
+		} else {
+			return $gameSwitches.value( id );
+		}
 	}
 
 	/**
@@ -312,6 +341,8 @@
 		return DIRECTION_MAP[ index ].out;
 	}
 
+	// イベントコマンドの番号
+	const PLUGIN_COMMAND = 356;
 
 
 	// HalfMove.js の確認
@@ -320,9 +351,9 @@
     /**
      * パラメータを受け取る
      */
-	const pluginParams = PluginManager.parameters( 'TF_Condition' );;
+	const pluginParams = PluginManager.parameters( PLUGIN_NAME );;
 	const TF_tmpVar = parseFloatStrict( pluginParams.temporaryVariable );
-	const TF_tmpSw = parseFloatStrict( pluginParams.temporarySwitch );
+	const TF_swIt = parseFloatStrict( pluginParams.temporarySwitch );
 
 
 	/*---- Game_Interpreter ----*/
@@ -333,7 +364,7 @@
 	const TF_CHECK_LOCATION = 'TF_CHECK_LOCATION';
 	const TF_FRONT_EVENT = 'TF_FRONT_EVENT';
 	const TF_HERE_EVENT = 'TF_HERE_EVENT';
-	const TF_STAY_PAGE_IF = 'TF_STAY_PAGE_IF';
+	const TF_STAY_IF = 'TF_STAY_IF';
 
 	/**
 	 * プラグインコマンドの実行
@@ -344,6 +375,7 @@
 
 		const commandStr = command.toUpperCase();
 		switch( commandStr ) {
+			case TF_STAY_IF: break;// 無視することで出現条件判定を飛ばす(実際の判定は meetsConditions() で行う)
 			case TF_VAR:
 				if( args[ 1 ] === undefined ) {
 					$gameVariables.setValue( TF_tmpVar, $gameVariables.valueByName( args[ 0 ] ) );
@@ -353,17 +385,17 @@
 				break;
 			case TF_SW:
 				if( args[ 1 ] === undefined ) {
-					$gameSwitches.setValue( TF_tmpSw, $gameSwitches.valueByName( args[ 0 ] ) );
+					$gameSwitches.setValue( TF_swIt, $gameSwitches.valueByName( args[ 0 ] ) );
 				} else {
 					$gameSwitches.setValueByName( args[ 0 ], args[ 1 ] );
 				}
 				break;
 			case TF_SELF_SW: setSelfSwitch( ...args ); break;
-			case TF_SW_AND: $gameSwitches.setValue( TF_tmpSw, $gameSwitches.multipleAnd( ...args ) ); break;
-			case TF_FRONT_EVENT: $gameSwitches.setValue( TF_tmpSw, this.TF_frontEvent( ...args ) ); break;
-			case TF_HERE_EVENT: $gameSwitches.setValue( TF_tmpSw, this.TF_hereEvent( ...args ) ); break;
-			case TF_CHECK_LOCATION: $gameSwitches.setValue( TF_tmpSw, this.TF_checkLocation( ...args ) ); break;
-			case TF_STAY_PAGE_IF: stayPageIf( this, args[ 0 ] ); break;
+			case TF_SW_AND: $gameSwitches.setValue( TF_swIt, $gameSwitches.multipleAnd( ...args ) ); break;
+			case TF_FRONT_EVENT: $gameSwitches.setValue( TF_swIt, this.TF_frontEvent( ...args ) ); break;
+			case TF_HERE_EVENT: $gameSwitches.setValue( TF_swIt, this.TF_hereEvent( ...args ) ); break;
+			case TF_CHECK_LOCATION: $gameSwitches.setValue( TF_swIt, this.TF_checkLocation( ...args ) ); break;
+
 		}
 	};
 
@@ -521,9 +553,63 @@
 		eventId = stringToEventId( eventId );
 		type = type ? type.toUpperCase() : 'A';
 		if( isOn === undefined ) {
-			$gameSwitches.setValue( TF_tmpSw, $gameSelfSwitches.value( [ mapId, eventId, type ] ) );
+			$gameSwitches.setValue( TF_swIt, $gameSelfSwitches.value( [ mapId, eventId, type ] ) );
 		} else {
 			$gameSelfSwitches.setValue( [ mapId, eventId, type ], parseBooleanStrict( isOn ) );
 		}
 	}
+
+	/*--- Game_Event ---*/
+	/**
+	 * 指定イベントページの出現条件判定を行う。
+	 * @param {RPG.EventPage} page 対象イベントページ
+	 */
+	const _Game_Event_meetsConditions = Game_Event.prototype.meetsConditions;
+	Game_Event.prototype.meetsConditions = function( page ) {
+		const doPage = _Game_Event_meetsConditions.apply( this, arguments );
+		if( doPage === false ) return false;
+
+		/**
+		 * イベントコマンドの出現条件判定だったら判定を行い、それ以外ならtrueを返して終了。
+		 * @param {String} param 判定用コマンド
+		 * @returns {Boolean} ページ出現条件に合うか
+		 */
+		const meetsConditionsCommand = ( args ) => {
+			const l = args.length;
+			switch( l ) {
+				case 1:
+					// スクリプト判定
+					return ( new Function(
+						'return '
+						+ args[ 0 ] )
+					)();
+				case 2:
+					//  スイッチ判定
+					const getSwitchValue = swId => [ 'A', 'B', 'C', 'D' ].includes( swId ) ?	// セルフスイッチ判定
+						$gameSelfSwitches.value( [ this._mapId, this._eventId, swId ] ) :
+						parseBooleanStrict( swId );
+					return getSwitchValue( args[ 0 ] ) === getSwitchValue( args[ 1 ] );
+				case 3:
+					// 論理演算判定
+					break;
+				case 5:
+					// 範囲判定
+					break;
+				default:
+					new Error( `${l} length of arguments are wrong.` );
+					break;
+			}
+
+		};
+		// 全て条件に合ったらtrueを返す(条件に合わないものがひとつでもあったらfalseを返す)
+		for( const command of page.list ) {
+			if( command.code !== PLUGIN_COMMAND ) return true;	// プラグインコマンド以外のイベントコマンド
+
+			const args = command.parameters[ 0 ].split( CHAR_SPACE );
+			const pluginCommand = args.shift();
+			if( pluginCommand !== TF_STAY_IF ) return true;	// TF_STAY_IF 以外のプラグインコマンド
+			if( !meetsConditionsCommand( args ) ) return false;
+		}
+		return true;
+	};
 } )();
