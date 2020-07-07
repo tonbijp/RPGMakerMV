@@ -1,6 +1,6 @@
 //========================================
 // TF_Condition.js
-// Version :0.10.0.0
+// Version :0.11.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -128,36 +128,67 @@
  *------------------------------
  * [スクリプト] this.TF_checkLocation( [マップID], [x], [y], [向き], [論理演算子] )
  *
- *------------------------------
- * TF_COMPARE	(TODO:実装予定)
- * 　引数の数によって様々な比較を行う
  * 
+ * 
+ *------------------------------
+ * TF_COMPARE
+ * 　引数の数によって様々な比較を行い結果を、指定ID(規定値:1)のスイッチに設定。
+ * ---- ↓引数1 ----
+ * TF_COMPARE [JavaScript]
+ * 　JavaScriptを実行した結果を判定に使う。
+ * 　　[JavaScript] 真偽値を返すJavaScript を空白を入れずに書く
+ *
+ * 例: TF_COMPARE $gameTimer.isWorking()&&$gameTimer.seconds ()<=100
+ * ---- ↓引数2 ----
+ * TF_COMPARE [真偽値] [真偽値]
+ * 　スイッチと真偽値、スイッチとスイッチが両辺で同じか判定。
+ * 　　[真偽値] S[番号]、S[識別子]、it、A、B、C、D、true、false、ON、OFF のいずれか
+ * 
+ * 例: TF_COMPARE A OFF
+ * ---- ↓引数3 ----
+ * TF_COMPARE [数値] [条件式] [数値]
+ * 　変数と数値、変数と変数を比較する。
+ * 　　[数値] V[番号]、 V[変数名]、it、数値 のいずれか
+ * 　　[条件式] =、 = 以外なら全て =<(小なりイコール)とする
+ * 
+ * 例: TF_COMPARE V[0] ≦ V[3]
+ * ---- ↓引数4 ----
+ * TF_COMPARE [マップID] [イベントID] [セルフスイッチ] [実行条件(真偽値)]
+ * 　指定のイベントのセルフスイッチの状態を判定。
+ * 　　[イベントID]は現在のマップでないと識別子では指定できないので、注意!!
+ *
+ * 例: TF_COMPARE here 門番 C ON
+ * ---- ↓引数5 ----
+ * TF_COMPARE [数値] [~] [数値] [~] [数値]
+ * 　　[~] 実際は全て =<(小なりイコール)として判定
+ *
  * 例: TF_COMPARE 10 ~ it ~ 15
- *------------------------------
- * TF_STAY_IF [スクリプト]　　　引数が1つの場合
- * 　ページの[出現条件]をさらに追加する。条件に合わなかった場合、次のページの出現条件判定へ
  * 
- * 例: TF_STAY_IF 15<=$gameParty.members()[0].level
+ *
  *------------------------------
- * TF_STAY_IF [スイッチ] [実行条件(真偽値)]　　　引数が2つの場合
+ * TF_STAY_IF
+ * 　ページの[出現条件]をさらに追加する。
+ * 　引数の数によって様々な比較を行い、条件に合わなかった場合次のページの出現条件判定へ	。
+ * 　引数の数と内容の対応はTF_COMPAREと同じ。
+ * ---- ↓引数1 ----
+ * TF_STAY_IF [JavaScript]
  * 
- * 例: TF_STAY_IF A OFF
+ * 例: TF_STAY_IF 1000<=$gameParty.gold()
+ * ---- ↓引数2 ----
+ * TF_STAY_IF [真偽値] [真偽値]
+ * 
  * 例: TF_STAY_IF S[0] OFF
- *------------------------------
- * TF_STAY_IF [数値] [条件式] [数値]　　　引数が3つの場合
- * 　[数値] 数値か、V[変数ID] もしくは V[変数名]
- * 　[条件式] =,~(実際は=以外なら全て =<(小なりイコール)として判定)
+ * ---- ↓引数3 ----
+ * TF_STAY_IF [数値] [条件式] [数値]
  *
  * 例: TF_STAY_IF 0 ~ v[変数名]
- *------------------------------
- * TF_STAY_IF [マップID] [イベントID] [セルフスイッチ] [実行条件(真偽値)]　　　引数が4つの場合
- * 　任意のイベントのセルフスイッチの状態を判定。
- * 　[イベントID] は識別子では指定できないので、注意!!
+ * ---- ↓引数4 ----
+ * TF_STAY_IF [マップID] [イベントID] [セルフスイッチ] [真偽値]
+ * 　　[イベントID] は識別子では指定できないので、注意!!
  *
  * 例: TF_STAY_IF here 門番 C ON
- *------------------------------
- * TF_STAY_IF [判定要素] [~] [判定要素] [~] [判定要素]　　　引数が5つの場合
- * 　[~] 実際は全て =<(小なりイコール)として判定
+ * ---- ↓引数5 ----
+ * TF_STAY_IF [数値] [~] [数値] [~] [数値]
  * 
  * 例: TF_STAY_IF 10 ~ V[1] ~ 15
  */
@@ -382,6 +413,7 @@
 	const TF_CHECK_LOCATION = 'TF_CHECK_LOCATION';
 	const TF_FRONT_EVENT = 'TF_FRONT_EVENT';
 	const TF_HERE_EVENT = 'TF_HERE_EVENT';
+	const TF_COMPARE = 'TF_COMPARE';
 	const TF_STAY_IF = 'TF_STAY_IF';
 
 	/**
@@ -413,6 +445,7 @@
 			case TF_FRONT_EVENT: $gameSwitches.setValue( TF_swIt, this.TF_frontEvent( ...args ) ); break;
 			case TF_HERE_EVENT: $gameSwitches.setValue( TF_swIt, this.TF_hereEvent( ...args ) ); break;
 			case TF_CHECK_LOCATION: $gameSwitches.setValue( TF_swIt, this.TF_checkLocation( ...args ) ); break;
+			case TF_COMPARE: $gameSwitches.setValue( TF_swIt, compareValues( this.character( 0 ), args ) ); break;
 
 		}
 	};
