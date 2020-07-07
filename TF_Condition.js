@@ -1,6 +1,6 @@
 //========================================
 // TF_Condition.js
-// Version :0.9.0.0
+// Version :0.10.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -14,13 +14,13 @@
  * @author とんび@鳶嶋工房
  *
  * @param temporaryVariable
- * @desc 各種値を返す変数のID(規定値:1)
+ * @desc 各種値を返す変数(it)のID(規定値:1)
  * @type number
  * @min 1
  * @default 1
  * 
  * @param temporarySwitch
- * @desc 各種値を返すスイッチのID(規定値:1)
+ * @desc 各種値を返すスイッチ(it)のID(規定値:1)
  * @type number
  * @min 1
  * @default 1
@@ -49,12 +49,6 @@
  * [スクリプト] $gameVariables.valueByName( [変数ID] )
  *
  *------------------------------
- * TF_COMPARE [値] [比較演算子] [値] [比較演算子] [値]	(TODO:実装予定)
- * 　数値の比較
- * 　[値] V[n]形式の変数、数値、あるいは変数名
- * 　[比較演算子] 〜≦＜≠＝
- * 例: TF_COMPARE 10 ~ tmp ~ 15
- *------------------------------
  * TF_SW [スイッチID] [スイッチ状態]
  * 　スイッチを設定
  * 　[スイッチID] スイッチを ID、名前、変数V[n] のいずれかで指定
@@ -82,12 +76,21 @@
  * 
  *------------------------------
  * TF_SELF_SW [マップID] [イベントID] [スイッチタイプ] [スイッチ状態]
- * 　同マップ内のイベントのセルフスイッチを設定。
+ * 　指定イベントのセルフスイッチを設定。
+ * 　[マップID]  マップID(数値)
+ * 　　here(またはthis):現在のマップ
+ * 　　マップ名で指定(以下は指定不可)
+ * 　　　・数値や here などと同じ名前
+ * 　　　・スペースの入った名前
+ * 　　　・数字から始まる名前(数字として判断される)
  * 　[イベントID] 0:このイベント、-1:プレイヤー、1〜:イベントID(規定値:0)
- * 　　this(またはself):このイベント、player:プレイヤー
- * 　　イベントの[名前]で指定(上記の数値や this などと同じ名前、およびスペースの入った名前は指定できません)
+ * 　　self(またはthis):このイベント、player:プレイヤー
+ * 　　イベントの[名前]で指定(以下の場合は指定不可)
+ * 　　　・[マップID]の指定が現在のマップでない場合
+ * 　　　・数値や self などと同じ名前
+ * 　　　・スペースの入った名前
+ * 　　　・数字から始まる名前(数字として判断される)
  * 　[スイッチタイプ] A, B, C, D のいずれか
- * 　[マップID]  マップID | マップ名 | here | this
  * 
  * 例: TF_SELF_SW 1F:西スイッチ A true
  *------------------------------
@@ -124,14 +127,21 @@
  * 　[y] 対象y座標(タイル数)
  *------------------------------
  * [スクリプト] this.TF_checkLocation( [マップID], [x], [y], [向き], [論理演算子] )
+ *
+ *------------------------------
+ * TF_COMPARE	(TODO:実装予定)
+ * 　引数の数によって様々な比較を行う
  * 
+ * 例: TF_COMPARE 10 ~ it ~ 15
  *------------------------------
  * TF_STAY_IF [スクリプト]　　　引数が1つの場合
  * 　ページの[出現条件]をさらに追加する。条件に合わなかった場合、次のページの出現条件判定へ
+ * 
  * 例: TF_STAY_IF 15<=$gameParty.members()[0].level
  *------------------------------
  * TF_STAY_IF [スイッチ] [実行条件(真偽値)]　　　引数が2つの場合
- * 例: TF_STAY_IF A OFF(
+ * 
+ * 例: TF_STAY_IF A OFF
  * 例: TF_STAY_IF S[0] OFF
  *------------------------------
  * TF_STAY_IF [数値] [条件式] [数値]　　　引数が3つの場合
@@ -140,7 +150,9 @@
  *
  * 例: TF_STAY_IF 0 ~ v[変数名]
  *------------------------------
- * TF_STAY_IF [マップID] [イベントID] [セルフスイッチ] [実行条件(真偽値)]　　　引数が4つの場合(未実装)
+ * TF_STAY_IF [マップID] [イベントID] [セルフスイッチ] [実行条件(真偽値)]　　　引数が4つの場合
+ * 　任意のイベントのセルフスイッチの状態を判定。
+ * 　[イベントID] は識別子では指定できないので、注意!!
  *
  * 例: TF_STAY_IF here 門番 C ON
  *------------------------------
@@ -272,7 +284,7 @@
 	/**
 	 * 文字列をイベントIDへ変換。
 	 * @param {String} value イベントIDの番号か識別子
-	 * @returns {Number} 拡張イベントID
+	 * @returns {Number} 拡張イベントID(イベントが存在しない場合、undefinedを返す)
 	 */
 	function stringToEventId( value ) {
 		value = treatValue( value );
@@ -296,7 +308,7 @@
 			const eventId = event._eventId;
 			return $dataMap.events[ eventId ].name === value;
 		} );
-		if( i === -1 ) throw Error( `指定したイベント[${value}]がありません。` );
+		if( i === -1 ) return;//イベントが存在しない
 		return i;
 	}
 
@@ -449,7 +461,9 @@
 			const y = d ? $gameMap.roundYWithDirection( $gamePlayer.y, d ) : $gamePlayer.y;
 			events = $gameMap.eventsXy( x, y );
 		}
-		const targetEvent = getEventById( interpreter, stringToEventId( eventId ) );
+		const numberId = stringToEventId( eventId );
+		if( numberId === undefined ) return false;
+		const targetEvent = getEventById( interpreter, numberId );
 		return events.some( e => e === targetEvent );
 	}
 
@@ -507,7 +521,7 @@
 		let i = $dataSystem.variables.findIndex( i => i === name );
 		if( 0 <= i ) return i;
 		i = parseInt( name, 10 );
-		if( isNaN( i ) ) throw new Error( `I can't find the variable '${name}'` );
+		if( isNaN( i ) ) throw Error( `I can't find the variable '${name}'` );
 		return i;
 	}
 
@@ -538,7 +552,7 @@
 		let i = $dataSystem.switches.findIndex( i => i === name );
 		if( 0 <= i ) return i;
 		i = parseInt( name, 10 );
-		if( isNaN( i ) ) throw new Error( `I can't find the switch '${name}'` );
+		if( isNaN( i ) ) throw Error( `I can't find the switch '${name}'` );
 		return i;
 	}
 
@@ -550,18 +564,19 @@
 	/**
 	 * [セルフスイッチ] を設定します
 	 * @param {String} mapId 対象マップ
-	 * @param {String} eventId 対象イベント
+	 * @param {String} eventId 対象イベント(識別子で指定できるのは現在のマップのみ)
 	 * @param {String} type A・B・C・D いずれかの文字
 	 * @param {String} isOn ON/OFF状態(指定なしの場合get動作してスイッチID1に値を書き込む)
 	 */
 	function setSelfSwitch( mapId, eventId, type, isOn ) {
 		mapId = stringToMapId( mapId );
-		eventId = stringToEventId( eventId );
+		const numberId = stringToEventId( eventId );
+		if( numberId === undefined ) throw Error( `I can't find the event '${eventId}'` );
 		type = type ? type.toUpperCase() : 'A';
 		if( isOn === undefined ) {
-			$gameSwitches.setValue( TF_swIt, $gameSelfSwitches.value( [ mapId, eventId, type ] ) );
+			$gameSwitches.setValue( TF_swIt, $gameSelfSwitches.value( [ mapId, numberId, type ] ) );
 		} else {
-			$gameSelfSwitches.setValue( [ mapId, eventId, type ], parseBooleanStrict( isOn ) );
+			$gameSelfSwitches.setValue( [ mapId, numberId, type ], parseBooleanStrict( isOn ) );
 		}
 	}
 
@@ -576,38 +591,6 @@
 		const doPage = _Game_Event_meetsConditions.apply( this, arguments );
 		if( doPage === false ) return false;
 
-		/**
-		 * イベントコマンドの出現条件判定だったら判定を行い、それ以外ならtrueを返して終了。
-		 * @param {String} param 判定用コマンド
-		 * @returns {Boolean} ページ出現条件に合うか
-		 */
-		const meetsConditionsCommand = ( args ) => {
-			const l = args.length;
-			switch( l ) {
-				case 1:
-					// スクリプト判定
-					return ( new Function( `return ${args[ 0 ]}` ) )();
-				case 2:
-					//  スイッチ判定
-					const getSwitchValue = swId => SELF_SWITCHES.includes( swId ) ?	// セルフスイッチ判定
-						$gameSelfSwitches.value( [ this._mapId, this._eventId, swId ] ) :
-						parseBooleanStrict( swId );
-					return getSwitchValue( args[ 0 ] ) === getSwitchValue( args[ 1 ] );
-				case 3:
-					// 論理演算判定
-					const leftSide = parseFloatStrict( args[ 0 ] );
-					const rightSide = parseFloatStrict( args[ 2 ] );
-					return ( args[ 1 ] === OPE_EQUAL ) ? ( leftSide === rightSide ) : ( leftSide <= rightSide );
-				case 5:
-					// 範囲判定
-					const centerVal = parseFloatStrict( args[ 2 ] );
-					return ( parseFloatStrict( args[ 0 ] ) <= centerVal && centerVal <= parseFloatStrict( args[ 4 ] ) );
-				default:
-					new Error( `${l} length of arguments are wrong.` );
-					break;
-			}
-
-		};
 		// 全て条件に合ったらtrueを返す(条件に合わないものがひとつでもあったらfalseを返す)
 		for( const command of page.list ) {
 			if( command.code !== PLUGIN_COMMAND ) return true;	// プラグインコマンド以外のイベントコマンド
@@ -615,8 +598,53 @@
 			const args = command.parameters[ 0 ].split( CHAR_SPACE );
 			const pluginCommand = args.shift();
 			if( pluginCommand !== TF_STAY_IF ) return true;	// TF_STAY_IF 以外のプラグインコマンド
-			if( !meetsConditionsCommand( args ) ) return false;
+			if( !compareValues( this, args ) ) return false;
 		}
 		return true;
 	};
+
+
+	/**
+	 * 引数によって判定を行う。
+	 * @param {Game_Event} gameEvent 対象のイベント
+	 * @param {String} args 引数の数で判定方法を変更する
+	 * @returns {Boolean} 判定結果
+	 */
+	function compareValues( gameEvent, args ) {
+		const getSwitchValue = swId => SELF_SWITCHES.includes( swId ) ?	// セルフスイッチ判定
+			$gameSelfSwitches.value( [ gameEvent._mapId, gameEvent._eventId, swId ] ) :
+			parseBooleanStrict( swId );
+		const l = args.length;
+		switch( l ) {
+			case 1:
+				// JavaScript判定
+				return ( new Function( `return ${args[ 0 ]}` ) )();
+			case 2:
+				//  スイッチ判定
+				// [スイッチID] [真偽値]
+				// 実際は真偽値2つが同じかの判定で、引数の処理に差はない
+				return getSwitchValue( args[ 0 ] ) === getSwitchValue( args[ 1 ] );
+			case 3:
+				// 論理演算判定
+				// [変数] [演算子] [数値]
+				// 実際は2数値の判定で、演算子の左辺か右辺か以外に引数の処理に差はない
+				const leftSide = parseFloatStrict( args[ 0 ] );
+				const rightSide = parseFloatStrict( args[ 2 ] );
+				return ( args[ 1 ] === OPE_EQUAL ) ? ( leftSide === rightSide ) : ( leftSide <= rightSide );
+			case 4:
+				// セルフスイッチ判定
+				const mapId = stringToMapId( args[ 0 ] );
+				const numberId = stringToEventId( args[ 1 ] );// 現在のマップが用意される前に判定が走るので、識別子で指定できない
+				if( numberId === undefined ) throw Error( `I can't find the event '${args[ 1 ]}'` );
+				const type = args[ 2 ].toUpperCase();
+				return $gameSelfSwitches.value( [ mapId, numberId, type ] ) === getSwitchValue( args[ 3 ] );
+			case 5:
+				// 範囲判定
+				const centerVal = parseFloatStrict( args[ 2 ] );
+				return ( parseFloatStrict( args[ 0 ] ) <= centerVal && centerVal <= parseFloatStrict( args[ 4 ] ) );
+			default:
+				throw Error( `${l} length of arguments are wrong.` );
+		}
+	}
+
 } )();
