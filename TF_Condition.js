@@ -1,6 +1,6 @@
 //========================================
 // TF_Condition.js
-// Version :0.11.0.0
+// Version :0.11.1.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -136,6 +136,7 @@
  * ---- ↓引数1 ----
  * TF_COMPARE [JavaScript]
  * 　JavaScriptを実行した結果を判定に使う。
+ * 　this は Interpreter ではなく Game_Event(実行したイベント自身) になるので注意。
  * 　　[JavaScript] 真偽値を返すJavaScript を空白を入れずに書く
  *
  * 例: TF_COMPARE $gameTimer.isWorking()&&$gameTimer.seconds ()<=100
@@ -651,7 +652,7 @@
 		switch( l ) {
 			case 1:
 				// JavaScript判定
-				return ( new Function( `return ${args[ 0 ]}` ) )();
+				return ( new Function( `return ${args[ 0 ]}` ) ).call( gameEvent );
 			case 2:
 				//  スイッチ判定
 				// [スイッチID] [真偽値]
