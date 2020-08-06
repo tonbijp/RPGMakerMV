@@ -1,6 +1,6 @@
 //========================================
 // TF_VectorWindow.js
-// Version :0.5.1.1
+// Version :0.6.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -16,7 +16,7 @@
  * @param preset
  * @desc ウィンドウ設定のプリセット(1が規定)
  * @type struct<WindowParamJa>[]
- * @default ["{\"shape\":\"roundrect\",\"margin\":\"6\",\"borderWidth\":\"6\",\"borderColor\":\"#0ee\",\"decorSize\":\"20\",\"padding\":\"14\",\"bgColor\":\"[\\\"#0008\\\"]\"}","{\"shape\":\"roundrect\",\"margin\":\"6\",\"borderWidth\":\"2\",\"borderColor\":\"#666\",\"decorSize\":\"100\",\"padding\":\"16\",\"bgColor\":\"[\\\"#000a\\\"]\"}","{\"shape\":\"spike\",\"margin\":\"60\",\"borderWidth\":\"6\",\"borderColor\":\"#fff\",\"decorSize\":\"80\",\"padding\":\"14\",\"bgColor\":\"[\\\"#0006\\\"]\"}"]
+ * @default ["{\"name\":\"talk\",\"shape\":\"roundrect\",\"margin\":\"6\",\"borderWidth\":\"6\",\"borderColor\":\"#0ee\",\"decorSize\":\"20\",\"padding\":\"14\",\"bgColor\":\"[\\\"#0008\\\"]\"}","{\"name\":\"thought\",\"shape\":\"roundrect\",\"margin\":\"6\",\"borderWidth\":\"2\",\"borderColor\":\"#666\",\"decorSize\":\"100\",\"padding\":\"16\",\"bgColor\":\"[\\\"#000a\\\"]\"}","{\"name\":\"shout\",\"shape\":\"spike\",\"margin\":\"60\",\"borderWidth\":\"6\",\"borderColor\":\"#fff\",\"decorSize\":\"80\",\"padding\":\"14\",\"bgColor\":\"[\\\"#0006\\\"]\"}"]
  * 
  * @param dropShadow
  * @desc ウィンドウの影を落とすか
@@ -58,6 +58,10 @@
  */
 /*~struct~WindowParamJa:
  *
+ * @param name
+ * @disc ウィンドウの名前
+ * @type string
+ * 
  * @param shape
  * @desc ウィンドウの形
  * @type select
@@ -116,7 +120,6 @@
 	const SHAPE_OCTAGON = 'octagon';
 	const SHAPE_BALLOON = 'balloon';
 	const SHAPE_NONE = 'none';
-	const PARAM_TRUE = 'true';
 	const workBitmap = new Bitmap( 1, 1 );
 	const workCtx = workBitmap.context;
 
@@ -128,6 +131,10 @@
 	const POSITION_LEFT = 'left';
 	const POSITION_CENTER = 'center';
 	const POSITION_RIGHT = 'right';
+
+	const PARAM_TRUE = 'true';
+	const PARAM_ON = 'on';
+	const TYPE_NUMBER = 'number';
 
     /**
      * パラメータを受け取る
@@ -144,15 +151,15 @@
 	};
 
 	// プリセット設定
-	const presetList = JsonEx.parse( pluginParams.preset );
+	const presetList = JSON.parse( pluginParams.preset );
 	pluginParams.preset = presetList.map( value => {
-		const params = JsonEx.parse( value );
+		const params = JSON.parse( value );
 		params.margin = parseFloatStrict( params.margin );
 		params.borderWidth = parseFloatStrict( params.borderWidth );
 		params.borderColor = params.borderColor;
 		params.decorSize = parseFloatStrict( params.decorSize );
 		params.padding = parseFloatStrict( params.padding );
-		params.bgColor = JsonEx.parse( params.bgColor );
+		params.bgColor = JSON.parse( params.bgColor );
 		return params;
 	} );
 
@@ -164,6 +171,8 @@
 	const DROP_SHADOW = getBooleanParam( 'dropShadow', true );
 
 
+
+	/*---- パラメータパース関数 ----*/
 	/**
 	 * 与えられた文字列に変数が指定されていたら、変数の内容に変換して返す。
 	 * @param {String} value 変換元の文字列( v[n]形式を含む )
@@ -171,33 +180,40 @@
 	 */
 	function treatValue( value ) {
 		if( value === undefined || value === '' ) return '0';
-		if( value[ 0 ] === 'V' || value[ 0 ] === 'v' ) {
-			return value.replace( /[V]\[([0-9]+)\]/i, ( match, p1 ) => $gameVariables.value( parseInt( p1, 10 ) ) );
+		const result = value.match( /v\[(.+)\]/i );
+		if( result === null ) return value;
+		const id = parseInt( result[ 1 ], 10 );
+		if( isNaN( id ) ) {
+			return $gameVariables.valueByName( result[ 1 ] );
+		} else {
+			return $gameVariables.value( id );
 		}
-		return value;
 	}
 
 	/**
-	 * @method parseIntStrict
-	 * @param {String} value
+	 * 文字列を整数に変換して返す。
+	 * @param {String|Number} value
 	 * @return {Number} 数値に変換した結果
 	 */
 	function parseIntStrict( value ) {
+		if( typeof value === TYPE_NUMBER ) return Math.floor( value );
 		const result = parseInt( treatValue( value ), 10 );
-		if( isNaN( result ) ) throw Error( '指定した値[' + value + ']が数値ではありません。' );
+		if( isNaN( result ) ) throw Error( `Value '${value}' is not a number.` );
 		return result;
-	};
+	}
 
 	/**
-	 * @method parseFloatStrict
-	 * @param {String} value
+	 * 文字列を実数に変換して返す。
+	 * @param {String|Number} value
 	 * @return {Number} 数値に変換した結果
 	 */
 	function parseFloatStrict( value ) {
+		if( typeof value === TYPE_NUMBER ) return value;
 		const result = parseFloat( treatValue( value ) );
-		if( isNaN( result ) ) throw Error( '指定した値[' + value + ']が数値ではありません。' );
+		if( isNaN( result ) ) throw Error( `Value '${value}' is not a number.` );
 		return result;
 	}
+
 
 	/*---- Game_Interpreter ----*/
 	/**
@@ -211,11 +227,30 @@
 		if( commandStr === TF_SET_WINDOW ) {
 			const messageWindow = SceneManager._scene._messageWindow;
 			if( messageWindow ) {
-				const newWindowType = parseIntStrict( args[ 0 ] ) - 1;
-				if( newWindowType !== messageWindow.TF_windowType ) {
+				const newWindowType = getWindowType( args[ 0 ] );
+				if( newWindowType !== -1 && newWindowType !== messageWindow.TF_windowType ) {
 					messageWindow.TF_refleshWindow = true;
 					messageWindow.TF_windowType = newWindowType;
 				}
+			}
+		}
+		/**
+		 * ウィンドウタイプ番号を返す。
+		 * @param {String} type ウィンドウタイプの番号か名前の文字列
+		 * @returns {Number} ウィンドウタイプ番号
+		 */
+		function getWindowType( type ) {
+			const parsedType = parseInt( type );
+			if( isNaN( parsedType ) ) {
+				const numberOfName = pluginParams.preset.findIndex( ( e ) => e.name === type );	// 名前から数値を得る
+
+				if( numberOfName === -1 ) {
+					return parseIntStrict( type ) - 1; // V[n]型の指定をパース
+				} else {
+					return numberOfName;
+				}
+			} else {
+				return parsedType - 1;
 			}
 		}
 	};
@@ -342,7 +377,7 @@
 		this._windowFrameSprite.setFrame( 0, 0, this._width, this._height + 12 );
 		const path2d = drawBalloon( m, this._width, this._height, r, this._positionType );
 		drawWindow.call( this, bitmap.context, path2d );
-	}
+	};
 
 	const _Window_Message_updatePlacement = Window_Message.prototype.updatePlacement;
 	Window_Message.prototype.updatePlacement = function() {
@@ -422,7 +457,7 @@
 		} else {
 			const grad = ctx.createLinearGradient( 0, 0, 0, this._height );
 			const l = bgColor.length;
-			const interval = 1.0 / ( l - 1 )
+			const interval = 1.0 / ( l - 1 );
 			bgColor.forEach( ( e, i ) => {
 				grad.addColorStop( i * interval, tintColor( e, this._colorTone ) );
 			} );
