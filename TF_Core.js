@@ -46,11 +46,11 @@
     const TYPE_BOOLEAN = 'boolean';
     const TYPE_NUMBER = 'number';
     const TYPE_STRING = 'string';
-	/**
-	 * 与えられた文字列に変数が指定されていたら、変数の内容に変換して返す。
-	 * @param {String} value 変換元の文字列( v[n]形式を含む )
-	 * @return {String} 変換後の文字列
-	 */
+    /**
+     * 与えられた文字列に変数が指定されていたら、変数の内容に変換して返す。
+     * @param {String} value 変換元の文字列( v[n]形式を含む )
+     * @return {String} 変換後の文字列
+     */
     function treatValue( value ) {
         if( value === undefined || value === '' ) return '0';
         const result = value.match( /v\[(.+)\]/i );
@@ -61,66 +61,6 @@
         } else {
             return $gameVariables.value( id );
         }
-    }
-
-    /*--- Game_Variables ---*/
-	/**
-	 * 変数を文字列で指定し、値を返す。
-	 * @param {String} name 変数(ID, 名前, V[n]による指定が可能)
-	 */
-    Game_Variables.prototype.valueByName = function( name ) {
-        return this.value( stringToVariableId( name ) );
-    };
-	/**
-	 * 変数を文字列で指定し、値を設定。
-	 * @param {String} name 変数(ID, 名前, V[n]による指定が可能)
-	 * @param {String} value 設定する値
-	 */
-    Game_Variables.prototype.setValueByName = function( name, value ) {
-        this.setValue( stringToVariableId( name ), value );
-    };
-
-	/**
-	 * 指定された変数のIDを返す。
-	 * @param {String} name 変数(ID, 名前, V[n]による指定が可能)
-	 */
-    function stringToVariableId( name ) {
-        name = treatValue( name );
-        let i = $dataSystem.variables.findIndex( i => i === name );
-        if( 0 <= i ) return i;
-        i = parseInt( name, 10 );
-        if( isNaN( i ) ) throw Error( `I can't find the variable '${name}'` );
-        return i;
-    }
-
-
-    /*--- Game_Switches ---*/
-	/**
-	 * スイッチの内容を文字列で指定して返す
-	 * @param {String} name スイッチ(ID, 名前, V[n]による指定が可能)
-	 */
-    Game_Switches.prototype.valueByName = function( name ) {
-        return this.value( stringToSwitchId( name ) );
-    };
-	/**
-	 * スイッチの内容を文字列で指定して設定
-	 * @param {String} name スイッチ(ID, 名前, V[n]による指定が可能)
-	 * @param {String} value 設定する値(
-	 */
-    Game_Switches.prototype.setValueByName = function( name, value ) {
-        this.setValue( stringToSwitchId( name ), value );
-    };
-	/**
-	 * 指定されたスイッチのIDを返す
-	 * @param {String} name スイッチ(ID, 名前, V[n]による指定が可能)
-	 */
-    function stringToSwitchId( name ) {
-        name = treatValue( name );
-        let i = $dataSystem.switches.findIndex( i => i === name );
-        if( 0 <= i ) return i;
-        i = parseInt( name, 10 );
-        if( isNaN( i ) ) throw Error( `I can't find the switche '${name}'` );
-        return i;
     }
 
 	/**
@@ -318,6 +258,78 @@
         // speed 1: 1 / 8倍速, 2: 1 / 4倍速, 3: 1 / 2倍速, 4: 通常速, 5: 2倍速, 6: 4倍速
         return 128 >> speed;
     }
+
+
+    /*--- Game_Variables ---*/
+    /**
+     * 変数を文字列で指定し、値を返す。
+     * @param {String} name 変数(ID, 名前, V[n]による指定が可能)
+     */
+    Game_Variables.prototype.valueByName = function( name ) {
+        return this.value( stringToVariableId( name ) );
+    };
+    /**
+     * 変数を文字列で指定し、値を設定。
+     * @param {String} name 変数(ID, 名前, V[n]による指定が可能)
+     * @param {String} value 設定する値
+     */
+    Game_Variables.prototype.setValueByName = function( name, value ) {
+        this.setValue( stringToVariableId( name ), value );
+    };
+
+    /**
+     * 指定された変数のIDを返す。
+     * @param {String} name 変数(ID, 名前, V[n]による指定が可能)
+     */
+    function stringToVariableId( name ) {
+        name = treatValue( name );
+        let i = $dataSystem.variables.findIndex( i => i === name );
+        if( 0 <= i ) return i;
+        i = parseInt( name, 10 );
+        if( isNaN( i ) ) throw Error( `I can't find the variable '${name}'` );
+        return i;
+    }
+
+
+    /*--- Game_Switches ---*/
+    /**
+     * スイッチの内容を文字列で指定して返す
+     * @param {String} name スイッチ(ID, 名前, V[n]による指定が可能)
+     */
+    Game_Switches.prototype.valueByName = function( name ) {
+        return this.value( stringToSwitchId( name ) );
+    };
+    /**
+     * スイッチの内容を文字列で指定して設定
+     * @param {String} name スイッチ(ID, 名前, V[n]による指定が可能)
+     * @param {String} value 設定する値(
+     */
+    Game_Switches.prototype.setValueByName = function( name, value ) {
+        this.setValue( stringToSwitchId( name ), value );
+    };
+    /**
+     * 指定されたスイッチのIDを返す
+     * @param {String} name スイッチ(ID, 名前, V[n]による指定が可能)
+     */
+    function stringToSwitchId( name ) {
+        name = treatValue( name );
+        let i = $dataSystem.switches.findIndex( i => i === name );
+        if( 0 <= i ) return i;
+        i = parseInt( name, 10 );
+        if( isNaN( i ) ) throw Error( `I can't find the switche '${name}'` );
+        return i;
+    }
+
+    /*---- Game_Interpreter ----*/
+    /**
+     * プラグインコマンドの実行
+     */
+    const _Game_Interpreter_pluginCommand = Game_Interpreter.prototype.pluginCommand;
+    Game_Interpreter.prototype.pluginCommand = function( command, args ) {
+        _Game_Interpreter_pluginCommand.apply( this, arguments );
+
+        const commandStr = command.toUpperCase();
+        // コマンド文字列による分岐
+    };
+
 } )();
-
-
