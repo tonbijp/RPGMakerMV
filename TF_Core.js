@@ -1,6 +1,6 @@
 //========================================
 // TF_Core
-// Version :0.2.1.0 
+// Version :0.2.1.1
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -14,7 +14,8 @@
  * @help
  * プラグインで共通して使っている処理をメモ的にまとめたもの。
  * これをライブラリとして必要とするプラグインなどを作る予定はない。
- * 
+ *
+ * ============= この長さに合わせるとヘルプではみ出ない ==============
  * 利用規約 : MITライセンス
  */
 
@@ -23,7 +24,7 @@
     const PLUGIN_NAME = 'TF_Core';
 
     // HalfMove.js の確認
-    const hasHalfMove = PluginManager._scripts.contains( 'HalfMove' );
+    const hasHalfMove = PluginManager._scripts.includes( 'HalfMove' );
 
     /**
      * パラメータを受け取る
