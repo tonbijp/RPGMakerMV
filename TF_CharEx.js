@@ -1,6 +1,6 @@
 //========================================
 // TF_CharEx.js
-// Version :0.14.0.1
+// Version :0.14.1.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -488,7 +488,7 @@
 			case TF_LOCATE_EV: locateEv( idToEv( args[ 0 ] ), idToEv( args[ 1 ] ), args[ 2 ], args[ 3 ], args[ 4 ], args[ 5 ] ); break;
 			case TF_GO_XY: goXY( idToEv( args[ 0 ] ), args[ 1 ], args[ 2 ], args[ 3 ] ); break;
 			case TF_GO_EV: goEv( idToEv( args[ 0 ] ), idToEv( args[ 1 ] ), args[ 2 ], args[ 3 ], args[ 4 ] ); break;
-			case TF_ROUTE: moveRoute.apply( this, args ); break;
+			case TF_ROUTE: moveRoute( this, ...args ); break;
 			case TF_VD_ANIME: vdAnime.apply( this, args ); break;
 			case TF_VU_ANIME: vuAnime.apply( this, args ); break;
 			case TF_VDEX_ANIME: vdexAnime.apply( this, args ); break;
@@ -725,16 +725,17 @@
 	// ROUTE_SCRIPT
 
 	/**
-	 * 
-	 *	this が インタプリタである必要がある。
+	 * TF_ROUTE
+	 * @param {Game_Interpreter} interpreter インタプリタ
 	 * @param {String} eventId イベントIDかそれに替わる識別子の文字列
 	 * @param {String} mml MML(Moving Macro Language) の文字列
 	 * @param {String} repeat 繰り返すか(規定値:false)
 	 * @param {String} skippable 移動できない場合とばすか(規定値:true)
 	 * @param {String} wait 待つか(規定値:true)
 	 */
-	function moveRoute( eventId, mml, repeat, skippable, wait ) {
-		const targetEvent = getEventById( this, stringToEventId( eventId ) );
+	function moveRoute( interpreter, eventId, mml, repeat, skippable, wait ) {
+		eventId = stringToEventId( eventId );
+		const targetEvent = getEventById( interpreter, eventId );
 		const mmlArray = mml.match( /[^0-9.,-]+[0-9.,-]+/ig );
 		repeat = parseBooleanStrict( repeat );
 		skippable = ( skippable === undefined ) ? true : parseBooleanStrict( skippable );
@@ -908,7 +909,7 @@
 				const result = opland.match( /([0-9.]+),([0-9.]+)/ );
 				let x, y;
 				if( result === null ) {
-					const destinationEvent = getEventById( this, paramNo );
+					const destinationEvent = getEventById( interpreter, paramNo );
 					x = destinationEvent.x;
 					y = destinationEvent.y;
 				} else {
@@ -920,8 +921,8 @@
 		} );
 
 		movementList.push( { code: gc.ROUTE_END } );
-		this._params = [ eventId, { repeat: repeat, skippable: skippable, wait: wait, list: movementList } ];
-		this.command205();	// SET_MOVEMENT_ROUTE
+		interpreter._params = [ eventId, { repeat: repeat, skippable: skippable, wait: wait, list: movementList } ];
+		interpreter.command205();	// SET_MOVEMENT_ROUTE
 	}
 
 
