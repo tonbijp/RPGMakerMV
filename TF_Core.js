@@ -48,19 +48,33 @@
     const TYPE_STRING = 'string';
     /**
      * 与えられた文字列に変数が指定されていたら、変数の内容に変換して返す。
-     * @param {String} value 変換元の文字列( v[n]形式を含む )
+     * @param {String} value 変換元の文字列( v[n]、s[n]形式を含む )
      * @return {String} 変換後の文字列
      */
     function treatValue( value ) {
         if( value === undefined || value === '' ) return '0';
-        const result = value.match( /v\[(.+)\]/i );
-        if( result === null ) return value;
-        const id = parseInt( result[ 1 ], 10 );
-        if( isNaN( id ) ) {
-            return $gameVariables.valueByName( result[ 1 ] );
-        } else {
-            return $gameVariables.value( id );
+
+        const varResult = value.match( /^v\[(.+)\]$/i );
+        if( varResult !== null ) {
+            const id = parseInt( varResult[ 1 ], 10 );
+            if( isNaN( id ) ) {
+                return $gameVariables.valueByName( varResult[ 1 ] );
+            } else {
+                return $gameVariables.value( id );
+            }
         }
+
+        const swResult = value.match( /^s\[(.+)\]$/i );
+        if( swResult !== null ) {
+            const id = parseInt( swResult[ 1 ], 10 );
+            if( isNaN( id ) ) {
+                return $gameSwitches.valueByName( swResult[ 1 ] );
+            } else {
+                return $gameSwitches.value( id );
+            }
+        }
+
+        return value;
     }
 
 	/**

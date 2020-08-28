@@ -15,7 +15,6 @@
  * 
  * @help
  * イベントコマンドの[スクリプト]から使いやすいようにラッピング。
- * TkoolMV_PluginCommandBook.js 必須。
  *
  *------------------------------
  * TF_BEFORE_MOVE [マップID] [x]] [y] [向き]
@@ -43,6 +42,8 @@
 	const PARAM_ON = 'on';
 
 	const VOLUME_OFFSET = 5;	//オプション: 音量の最小変更数を5に。
+	console.log( `ユーティリティーだよ` );
+
 
 	// イベントコマンドの番号
 	const COMMAND_END = 0;
@@ -67,6 +68,12 @@
 	// );
 
 
+	/*---- パラメータパース関数 ----*/
+	const PARAM_TRUE = 'true';
+	const PARAM_ON = 'on';
+	const TYPE_BOOLEAN = 'boolean';
+	const TYPE_NUMBER = 'number';
+	const TYPE_STRING = 'string';
 	/**
 	 * 与えられた文字列に変数が指定されていたら、変数の内容に変換して返す。
 	 * @param {String} value 変換元の文字列( v[n]形式を含む )
@@ -74,21 +81,15 @@
 	 */
 	function treatValue( value ) {
 		if( value === undefined || value === '' ) return '0';
-		if( value[ 0 ] === 'V' || value[ 0 ] === 'v' ) {
-			return value.replace( /[Vv]\[([0-9]+)\]/, ( match, p1 ) => $gameVariables.value( parseInt( p1, 10 ) ) );
+		const result = value.match( /v\[(.+)\]/i );
+		if( result === null ) return value;
+		const id = parseInt( result[ 1 ], 10 );
+		if( isNaN( id ) ) {
+			return $gameVariables.valueByName( result[ 1 ] );
+		} else {
+			return $gameVariables.value( id );
 		}
-		return value;
 	}
-
-	/**
-	 * @param {String} value 変換元文字列
-	 * @return {Number} 整数値への変換結果
-	 */
-	function parseIntStrict( value ) {
-		const result = parseInt( treatValue( value ), 10 );
-		if( isNaN( result ) ) throw Error( '指定した値[' + value + ']が数値ではありません。' );
-		return result;
-	};
 
 	/**
 	 * @param {String} value 変換元文字列
@@ -98,14 +99,6 @@
 		const result = parseFloat( treatValue( value ) );
 		if( isNaN( result ) ) throw Error( '指定した値[' + value + ']が数値ではありません。' );
 		return result;
-	}
-    /**
-     * @param {String} value 変換元文字列
-     * @returns {Boolean} 
-     */
-	function parseBooleanStrict( value ) {
-		const result = treatValue( value ).toLowerCase();
-		return ( result === PARAM_TRUE || result === PARAM_ON );
 	}
 
 
@@ -195,21 +188,76 @@
 	}
 
 
+	/*--- Game_Variables ---*/
+	/**
+	 * 変数を文字列で指定し、値を返す。
+	 * @param {String} name 変数(ID, 名前, V[n]による指定が可能)
+	 */
+	Game_Variables.prototype.valueByName = function( name ) {
+		return this.value( stringToVariableId( name ) );
+	};
+	/**
+	 * 変数を文字列で指定し、値を設定。
+	 * @param {String} name 変数(ID, 名前, V[n]による指定が可能)
+	 * @param {String} value 設定する値
+	 */
+	Game_Variables.prototype.setValueByName = function( name, value ) {
+		this.setValue( stringToVariableId( name ), value );
+	};
+
+	/**
+	 * 指定された変数のIDを返す。
+	 * @param {String} name 変数(ID, 名前, V[n]による指定が可能)
+	 */
+	function stringToVariableId( name ) {
+		name = treatValue( name );
+		let i = $dataSystem.variables.findIndex( i => i === name );
+		if( 0 <= i ) return i;
+		i = parseInt( name, 10 );
+		if( isNaN( i ) ) throw Error( `I can't find the variable '${name}'` );
+		return i;
+	}
+
+	/*---- Game_Interpreter ----*/
+    /**
+     * プラグインコマンドの実行
+     */
+	const TF_BEFORE_MOVE = 'TF_BEFORE_MOVE';
+	const TF_AFTER_MOVE = 'TF_AFTER_MOVE';
+	const TF_PICT = 'TF_PICT';
+	const _Game_Interpreter_pluginCommand = Game_Interpreter.prototype.pluginCommand;
+	Game_Interpreter.prototype.pluginCommand = function( command, args ) {
+		_Game_Interpreter_pluginCommand.apply( this, arguments );
+
+		const commandStr = command.toUpperCase();
+		console.log( `${commandStr}` );
+
+		// コマンド文字列による分岐
+		switch( commandStr ) {
+			case TF_BEFORE_MOVE: TF_beforeMove( this, args[ 0 ], args[ 1 ], args[ 2 ], args[ 3 ] ); break;
+			case TF_AFTER_MOVE: TF_afterMove( this ); break;
+			case TF_PICT: TF_pict( this, args[ 0 ], args[ 1 ], args[ 2 ], args[ 3 ] ); break;
+
+		}
+	};
+
 	/**
 	 * マップ移動前の処理。
 	 * 向きは省略可能で、規定値は現在の向き( 0 )が設定される。
 	 * @example TF_BEFORE_MOVE マップID x座標 y座標 向き
-	 * @param {Array} args [ mapId, x, y, d ]
+	 * @param {Game_Interpreter} インタプリター
 	 * @param {String} mapId マップID | マップ名 | self | this
 	 * @param {String} x x座標(タイル数)
 	 * @param {String} y y座標(タイル数)
 	 * @param {String} d 向き(テンキー対応 | 方向文字列)
 	 */
-	Game_Interpreter.prototype.pluginCommandBook_TF_BEFORE_MOVE = function( args ) {
-		const mapId = stringToMapId( args[ 0 ] );
-		const x = parseFloatStrict( args[ 1 ] );
-		const y = parseFloatStrict( args[ 2 ] );
-		const d = stringToDirection( args[ 3 ] );
+	function TF_beforeMove( interpreter, mapId, x, y, d ) {
+		mapId = stringToMapId( mapId );
+		x = parseFloatStrict( x );
+		y = parseFloatStrict( y );
+		d = stringToDirection( d );
+		console.log( `ビフォームーブ：${mapId}` );
+
 		const commandList = [
 			{
 				indent: 0, code: SET_MOVEMENT_ROUTE, parameters: [ PLAYER_CHARACTER,
@@ -228,13 +276,13 @@
 			{ indent: 0, code: TRANSFER_PLAYER, parameters: [ 0, mapId, x, y, d, 2 ] },
 			{ indent: 0, code: COMMAND_END }
 		];
-		this.setupChild( commandList, this._eventId );
+		interpreter.setupChild( commandList, interpreter._eventId );
 	};
 
 	/**
 	 * 移動後のフェードインおよび一歩前進処理を行う
 	 */
-	Game_Interpreter.prototype.pluginCommandBook_TF_AFTER_MOVE = function() {
+	function TF_afterMove() {
 		const commandList = [
 			{ indent: 0, code: CHANGE_PLAYER_FOLLOWERS, parameters: [ 0 ] },
 			{ indent: 0, code: FADEIN_SCREEN },
@@ -253,21 +301,24 @@
 			},
 			{ indent: 0, code: COMMAND_END }
 		];
-		this.setupChild( commandList, this._eventId );
+		interpreter.setupChild( commandList, interpreter._eventId );
 	};
 
 
-	// Show Picture
 	/**
-	 * 
+	 * TF_PICT
+	 * showPicture (pictureId, name, origin, x, y, scaleX, scaleY, opacity, blendMode)
+	 * DL DR
 	 */
-	Game_Interpreter.prototype.pluginCommandBook_TF_PICT = function( args ) {
-		const x = args[ 0 ];
-		const y = args[ 1 ];
+	const ORIGN_TOPLEFT = 0;
+	const LEFT_GAME_PICTURE = new Game_Picture();// pictureId は undefinedでいく。
+	const RIGHT_GAME_PICTURE = new Game_Picture();
+	const LEFT_SPRITE_PICTURE = new Sprite_Picture();
+	const RIGHT_SPRITE_PICTURE = new Sprite_Picture();
+	function TF_pict( fileName, lrPosition ) {
 		// const align = args[  ]; 	// TODO: アラインメント設定を可能にする UL, UR, DL, DR, LOM(Left On Message), ROM(Right On Message)
-		$gameScreen.showPicture( this._params[ 0 ], this._params[ 1 ], this._params[ 2 ],
-			x, y, this._params[ 6 ], this._params[ 7 ], this._params[ 8 ], this._params[ 9 ] );
-		return true;
+
+		LEFT_GAME_PICTURE.show( fileName, ORIGN_TOPLEFT, 0, 0, 1, 1, 0xff, Graphics.BLEND_NORMAL );
 	};
 
 

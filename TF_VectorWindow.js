@@ -1,6 +1,6 @@
 //========================================
 // TF_VectorWindow.js
-// Version :0.6.0.0
+// Version :0.6.0.1
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -132,47 +132,11 @@
 	const POSITION_CENTER = 'center';
 	const POSITION_RIGHT = 'right';
 
+
+	/*---- パラメータパース関数 ----*/
 	const PARAM_TRUE = 'true';
 	const PARAM_ON = 'on';
 	const TYPE_NUMBER = 'number';
-
-    /**
-     * パラメータを受け取る
-     */
-	const pluginParams = PluginManager.parameters( 'TF_VectorWindow' );
-    /**
-     * 指定したパラメータの真偽値を返す。
-     * @param {String} paramName パラメータ名
-     * @param {Number} defaultParam 規定値
-     * @returns {Boolean}
-     */
-	const getBooleanParam = ( paramName, defaultParam ) => {
-		return pluginParams[ paramName ] ? ( pluginParams[ paramName ].toLowerCase() === PARAM_TRUE ) : defaultParam;
-	};
-
-	// プリセット設定
-	const presetList = JSON.parse( pluginParams.preset );
-	pluginParams.preset = presetList.map( value => {
-		const params = JSON.parse( value );
-		params.margin = parseFloatStrict( params.margin );
-		params.borderWidth = parseFloatStrict( params.borderWidth );
-		params.borderColor = params.borderColor;
-		params.decorSize = parseFloatStrict( params.decorSize );
-		params.padding = parseFloatStrict( params.padding );
-		params.bgColor = JSON.parse( params.bgColor );
-		return params;
-	} );
-
-	// 全体設定
-	const SYSTEM_FONT_SIZE = parseFloatStrict( pluginParams.systemFontSize );
-	const MESSAGE_FONT_SIZE = parseFloatStrict( pluginParams.messageFontSize );
-	const LINE_HEIGHT = parseFloatStrict( pluginParams.lineHeight ) / 100;
-	const MESSAGE_LINES = parseIntStrict( pluginParams.messageLines );
-	const DROP_SHADOW = getBooleanParam( 'dropShadow', true );
-
-
-
-	/*---- パラメータパース関数 ----*/
 	/**
 	 * 与えられた文字列に変数が指定されていたら、変数の内容に変換して返す。
 	 * @param {String} value 変換元の文字列( v[n]形式を含む )
@@ -214,6 +178,62 @@
 		return result;
 	}
 
+
+    /**
+     * パラメータを受け取る
+     */
+	const pluginParams = PluginManager.parameters( 'TF_VectorWindow' );
+    /**
+     * 指定したパラメータの真偽値を返す。
+     * @param {String} paramName パラメータ名
+     * @param {Number} defaultParam 規定値
+     * @returns {Boolean}
+     */
+	const getBooleanParam = ( paramName, defaultParam ) => {
+		return pluginParams[ paramName ] ? ( pluginParams[ paramName ].toLowerCase() === PARAM_TRUE ) : defaultParam;
+	};
+
+	// プリセット設定
+	const presetList = JSON.parse( pluginParams.preset );
+	pluginParams.preset = presetList.map( value => {
+		const params = JSON.parse( value );
+		params.margin = parseFloatStrict( params.margin );
+		params.borderWidth = parseFloatStrict( params.borderWidth );
+		params.borderColor = params.borderColor;
+		params.decorSize = parseFloatStrict( params.decorSize );
+		params.padding = parseFloatStrict( params.padding );
+		params.bgColor = JSON.parse( params.bgColor );
+		return params;
+	} );
+
+	// 全体設定
+	const SYSTEM_FONT_SIZE = parseFloatStrict( pluginParams.systemFontSize );
+	const MESSAGE_FONT_SIZE = parseFloatStrict( pluginParams.messageFontSize );
+	const LINE_HEIGHT = parseFloatStrict( pluginParams.lineHeight ) / 100;
+	const MESSAGE_LINES = parseIntStrict( pluginParams.messageLines );
+	const DROP_SHADOW = getBooleanParam( 'dropShadow', true );
+
+
+	/*--- Game_Variables ---*/
+	/**
+	 * 変数を文字列で指定し、値を返す。
+	 * @param {String} name 変数(ID, 名前, V[n]による指定が可能)
+	 */
+	Game_Variables.prototype.valueByName = function( name ) {
+		return this.value( stringToVariableId( name ) );
+	};
+	/**
+	 * 指定された変数のIDを返す。
+	 * @param {String} name 変数(ID, 名前, V[n]による指定が可能)
+	 */
+	function stringToVariableId( name ) {
+		name = treatValue( name );
+		let i = $dataSystem.variables.findIndex( i => i === name );
+		if( 0 <= i ) return i;
+		i = parseInt( name, 10 );
+		if( isNaN( i ) ) throw new Error( `I can't find the variable '${name}'` );
+		return i;
+	}
 
 	/*---- Game_Interpreter ----*/
 	/**
