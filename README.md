@@ -17,3 +17,7 @@
 |[TF_VectorWindow.js](https://raw.githubusercontent.com/tonbijp/RPGMakerMV/master/TF_VectorWindow.js)| ウィンドウをベクター描画 | α版 | |
 |[TF_ScreenUtil.js](https://raw.githubusercontent.com/tonbijp/RPGMakerMV/master/TF_ScreenUtil.js)| 画面サイズ設定・スクロール固定など | α版 | |
 |[TF_Condition.js](https://raw.githubusercontent.com/tonbijp/RPGMakerMV/master/TF_Condition.js)| 変数・スイッチ・判定など | α版 | |
+
+
+『RPGツクールMV』のプラグインの開発については、完全に注視しています。<br />
+新たなプラグインについては [RPGツクールMZ プラグイン置き場](https://github.com/tonbijp/RPGMakerMZ) をご覧ください。。
