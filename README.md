@@ -19,5 +19,5 @@
 |[TF_Condition.js](https://raw.githubusercontent.com/tonbijp/RPGMakerMV/master/TF_Condition.js)| 変数・スイッチ・判定など | α版 | |
 
 
-『RPGツクールMV』のプラグインの開発は完全に注視しています。<br />
+『RPGツクールMV』のプラグインの開発は完全に中止しています。<br />
 新たなプラグインについては [RPGツクールMZ プラグイン置き場](https://github.com/tonbijp/RPGMakerMZ) をご覧ください。。
