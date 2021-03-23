@@ -19,8 +19,8 @@
  * 利用規約 : MITライセンス
  */
 
-( function() {
-    'use strict';
+( () => {
+    "use strict";
     const PLUGIN_NAME = 'TF_Core';
 
     // HalfMove.js の確認
