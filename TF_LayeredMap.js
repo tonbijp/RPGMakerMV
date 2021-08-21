@@ -1,6 +1,6 @@
 //========================================
 // TF_LayeredMap.js
-// Version :1.0.3.1
+// Version :1.0.4.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2018 - 2020
@@ -416,11 +416,11 @@
         }
     }
 
-	/**
-	 * 与えられた文字列に変数が指定されていたら、変数の内容に変換して返す。
-	 * @param {String} value 変換元の文字列( v[n]形式を含む )
-	 * @return {String} 変換後の文字列
-	 */
+    /**
+     * 与えられた文字列に変数が指定されていたら、変数の内容に変換して返す。
+     * @param {String} value 変換元の文字列( v[n]形式を含む )
+     * @return {String} 変換後の文字列
+     */
     function treatValue( value ) {
         if( value === undefined || value === '' ) return '0';
         const result = value.match( /v\[(.+)\]/i );
@@ -433,17 +433,17 @@
         }
     }
     /*--- Game_Variables ---*/
-	/**
-	 * 変数を文字列で指定し、値を返す。
-	 * @param {String} name 変数(ID, 名前, V[n]による指定が可能)
-	 */
+    /**
+     * 変数を文字列で指定し、値を返す。
+     * @param {String} name 変数(ID, 名前, V[n]による指定が可能)
+     */
     Game_Variables.prototype.valueByName = function( name ) {
         return this.value( stringToVariableId( name ) );
     };
-	/**
-	 * 指定された変数のIDを返す。
-	 * @param {String} name 変数(ID, 名前, V[n]による指定が可能)
-	 */
+    /**
+     * 指定された変数のIDを返す。
+     * @param {String} name 変数(ID, 名前, V[n]による指定が可能)
+     */
     function stringToVariableId( name ) {
         name = treatValue( name );
         let i = $dataSystem.variables.findIndex( i => i === name );
@@ -453,11 +453,11 @@
         return i;
     }
 
-	/**
-	 * 文字列を整数に変換して返す。
-	 * @param {String|Number} value
-	 * @return {Number} 数値に変換した結果
-	 */
+    /**
+     * 文字列を整数に変換して返す。
+     * @param {String|Number} value
+     * @return {Number} 数値に変換した結果
+     */
     function parseIntStrict( value ) {
         if( typeof value === TYPE_NUMBER ) return Math.floor( value );
         const result = parseInt( treatValue( value ), 10 );
@@ -465,11 +465,11 @@
         return result;
     }
 
-	/**
-	 * 文字列を実数に変換して返す。
-	 * @param {String|Number} value
-	 * @return {Number} 数値に変換した結果
-	 */
+    /**
+     * 文字列を実数に変換して返す。
+     * @param {String|Number} value
+     * @return {Number} 数値に変換した結果
+     */
     function parseFloatStrict( value ) {
         if( typeof value === 'number' ) return value;
         const result = parseFloat( treatValue( value ) );
@@ -478,7 +478,7 @@
     }
 
     /**
-	 * 文字列を真偽値に変換して返す。
+     * 文字列を真偽値に変換して返す。
      * @param {String|Boolean} value 変換元文字列
      * @returns {Boolean} 
      */
@@ -489,12 +489,12 @@
         return ( result === PARAM_TRUE || result === PARAM_ON );
     }
 
-	/**
-	 * character を拡張して隊列メンバーも指定できるようにしたもの。
-	 * @param {Game_Interpreter} interpreter インタプリタ
-	 * @param {Number} id 拡張イベントID
-	 * @returns {Game_CharacterBase}
-	 */
+    /**
+     * character を拡張して隊列メンバーも指定できるようにしたもの。
+     * @param {Game_Interpreter} interpreter インタプリタ
+     * @param {Number} id 拡張イベントID
+     * @returns {Game_CharacterBase}
+     */
     function getEventById( interpreter, id ) {
         if( id < -1 ) {
             return $gamePlayer.followers().follower( -2 - id );			// 隊列メンバー(0〜2)
@@ -509,11 +509,11 @@
     const EVENT_FOLLOWER0 = 'follower0';
     const EVENT_FOLLOWER1 = 'follower1';
     const EVENT_FOLLOWER2 = 'follower2';
-	/**
-	 * 文字列をイベントIDへ変換
-	 * @param {String} value イベントIDの番号か識別子
-	 * @returns {Number} 拡張イベントID
-	 */
+    /**
+     * 文字列をイベントIDへ変換
+     * @param {String} value イベントIDの番号か識別子
+     * @returns {Number} 拡張イベントID
+     */
     function stringToEventId( value ) {
         value = treatValue( value );
         const result = parseInt( value, 10 );
@@ -751,7 +751,7 @@
 
         // テーブルの描画
         if( this._isTableTile( northTileId1 ) && !this._isTableTile( tileId1 ) ) {
-            if( !Tilemap.isShadowingTile( tileId0 ) ) {
+            if( !Tilemap.isShadowingTile( tileId0 ) && !Tilemap.isShadowingTile( tileId1 ) ) {
                 this._drawTableEdge( lowerLayer, northTileId1, dx, dy );
             }
         }
@@ -1010,11 +1010,11 @@
             0, 2, OPTT + 8, OPTT + 10,
             4, 6, OPTT + 12, OPTT + 14,
         ] : [
-                0, 2, OPTT + 8, OPTT + 10,
-                4, 6, OPTT + 12, OPTT + 14,
-                1, 3, OPTT + 9, OPTT + 11,
-                5, 7, OPTT + 15, OPTT + 13,
-            ];
+            0, 2, OPTT + 8, OPTT + 10,
+            4, 6, OPTT + 12, OPTT + 14,
+            1, 3, OPTT + 9, OPTT + 11,
+            5, 7, OPTT + 15, OPTT + 13,
+        ];
         replaceCollision( flags, tileId, MASK_WITHOUT_TAG_DIR_UPPER, A3_UPPER_OVERPASS );
     }
     /**
@@ -1030,11 +1030,11 @@
             0, 2, 17, 17,
             4, 6, 17, 17,
         ] : [
-                0, 2, 17, 17,
-                4, 6, 17, 17,
-                1, 3, 17, 17,
-                5, 7, 17, 17,
-            ];
+            0, 2, 17, 17,
+            4, 6, 17, 17,
+            1, 3, 17, 17,
+            5, 7, 17, 17,
+        ];
         replaceCollision( flags, tileId, MASK_WITHOUT_DIR_UPPER, A3_UPPER_PASS );
     }
     /**
@@ -1052,13 +1052,13 @@
             6, OPTT + 8, OPTT + 10, OPTT + 10, OPTT + 12, OPTT + 12, 4, 4,
             2, 2, OPTT + 14, OPTT + 10, 6, OPTT + 12, OPTT + 14, OPTT + 15,
         ] : [
-                0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0, 0, 0,
-                2, 2, 2, 2, OPTT + 8, OPTT + 8, OPTT + 8, OPTT + 8,
-                4, 4, 4, 4, 1, 1, 1, 1,
-                6, OPTT + 9, OPTT + 10, OPTT + 10, OPTT + 12, OPTT + 12, 5, 5,
-                3, 3, OPTT + 14, OPTT + 11, 7, OPTT + 13, OPTT + 15, OPTT + 15,
-            ];
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            2, 2, 2, 2, OPTT + 8, OPTT + 8, OPTT + 8, OPTT + 8,
+            4, 4, 4, 4, 1, 1, 1, 1,
+            6, OPTT + 9, OPTT + 10, OPTT + 10, OPTT + 12, OPTT + 12, 5, 5,
+            3, 3, OPTT + 14, OPTT + 11, 7, OPTT + 13, OPTT + 15, OPTT + 15,
+        ];
         replaceCollision( flags, tileId, MASK_WITHOUT_TAG_DIR_UPPER, A4_UPPER_OVERPASS );
     }
     /**
@@ -1076,13 +1076,13 @@
             6, 17, 17, 17, 17, 17, 4, 6,
             2, 6, 17, 17, 6, 17, 17, 17,
         ] : [
-                0, 2, 4, 6, 0, 2, 4, 6,
-                0, 2, 4, 6, 0, 2, 4, 6,
-                2, 6, 2, 6, 17, 17, 17, 17,
-                4, 4, 6, 6, 1, 3, 5, 7,
-                6, 17, 17, 17, 17, 17, 5, 7,
-                3, 7, 17, 17, 7, 17, 17, 17,
-            ];
+            0, 2, 4, 6, 0, 2, 4, 6,
+            0, 2, 4, 6, 0, 2, 4, 6,
+            2, 6, 2, 6, 17, 17, 17, 17,
+            4, 4, 6, 6, 1, 3, 5, 7,
+            6, 17, 17, 17, 17, 17, 5, 7,
+            3, 7, 17, 17, 7, 17, 17, 17,
+        ];
         replaceCollision( flags, tileId, MASK_WITHOUT_DIR_UPPER, A4_UPPER_PASS );
     }
     /**
@@ -1186,11 +1186,11 @@
             OPTT + 0, OPTT + 2, OPTT + 0, OPTT + 2,
             OPTT + 4, OPTT + 6, OPTT + 4, OPTT + 6,
         ] : [
-                0, 2, 0, 2,
-                4, 6, 4, 6,
-                0, 2, 0, 2,
-                4, 6, 4, 6,
-            ];
+            0, 2, 0, 2,
+            4, 6, 4, 6,
+            0, 2, 0, 2,
+            4, 6, 4, 6,
+        ];
         replaceCollision( flags, tileId, MASK_WITHOUT_TAG_DIR_UPPER, BRIDGE_SN_PASS );
     }
     /**
@@ -1206,11 +1206,11 @@
             OPTT + 1, OPTT + 1, OPTT + 9, OPTT + 9,
             OPTT + 1, OPTT + 1, OPTT + 9, OPTT + 9,
         ] : [
-                0, 0, 8, 8,
-                0, 0, 8, 8,
-                1, 1, 9, 9,
-                1, 1, 9, 9,
-            ];
+            0, 0, 8, 8,
+            0, 0, 8, 8,
+            1, 1, 9, 9,
+            1, 1, 9, 9,
+        ];
         replaceCollision( flags, tileId, MASK_WITHOUT_TAG_DIR_UPPER, BRIDGE_WE_PASS );
     }
 
