@@ -1,6 +1,6 @@
 //========================================
 // TF_CharEx.js
-// Version :0.14.1.0
+// Version :0.15.0.0
 // For : RPGツクールMV (RPG Maker MV)
 // -----------------------------------------------
 // Copyright : Tobishima-Factory 2020
@@ -23,6 +23,13 @@
  * @option なし(アナログ)
  * @value 0
  * @default 1
+ * 
+ * @param useIncreasedPattern
+ * @desc GALV_CharacterFrames.js に対応し3以上のパターン番号を指定可能にする。ただし[キャラパターン]指定はできなくなる。
+ * @type boolean
+ * @default  false
+ * @on 多パターン指定
+ * @off 3パターン指定(規定値)
  * 
  * @help
  * 主な機能とイベントコマンドにない利点。規定値:現在値)
@@ -55,7 +62,7 @@
  * 　例: TF_FILE_CHAR self !Door 2 0 D
  * ------------------------------
  * TF_FILE_CHAR [イベントID] [画像ファイル名] [キャラ番号] [キャラパターン]
- * 　[キャラパターン] [歩行パターン] [向き] を指定する番号(規定値:現在値)
+ * 　[キャラパターン] は[歩行パターン] + [向き] を一度に指定する番号(規定値:現在値)
  * 　※下部詳細参照
  *
  * 　例: TF_FILE_CHAR player Animal 7 11
@@ -163,6 +170,9 @@
  * 
  * 【[移動ルートの設定]で使うスクリプト】
  * ------------------------------
+ * this.TF_setCharPattern( [キャラ番号], [歩行パターン], [向き] )
+ * キャラクタのパターンを指定
+ * 
  * this.TF_goXY( [x], [y] );
  * 　指定座標に移動。
  * ------------------------------
@@ -194,6 +204,7 @@
  * 　3, 4, 5		<= 左向き(テンキー4)
  * 　6, 7, 8		<= 右向き(テンキー6)
  * 　9, 10, 11 <= 上向き(テンキー8)
+ * 　※ただし[]。
  * ------------------------------
  * 移動速度を[ウェイト]に変換する場合以下のような対応となる。
  * 　1 / 8倍速 … 64フレーム
@@ -344,11 +355,11 @@
 		return result;
 	}
 
-    /**
+	/**
 	 * 文字列を真偽値に変換して返す。
-     * @param {String|Boolean} value 変換元文字列
-     * @returns {Boolean} 
-     */
+	 * @param {String|Boolean} value 変換元文字列
+	 * @returns {Boolean} 
+	 */
 	function parseBooleanStrict( value ) {
 		if( typeof value === TYPE_BOOLEAN ) return value;
 		value = treatValue( value );
@@ -398,8 +409,7 @@
 
 		// イベント名で指定できるようにする
 		const i = $gameMap._events.findIndex( event => {
-			if( event === undefined ) return false;	// _events[0] が undefined なので無視
-
+			if( !event ) return false;	// _events[0] が空なら無視
 			const eventId = event._eventId;
 			return $dataMap.events[ eventId ].name === value;
 		} );
@@ -450,11 +460,12 @@
 	const gc = Game_Character;
 
 
-    /**
-     * パラメータを受け取る
-     */
+	/**
+	 * パラメータを受け取る
+	 */
 	const pluginParams = PluginManager.parameters( 'TF_CharEx' );
 	const TF_moveUnit = parseFloatStrict( pluginParams.moveUnit );
+	const TF_useIncreasedPattern = parseBooleanStrict( pluginParams.useIncreasedPattern );
 
 
 	/*---- Game_Interpreter ----*/
@@ -532,6 +543,14 @@
 		return _Game_Interpreter_updateWaitMode.call( this );
 	};
 
+
+	/**
+	 * setCharPattern() を呼び出す。
+	 */
+	Game_CharacterBase.prototype.TF_setCharPattern = function( charaNo, patternNo, d ) {
+		setCharPattern( this, undefined, charaNo, patternNo, d );
+	};
+
 	/**
 	 * goXY() を呼び出す。
 	 */
@@ -588,7 +607,7 @@
 		// パターン番号
 		if( patternNo !== undefined ) {
 			patternNo = parseIntStrict( patternNo );
-			if( 2 < patternNo ) {
+			if( !TF_useIncreasedPattern && 2 < patternNo ) {
 				d = ( Math.floor( patternNo / 3 ) + 1 ) * 2;
 				patternNo %= 3;
 			} else {
